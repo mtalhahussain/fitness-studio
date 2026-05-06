@@ -43,8 +43,9 @@ class MembershipPlan extends Model
         return $query->where('is_active', true);
     }
 
-    public function scopeForGym($query, int $gymId)
+    public function scopeForGym($query, ?int $gymId)
     {
+        if ($gymId === null) return $query;
         return $query->where('gym_id', $gymId);
     }
 }

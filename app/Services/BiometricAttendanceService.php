@@ -34,7 +34,7 @@ class BiometricAttendanceService
      * Process a batch of logs from ZKTeco device.
      * Returns a summary of processed, skipped, and failed records.
      */
-    public function syncBatch(array $logs, int $gymId): array
+    public function syncBatch(array $logs, ?int $gymId): array
     {
         $result = ['processed' => 0, 'skipped' => 0, 'failed' => 0, 'errors' => []];
 
@@ -69,7 +69,7 @@ class BiometricAttendanceService
      * Process a single biometric log.
      * Returns null if the log is a duplicate and was skipped.
      */
-    public function processLog(array $log, int $gymId): ?Attendance
+    public function processLog(array $log, ?int $gymId): ?Attendance
     {
         $deviceUserId = (string) ($log['device_user_id'] ?? $log['user_id'] ?? '');
         $punchTime    = Carbon::parse($log['punch_time'] ?? $log['timestamp'] ?? now());
@@ -118,7 +118,7 @@ class BiometricAttendanceService
      * (already linked from previous syncs) or fallback to user->id equality
      * (when device_user_id matches our user primary key — common in small gyms).
      */
-    public function resolveUser(string $deviceUserId, int $gymId): ?User
+    public function resolveUser(string $deviceUserId, ?int $gymId): ?User
     {
         // 1. Look for a previously linked user via attendance record
         $linked = Attendance::forGym($gymId)
@@ -141,7 +141,7 @@ class BiometricAttendanceService
     /**
      * Check if a punch from the same user within DUPLICATE_WINDOW_SECONDS already exists.
      */
-    public function isDuplicate(int $userId, int $gymId, Carbon $punchTime): bool
+    public function isDuplicate(int $userId, ?int $gymId, Carbon $punchTime): bool
     {
         $windowStart = (clone $punchTime)->subSeconds(self::DUPLICATE_WINDOW_SECONDS);
         $windowEnd   = (clone $punchTime)->addSeconds(self::DUPLICATE_WINDOW_SECONDS);
@@ -155,7 +155,7 @@ class BiometricAttendanceService
 
     // ─── Private helpers ─────────────────────────────────────────────────────
 
-    private function handleBiometricCheckIn(User $user, int $gymId, Carbon $time, string $deviceUserId): Attendance
+    private function handleBiometricCheckIn(User $user, ?int $gymId, Carbon $time, string $deviceUserId): Attendance
     {
         // If open session exists for biometric, silently ignore (device may re-send)
         $open = $this->attendanceService->findOpenSession($user->id, $gymId);
@@ -167,12 +167,12 @@ class BiometricAttendanceService
         return $this->attendanceService->checkIn($user, $gymId, $time, 'biometric', $deviceUserId);
     }
 
-    private function handleBiometricCheckOut(User $user, int $gymId, Carbon $time): Attendance
+    private function handleBiometricCheckOut(User $user, ?int $gymId, Carbon $time): Attendance
     {
         return $this->attendanceService->checkOut($user, $gymId, $time, 'biometric');
     }
 
-    private function handleToggle(User $user, int $gymId, Carbon $time, string $deviceUserId): Attendance
+    private function handleToggle(User $user, ?int $gymId, Carbon $time, string $deviceUserId): Attendance
     {
         $result = $this->attendanceService->processLog($user, $gymId, $time, 'biometric', $deviceUserId);
         return $result['attendance'];

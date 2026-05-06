@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Auto-expire memberships every day at midnight
 Schedule::command('memberships:expire')->dailyAt('00:00');
+
+// Send expiry reminders at 7, 3, and 1 day(s) before expiry
+Schedule::command('memberships:reminders')->dailyAt('09:00');

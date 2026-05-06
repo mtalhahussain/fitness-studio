@@ -51,8 +51,9 @@ class Membership extends Model
         return (int) now()->startOfDay()->diffInDays($this->end_date->endOfDay());
     }
 
-    public function scopeForGym($query, int $gymId)
+    public function scopeForGym($query, ?int $gymId)
     {
+        if ($gymId === null) return $query;
         return $query->where('gym_id', $gymId);
     }
 

@@ -114,7 +114,7 @@ class AttendanceController extends Controller
 
     // ─── Private helpers ─────────────────────────────────────────────────────
 
-    private function resolveTargetUser(Request $request, User $authUser, int $gymId): User
+    private function resolveTargetUser(Request $request, User $authUser, ?int $gymId): User
     {
         // Members can only act for themselves
         if ($authUser->isMember()) {

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\MemberCheckedIn;
 use App\Models\Attendance;
 use App\Models\User;
 use Carbon\Carbon;
@@ -18,7 +19,7 @@ class AttendanceService
      */
     public function processLog(
         User $user,
-        int $gymId,
+        ?int $gymId,
         Carbon $time,
         string $source = 'manual',
         ?string $deviceUserId = null
@@ -39,7 +40,7 @@ class AttendanceService
      */
     public function checkIn(
         User $user,
-        int $gymId,
+        ?int $gymId,
         Carbon $time,
         string $source = 'manual',
         ?string $deviceUserId = null
@@ -62,7 +63,7 @@ class AttendanceService
      */
     public function checkOut(
         User $user,
-        int $gymId,
+        ?int $gymId,
         Carbon $time,
         string $source = 'manual'
     ): Attendance {
@@ -78,7 +79,7 @@ class AttendanceService
     /**
      * Get today's attendance for a gym, with optional filters.
      */
-    public function getTodayAttendance(int $gymId, array $filters = [])
+    public function getTodayAttendance(?int $gymId, array $filters = [])
     {
         $query = Attendance::forGym($gymId)
             ->today()
@@ -110,7 +111,7 @@ class AttendanceService
     /**
      * Get attendance summary counts for today.
      */
-    public function getTodaySummary(int $gymId): array
+    public function getTodaySummary(?int $gymId): array
     {
         $base = Attendance::forGym($gymId)->today();
 
@@ -125,7 +126,7 @@ class AttendanceService
 
     // ─── Internal helpers ────────────────────────────────────────────────────
 
-    public function findOpenSession(int $userId, int $gymId): ?Attendance
+    public function findOpenSession(int $userId, ?int $gymId): ?Attendance
     {
         // No date boundary — handles late checkouts spanning midnight
         return Attendance::forUser($userId)
@@ -137,18 +138,22 @@ class AttendanceService
 
     private function performCheckIn(
         int $userId,
-        int $gymId,
+        ?int $gymId,
         Carbon $time,
         string $source,
         ?string $deviceUserId
     ): Attendance {
-        return Attendance::create([
+        $attendance = Attendance::create([
             'gym_id'         => $gymId,
             'user_id'        => $userId,
             'check_in_time'  => $time,
             'source'         => $source,
             'device_user_id' => $deviceUserId,
         ]);
+
+        MemberCheckedIn::dispatch($attendance->load('user'));
+
+        return $attendance;
     }
 
     private function performCheckOut(Attendance $session, Carbon $time): Attendance

@@ -61,8 +61,9 @@ class Attendance extends Model
 
     // Scopes
 
-    public function scopeForGym(Builder $query, int $gymId): Builder
+    public function scopeForGym(Builder $query, ?int $gymId): Builder
     {
+        if ($gymId === null) return $query;
         return $query->where('gym_id', $gymId);
     }
 

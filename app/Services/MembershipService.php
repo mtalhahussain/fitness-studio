@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\MembershipExpired;
 use App\Models\Membership;
 use App\Models\MembershipPlan;
 use App\Models\User;
@@ -14,7 +15,7 @@ class MembershipService
     /**
      * Create a new member user and assign an initial membership.
      */
-    public function createMember(array $data, int $gymId): User
+    public function createMember(array $data, ?int $gymId): User
     {
         return DB::transaction(function () use ($data, $gymId) {
             $member = User::create([
@@ -39,7 +40,7 @@ class MembershipService
     /**
      * Assign (or renew) a membership plan to a member.
      */
-    public function assignMembership(User $member, int $planId, int $gymId, array $data = []): Membership
+    public function assignMembership(User $member, int $planId, ?int $gymId, array $data = []): Membership
     {
         $plan = MembershipPlan::active()->forGym($gymId)->findOrFail($planId);
 
@@ -102,9 +103,23 @@ class MembershipService
      */
     public function markExpired(): int
     {
-        return Membership::where('status', 'active')
+        $expiring = Membership::with('user')
+            ->where('status', 'active')
             ->where('end_date', '<', now()->toDateString())
-            ->update(['status' => 'expired']);
+            ->get();
+
+        if ($expiring->isEmpty()) {
+            return 0;
+        }
+
+        $ids = $expiring->pluck('id')->all();
+        Membership::whereIn('id', $ids)->update(['status' => 'expired']);
+
+        foreach ($expiring as $membership) {
+            MembershipExpired::dispatch($membership->setRelations($membership->getRelations()));
+        }
+
+        return count($ids);
     }
 
     /**
@@ -123,7 +138,7 @@ class MembershipService
     /**
      * Get paginated members for a gym with their active membership.
      */
-    public function getMembers(int $gymId, array $filters = [])
+    public function getMembers(?int $gymId, array $filters = [])
     {
         $query = User::members()
             ->forGym($gymId)
