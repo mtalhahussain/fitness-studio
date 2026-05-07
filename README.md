@@ -2,15 +2,13 @@
 
 # 💪 Fitness Studio — Gym SaaS Platform
 
-**A full-featured, multi-tenant Gym Management SaaS built with Laravel 11**
+**A full-featured, multi-tenant Gym Management SaaS built with Laravel 12.58.0**
 
 [![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=flat-square&logo=php&logoColor=white)](https://php.net)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://mysql.com)
 [![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Active-22c55e?style=flat-square)]()
-
-*Built as a portfolio project demonstrating production-grade SaaS architecture patterns.*
 
 </div>
 
@@ -208,7 +206,7 @@ GET     /api/pos/revenue
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/fitness-studio.git
+git clone https://github.com/mtalhahussain/fitness-studio.git
 cd fitness-studio
 
 # 2. Install PHP dependencies
@@ -289,11 +287,11 @@ Centralises the `$this->gymId()` / `$this->requireGymId()` helpers so every serv
 
 ## Author
 
-**Muhammad [Your Name]** — Full Stack Laravel Developer
+**Muhammad Talha HUssain** — Full Stack Laravel Developer
 
 - Portfolio: [your-portfolio-url]
 - LinkedIn: [your-linkedin]
-- GitHub: [your-github]
+- GitHub: https://github.com/mtalhahussain/
 
 ---
 
