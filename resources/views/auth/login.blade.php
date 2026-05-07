@@ -10,6 +10,7 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+        
         :root, [data-theme="dark"] {
             --bg:            #0f1020;
             --left-bg:       #111228;
