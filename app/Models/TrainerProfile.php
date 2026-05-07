@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasGymScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TrainerProfile extends Model
 {
-    use HasFactory;
+    use HasFactory, HasGymScope;
 
     protected $fillable = [
         'user_id', 'gym_id', 'specialization', 'bio',

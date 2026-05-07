@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasGymScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-    use SoftDeletes;
+    use HasGymScope, SoftDeletes;
 
     protected $fillable = [
         'gym_id', 'user_id', 'invoice_number', 'subtotal', 'tax_amount',

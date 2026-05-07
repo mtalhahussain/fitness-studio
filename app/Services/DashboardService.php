@@ -5,7 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-class DashboardService
+class DashboardService extends BaseService
 {
     /**
      * Return the 5 core KPIs for the dashboard.

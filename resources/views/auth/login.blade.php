@@ -4,561 +4,479 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In — Fitness Studio</title>
+    <script>(function(){const t=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        :root {
-            --primary: #6C63FF;
-            --primary-dark: #574fd6;
-            --accent: #FF6584;
-            --dark: #0f0f1a;
-            --card: #1a1a2e;
-            --surface: #16213e;
-            --border: rgba(255,255,255,0.08);
-            --text: #e2e8f0;
-            --muted: #94a3b8;
-            --success: #10b981;
-            --error: #ef4444;
+        :root, [data-theme="dark"] {
+            --bg:            #0f1020;
+            --left-bg:       #111228;
+            --right-bg:      #161728;
+            --border:        rgba(255,255,255,0.08);
+            --input-bg:      rgba(255,255,255,0.05);
+            --input-border:  rgba(255,255,255,0.10);
+            --input-focus-bg:rgba(108,99,255,0.06);
+            --primary:       #6C63FF;
+            --primary-hover: #5a52e0;
+            --primary-glow:  rgba(108,99,255,0.30);
+            --text:          #f1f5f9;
+            --text-sub:      #94a3b8;
+            --text-muted:    #64748b;
+            --error:         #f87171;
+            --success:       #4ade80;
+            --badge-bg:      rgba(255,255,255,0.06);
+            --theme-btn:     rgba(255,255,255,0.06);
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--dark);
-            min-height: 100vh;
-            display: flex;
-            overflow: hidden;
+        [data-theme="light"] {
+            --bg:            #f4f6fb;
+            --left-bg:       #1e1b4b;
+            --right-bg:      #ffffff;
+            --border:        rgba(0,0,0,0.08);
+            --input-bg:      #f8fafc;
+            --input-border:  rgba(0,0,0,0.12);
+            --input-focus-bg:rgba(108,99,255,0.04);
+            --primary:       #6C63FF;
+            --primary-hover: #5a52e0;
+            --primary-glow:  rgba(108,99,255,0.25);
+            --text:          #111827;
+            --text-sub:      #4b5563;
+            --text-muted:    #9ca3af;
+            --error:         #ef4444;
+            --success:       #16a34a;
+            --badge-bg:      #f1f5f9;
+            --theme-btn:     rgba(255,255,255,0.12);
         }
 
-        /* Left Panel */
-        .panel-left {
+        html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); overflow: hidden; }
+
+        /* ── Layout ─────────────────────────────────────────────── */
+        .wrap { display: flex; height: 100vh; }
+
+        /* ── Left panel ─────────────────────────────────────────── */
+        .left {
             flex: 1;
-            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 40%, #16213e 100%);
+            background: var(--left-bg);
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 60px;
+            justify-content: space-between;
+            padding: 48px 56px;
             position: relative;
             overflow: hidden;
         }
 
-        .panel-left::before {
+        /* Mesh gradient background */
+        .left::before {
             content: '';
             position: absolute;
-            top: -200px;
-            left: -200px;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(108,99,255,0.15) 0%, transparent 70%);
-            border-radius: 50%;
-        }
-
-        .panel-left::after {
-            content: '';
-            position: absolute;
-            bottom: -150px;
-            right: -100px;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(255,101,132,0.1) 0%, transparent 70%);
-            border-radius: 50%;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 60px;
-            z-index: 1;
-        }
-
-        .brand-icon {
-            width: 52px;
-            height: 52px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .brand-name {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--text);
-            letter-spacing: -0.5px;
-        }
-
-        .brand-tagline {
-            font-size: 12px;
-            color: var(--muted);
-            font-weight: 400;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .hero-content {
-            z-index: 1;
-            text-align: center;
-            max-width: 440px;
-        }
-
-        .hero-content h1 {
-            font-size: 42px;
-            font-weight: 700;
-            color: var(--text);
-            line-height: 1.2;
-            letter-spacing: -1px;
-            margin-bottom: 20px;
-        }
-
-        .hero-content h1 span {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero-content p {
-            color: var(--muted);
-            font-size: 16px;
-            line-height: 1.7;
-            margin-bottom: 48px;
-        }
-
-        .stats {
-            display: flex;
-            gap: 32px;
-            justify-content: center;
-        }
-
-        .stat {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 4px;
-        }
-
-        .stat-divider {
-            width: 1px;
-            background: var(--border);
-            align-self: stretch;
-        }
-
-        /* Floating cards */
-        .floating-card {
-            position: absolute;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px 20px;
-            backdrop-filter: blur(10px);
-            z-index: 1;
-            animation: float 6s ease-in-out infinite;
-        }
-
-        .floating-card:nth-child(1) { top: 15%; right: 8%; animation-delay: 0s; }
-        .floating-card:nth-child(2) { bottom: 20%; left: 5%; animation-delay: 3s; }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-12px); }
-        }
-
-        .fc-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .fc-value { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 4px; }
-        .fc-change { font-size: 12px; color: var(--success); margin-top: 4px; }
-
-        /* Right Panel */
-        .panel-right {
-            width: 480px;
-            flex-shrink: 0;
-            background: #0d0d1a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 48px 48px;
-            border-left: 1px solid var(--border);
-        }
-
-        .login-box {
-            width: 100%;
-            max-width: 380px;
-        }
-
-        .login-header {
-            margin-bottom: 36px;
-        }
-
-        .login-header h2 {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text);
-            letter-spacing: -0.5px;
-        }
-
-        .login-header p {
-            color: var(--muted);
-            font-size: 14px;
-            margin-top: 8px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--muted);
-            margin-bottom: 8px;
-            letter-spacing: 0.3px;
-        }
-
-        .input-wrap {
-            position: relative;
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--muted);
-            font-size: 16px;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 10% 20%, rgba(108,99,255,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 90% 80%, rgba(124,58,237,0.14) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 50% 50%, rgba(59,130,246,0.06) 0%, transparent 70%);
             pointer-events: none;
         }
 
-        .form-input {
-            width: 100%;
-            padding: 13px 14px 13px 44px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text);
-            font-size: 14px;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.2s ease;
-            outline: none;
+        /* Subtle dot pattern */
+        .left::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+            background-size: 28px 28px;
+            pointer-events: none;
         }
 
-        .form-input:focus {
+        .left-inner { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; justify-content: space-between; }
+
+        /* Brand */
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-mark {
+            width: 40px; height: 40px; border-radius: 10px;
+            background: linear-gradient(135deg, #6C63FF, #a855f7);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(108,99,255,0.4);
+        }
+        .brand-text { line-height: 1.2; }
+        .brand-name    { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -.2px; }
+        .brand-tagline { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+
+        /* Hero text */
+        .hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 0; max-width: 400px; }
+        .hero-eyebrow {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 11px; font-weight: 600; letter-spacing: .8px;
+            text-transform: uppercase; color: rgba(167,139,250,0.9);
+            margin-bottom: 20px;
+        }
+        .hero-eyebrow span {
+            width: 20px; height: 1px; background: rgba(167,139,250,0.5);
+        }
+        .hero h1 {
+            font-size: 36px; font-weight: 700; color: #fff;
+            line-height: 1.2; letter-spacing: -1px; margin-bottom: 16px;
+        }
+        .hero h1 strong {
+            font-weight: 700;
+            background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .hero-sub {
+            font-size: 14px; color: rgba(255,255,255,0.5);
+            line-height: 1.7; margin-bottom: 36px;
+        }
+
+        /* Feature list */
+        .features { display: flex; flex-direction: column; gap: 14px; }
+        .feat {
+            display: flex; align-items: flex-start; gap: 12px;
+        }
+        .feat-icon {
+            width: 32px; height: 32px; flex-shrink: 0;
+            border-radius: 8px; background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .feat-icon svg { color: #a78bfa; }
+        .feat-body {}
+        .feat-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); }
+        .feat-desc  { font-size: 12px; color: rgba(255,255,255,0.38); margin-top: 1px; }
+
+        /* Stats row */
+        .stats {
+            display: flex; gap: 0;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px; overflow: hidden;
+            background: rgba(255,255,255,0.03);
+        }
+        .stat {
+            flex: 1; padding: 16px 20px; text-align: center;
+            border-right: 1px solid rgba(255,255,255,0.08);
+        }
+        .stat:last-child { border-right: none; }
+        .stat-val { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -.5px; }
+        .stat-lbl { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+        /* Theme toggle */
+        .theme-btn {
+            position: absolute; top: 44px; right: 20px; z-index: 10;
+            width: 34px; height: 34px; border-radius: 8px;
+            background: var(--theme-btn); border: 1px solid rgba(255,255,255,0.10);
+            color: rgba(255,255,255,0.6); cursor: pointer; transition: .15s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .theme-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+        /* ── Right panel ─────────────────────────────────────────── */
+        .right {
+            width: 460px; flex-shrink: 0;
+            background: var(--right-bg);
+            border-left: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            padding: 40px 48px;
+            overflow-y: auto;
+        }
+
+        .form-box { width: 100%; max-width: 340px; }
+
+        /* Form header */
+        .form-head { margin-bottom: 28px; }
+        .form-head h2 { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -.4px; }
+        .form-head p  { font-size: 13px; color: var(--text-sub); margin-top: 5px; line-height: 1.5; }
+
+        /* Inputs */
+        .field { margin-bottom: 16px; }
+        .field label { display: block; font-size: 13px; font-weight: 500; color: var(--text-sub); margin-bottom: 6px; }
+
+        .input-wrap { position: relative; }
+        .input-icon {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted); display: flex; align-items: center; pointer-events: none;
+        }
+        input[type="email"],
+        input[type="password"] {
+            width: 100%; padding: 10px 12px 10px 38px;
+            background: var(--input-bg); border: 1px solid var(--input-border);
+            border-radius: 8px; color: var(--text); font-size: 13.5px;
+            font-family: 'Inter', sans-serif; outline: none;
+            transition: border-color .18s, background .18s, box-shadow .18s;
+        }
+        input[type="email"]:focus,
+        input[type="password"]:focus {
             border-color: var(--primary);
-            background: rgba(108,99,255,0.05);
+            background: var(--input-focus-bg);
             box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
         }
+        input::placeholder { color: var(--text-muted); }
+        input.is-invalid   { border-color: var(--error); box-shadow: 0 0 0 3px rgba(239,68,68,0.10); }
+        .field-error { font-size: 12px; color: var(--error); margin-top: 4px; }
 
-        .form-input::placeholder { color: #475569; }
+        /* Options row */
+        .options { display: flex; align-items: center; justify-content: space-between; margin: 18px 0; }
+        .check-label { display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; color: var(--text-sub); }
+        .check-label input { accent-color: var(--primary); width: 14px; height: 14px; }
+        .forgot { font-size: 13px; font-weight: 500; color: var(--primary); text-decoration: none; }
+        .forgot:hover { text-decoration: underline; }
 
-        .form-input.is-invalid {
-            border-color: var(--error);
-            box-shadow: 0 0 0 3px rgba(239,68,68,0.12);
+        /* Submit */
+        .btn-submit {
+            width: 100%; padding: 11px 16px;
+            background: var(--primary); color: #fff;
+            font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif;
+            border: none; border-radius: 8px; cursor: pointer;
+            transition: background .18s, box-shadow .18s, transform .1s;
+            letter-spacing: .1px;
         }
+        .btn-submit:hover { background: var(--primary-hover); box-shadow: 0 6px 20px var(--primary-glow); transform: translateY(-1px); }
+        .btn-submit:active { transform: translateY(0); box-shadow: none; }
 
-        .error-msg {
-            font-size: 12px;
-            color: var(--error);
-            margin-top: 6px;
+        /* Divider */
+        .or { display: flex; align-items: center; gap: 10px; margin: 22px 0; }
+        .or-line { flex: 1; height: 1px; background: var(--border); }
+        .or span { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+        /* Demo accounts */
+        .demo {
+            border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
         }
-
-        .form-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-        }
-
-        .remember-wrap {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-
-        .remember-wrap input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: var(--primary);
-            cursor: pointer;
-        }
-
-        .remember-wrap span {
-            font-size: 13px;
-            color: var(--muted);
-        }
-
-        .forgot-link {
-            font-size: 13px;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .forgot-link:hover { text-decoration: underline; }
-
-        .btn-login {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--primary), #8b5cf6);
-            color: #fff;
-            font-size: 15px;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            letter-spacing: 0.3px;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 25px rgba(108,99,255,0.4);
-        }
-
-        .btn-login:active { transform: translateY(0); }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 28px 0;
-        }
-
-        .divider-line { flex: 1; height: 1px; background: var(--border); }
-        .divider span { font-size: 12px; color: var(--muted); white-space: nowrap; }
-
-        .demo-accounts {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px;
-        }
-
-        .demo-title {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-bottom: 12px;
-        }
-
-        .demo-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 0;
+        .demo-header {
+            padding: 9px 14px; background: var(--badge-bg);
             border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            transition: 0.15s;
+            font-size: 11px; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: .7px;
         }
-
-        .demo-item:last-child { border-bottom: none; }
-        .demo-item:hover .demo-email { color: var(--primary); }
-
-        .demo-role {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 500;
-            padding: 3px 10px;
-            border-radius: 20px;
+        .demo-row {
+            display: flex; align-items: center;
+            padding: 10px 14px; gap: 10px;
+            border-bottom: 1px solid var(--border); cursor: pointer;
+            transition: background .12s;
         }
+        .demo-row:last-child { border-bottom: none; }
+        .demo-row:hover { background: var(--badge-bg); }
 
-        .role-admin { background: rgba(108,99,255,0.15); color: #a78bfa; }
-        .role-owner { background: rgba(16,185,129,0.15); color: #34d399; }
-        .role-trainer { background: rgba(251,191,36,0.15); color: #fbbf24; }
-        .role-member { background: rgba(59,130,246,0.15); color: #60a5fa; }
-
-        .demo-email { font-size: 12px; color: var(--muted); }
-
-        .demo-use-btn {
-            font-size: 11px;
-            color: var(--primary);
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            padding: 2px 8px;
-            border-radius: 4px;
-            transition: 0.15s;
+        .role-dot {
+            width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
         }
+        .dot-admin   { background: #a78bfa; box-shadow: 0 0 6px rgba(167,139,250,0.6); }
+        .dot-owner   { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.5); }
+        .dot-trainer { background: #facc15; box-shadow: 0 0 6px rgba(250,204,21,0.5); }
+        .dot-member  { background: #60a5fa; box-shadow: 0 0 6px rgba(96,165,250,0.5); }
 
-        .demo-use-btn:hover { background: rgba(108,99,255,0.1); }
+        .demo-role  { font-size: 12px; font-weight: 600; color: var(--text-sub); width: 54px; }
+        .demo-email { font-size: 12px; color: var(--text-muted); flex: 1; }
+        .demo-use   {
+            font-size: 11px; font-weight: 600; color: var(--primary);
+            background: none; border: none; cursor: pointer;
+            font-family: 'Inter', sans-serif; padding: 0;
+        }
+        .demo-use:hover { text-decoration: underline; }
 
-        @media (max-width: 900px) {
-            .panel-left { display: none; }
-            .panel-right { width: 100%; border-left: none; }
+        /* Alert */
+        .alert { padding: 10px 14px; border-radius: 7px; font-size: 13px; margin-bottom: 16px; }
+        .alert-success { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.2); color: var(--success); }
+
+        @media (max-width: 860px) {
+            .left  { display: none; }
+            .right { width: 100%; border-left: none; }
         }
     </style>
 </head>
 <body>
+<div class="wrap">
 
-    <!-- Left Panel -->
-    <div class="panel-left">
-        <div class="floating-card">
-            <div class="fc-label">Active Members</div>
-            <div class="fc-value">2,847</div>
-            <div class="fc-change">↑ 12% this month</div>
-        </div>
-        <div class="floating-card">
-            <div class="fc-label">Revenue</div>
-            <div class="fc-value">$48,290</div>
-            <div class="fc-change">↑ 8.3% vs last month</div>
-        </div>
+    {{-- Left panel --}}
+    <div class="left">
+        <div class="left-inner">
 
-        <div class="brand">
-            <div class="brand-icon">💪</div>
-            <div>
-                <div class="brand-name">Fitness Studio</div>
-                <div class="brand-tagline">Gym Management SaaS</div>
+            {{-- Brand --}}
+            <div class="brand">
+                <div class="brand-mark">💪</div>
+                <div class="brand-text">
+                    <div class="brand-name">Fitness Studio</div>
+                    <div class="brand-tagline">Gym Management Platform</div>
+                </div>
             </div>
-        </div>
 
-        <div class="hero-content">
-            <h1>Manage Your <span>Gym Empire</span> Smarter</h1>
-            <p>All-in-one platform for gym owners, trainers, and members. Track memberships, schedule classes, and grow your business.</p>
+            {{-- Hero --}}
+            <div class="hero">
+                <div class="hero-eyebrow"><span></span> Multi-tenant SaaS</div>
+                <h1>The smarter way to run <strong>your gym</strong></h1>
+                <p class="hero-sub">Manage members, trainers, attendance, and revenue — all from one unified platform built for modern gym businesses.</p>
+
+                <div class="features">
+                    <div class="feat">
+                        <div class="feat-icon">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+                        </div>
+                        <div class="feat-body">
+                            <div class="feat-title">Member & Trainer Management</div>
+                            <div class="feat-desc">Full CRUD, memberships, session scheduling</div>
+                        </div>
+                    </div>
+                    <div class="feat">
+                        <div class="feat-icon">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </div>
+                        <div class="feat-body">
+                            <div class="feat-title">Biometric Attendance Sync</div>
+                            <div class="feat-desc">ZKTeco device integration, real-time punch</div>
+                        </div>
+                    </div>
+                    <div class="feat">
+                        <div class="feat-icon">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        </div>
+                        <div class="feat-body">
+                            <div class="feat-title">Analytics & Reporting</div>
+                            <div class="feat-desc">Revenue, growth, and attendance charts</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Stats --}}
             <div class="stats">
                 <div class="stat">
-                    <div class="stat-value">500+</div>
-                    <div class="stat-label">Gyms</div>
+                    <div class="stat-val">500+</div>
+                    <div class="stat-lbl">Gyms</div>
                 </div>
-                <div class="stat-divider"></div>
                 <div class="stat">
-                    <div class="stat-value">50K+</div>
-                    <div class="stat-label">Members</div>
+                    <div class="stat-val">50K+</div>
+                    <div class="stat-lbl">Members</div>
                 </div>
-                <div class="stat-divider"></div>
                 <div class="stat">
-                    <div class="stat-value">99.9%</div>
-                    <div class="stat-label">Uptime</div>
+                    <div class="stat-val">99.9%</div>
+                    <div class="stat-lbl">Uptime</div>
                 </div>
             </div>
+
         </div>
+
+        {{-- Theme toggle --}}
+        <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+            <svg id="icon-sun" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <svg id="icon-moon" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
     </div>
 
-    <!-- Right Panel -->
-    <div class="panel-right">
-        <div class="login-box">
-            <div class="login-header">
-                <h2>Welcome back 👋</h2>
-                <p>Sign in to your account to continue</p>
+    {{-- Right panel --}}
+    <div class="right">
+        <div class="form-box">
+
+            <div class="form-head">
+                <h2>Sign in to your account</h2>
+                <p>Enter your credentials to continue</p>
             </div>
 
             @if(session('status'))
-                <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399;padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:20px;">
-                    {{ session('status') }}
-                </div>
+                <div class="alert alert-success">{{ session('status') }}</div>
             @endif
 
             <form method="POST" action="{{ route('login.post') }}">
                 @csrf
 
-                <div class="form-group">
-                    <label class="form-label" for="email">Email Address</label>
+                <div class="field">
+                    <label for="email">Email address</label>
                     <div class="input-wrap">
-                        <span class="input-icon">✉</span>
-                        <input
-                            id="email"
-                            name="email"
-                            type="email"
-                            class="form-input @error('email') is-invalid @enderror"
+                        <span class="input-icon">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        </span>
+                        <input type="email" id="email" name="email"
+                            class="@error('email') is-invalid @enderror"
                             placeholder="you@example.com"
                             value="{{ old('email') }}"
-                            autocomplete="email"
-                            autofocus
-                        >
+                            autocomplete="email" autofocus>
                     </div>
-                    @error('email')
-                        <div class="error-msg">{{ $message }}</div>
-                    @enderror
+                    @error('email')<p class="field-error">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="password">Password</label>
+                <div class="field">
+                    <label for="password">Password</label>
                     <div class="input-wrap">
-                        <span class="input-icon">🔒</span>
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            class="form-input @error('password') is-invalid @enderror"
-                            placeholder="Enter your password"
-                            autocomplete="current-password"
-                        >
+                        <span class="input-icon">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        </span>
+                        <input type="password" id="password" name="password"
+                            class="@error('password') is-invalid @enderror"
+                            placeholder="••••••••"
+                            autocomplete="current-password">
                     </div>
-                    @error('password')
-                        <div class="error-msg">{{ $message }}</div>
-                    @enderror
+                    @error('password')<p class="field-error">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="form-row">
-                    <label class="remember-wrap">
-                        <input type="checkbox" name="remember" id="remember">
+                <div class="options">
+                    <label class="check-label">
+                        <input type="checkbox" name="remember">
                         <span>Remember me</span>
                     </label>
-                    <a href="#" class="forgot-link">Forgot password?</a>
+                    <a href="#" class="forgot">Forgot password?</a>
                 </div>
 
-                <button type="submit" class="btn-login">Sign In →</button>
+                <button type="submit" class="btn-submit">Sign in</button>
             </form>
 
-            <div class="divider">
-                <div class="divider-line"></div>
-                <span>Demo Accounts (password: password)</span>
-                <div class="divider-line"></div>
+            <div class="or">
+                <div class="or-line"></div>
+                <span>Demo access · password: password</span>
+                <div class="or-line"></div>
             </div>
 
-            <div class="demo-accounts">
-                <div class="demo-title">Quick Login</div>
-
-                <div class="demo-item" onclick="fillLogin('admin@fitnessstudio.com')">
-                    <span class="demo-role role-admin">⚡ Admin</span>
+            <div class="demo">
+                <div class="demo-header">Quick login</div>
+                <div class="demo-row" onclick="fillLogin('admin@fitnessstudio.com')">
+                    <span class="role-dot dot-admin"></span>
+                    <span class="demo-role">Admin</span>
                     <span class="demo-email">admin@fitnessstudio.com</span>
-                    <button class="demo-use-btn">Use →</button>
+                    <button class="demo-use">Use</button>
                 </div>
-                <div class="demo-item" onclick="fillLogin('owner@demogym.com')">
-                    <span class="demo-role role-owner">🏋 Owner</span>
+                <div class="demo-row" onclick="fillLogin('owner@demogym.com')">
+                    <span class="role-dot dot-owner"></span>
+                    <span class="demo-role">Owner</span>
                     <span class="demo-email">owner@demogym.com</span>
-                    <button class="demo-use-btn">Use →</button>
+                    <button class="demo-use">Use</button>
                 </div>
-                <div class="demo-item" onclick="fillLogin('trainer@demogym.com')">
-                    <span class="demo-role role-trainer">🎯 Trainer</span>
+                <div class="demo-row" onclick="fillLogin('trainer@demogym.com')">
+                    <span class="role-dot dot-trainer"></span>
+                    <span class="demo-role">Trainer</span>
                     <span class="demo-email">trainer@demogym.com</span>
-                    <button class="demo-use-btn">Use →</button>
+                    <button class="demo-use">Use</button>
                 </div>
-                <div class="demo-item" onclick="fillLogin('member@demogym.com')">
-                    <span class="demo-role role-member">👤 Member</span>
+                <div class="demo-row" onclick="fillLogin('member@demogym.com')">
+                    <span class="role-dot dot-member"></span>
+                    <span class="demo-role">Member</span>
                     <span class="demo-email">member@demogym.com</span>
-                    <button class="demo-use-btn">Use →</button>
+                    <button class="demo-use">Use</button>
                 </div>
             </div>
+
         </div>
     </div>
 
-    <script>
-        function fillLogin(email) {
-            document.getElementById('email').value = email;
-            document.getElementById('password').value = 'password';
-            document.getElementById('email').focus();
-        }
-    </script>
+</div>
+
+<script>
+    function fillLogin(email) {
+        document.getElementById('email').value    = email;
+        document.getElementById('password').value = 'password';
+    }
+
+    function toggleTheme() {
+        const html  = document.documentElement;
+        const next  = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        syncIcons(next);
+    }
+
+    function syncIcons(t) {
+        document.getElementById('icon-sun').style.display  = t === 'light' ? 'block' : 'none';
+        document.getElementById('icon-moon').style.display = t === 'dark'  ? 'block' : 'none';
+    }
+
+    syncIcons(document.documentElement.getAttribute('data-theme') || 'dark');
+</script>
 </body>
 </html>

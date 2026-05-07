@@ -11,50 +11,41 @@
 </div>
 
 {{-- Stat Cards --}}
-<div class="stat-grid" style="margin-bottom:24px">
+<div class="stat-grid" style="margin-bottom:24px;grid-template-columns:repeat(4,1fr)">
     <div class="stat-card">
-        <div class="stat-icon" style="background:var(--primary-dim)">👥</div>
+        <div class="stat-icon" style="background:var(--primary-dim)">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--primary)" stroke-width="1.8"><path stroke-linecap="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
         <div class="stat-content">
             <div class="label">Total Members</div>
             <div class="value">{{ number_format($stats['total_members']) }}</div>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon" style="background:var(--success-dim)">✅</div>
+        <div class="stat-icon" style="background:var(--success-dim)">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--success)" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
         <div class="stat-content">
             <div class="label">Active Memberships</div>
             <div class="value">{{ number_format($stats['active_memberships']) }}</div>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon" style="background:var(--info-dim)">🕐</div>
+        <div class="stat-icon" style="background:var(--info-dim)">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--info)" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline stroke-linecap="round" points="12 6 12 12 16 14"/></svg>
+        </div>
         <div class="stat-content">
-            <div class="label">Today's Attendance</div>
-            <div class="value">{{ number_format($stats['today_attendance']) }}</div>
+            <div class="label">Today's Check-ins</div>
+            <div class="value">{{ number_format($stats['today_checkins']) }}</div>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(244,114,182,0.12)">🏋️</div>
-        <div class="stat-content">
-            <div class="label">Total Trainers</div>
-            <div class="value">{{ number_format($stats['total_trainers']) }}</div>
+        <div class="stat-icon" style="background:var(--warning-dim)">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--warning)" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:var(--warning-dim)">📅</div>
         <div class="stat-content">
-            <div class="label">Upcoming Sessions</div>
-            <div class="value">{{ number_format($stats['upcoming_sessions']) }}</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:var(--error-dim)">⚠️</div>
-        <div class="stat-content">
-            <div class="label">Expiring in 7 Days</div>
-            <div class="value">{{ number_format($stats['expiring_soon']) }}</div>
-            @if($stats['expiring_soon'] > 0)
-            <div class="change warn">Needs attention</div>
-            @endif
+            <div class="label">Monthly Revenue</div>
+            <div class="value">{{ number_format($stats['monthly_revenue'], 0) }}</div>
         </div>
     </div>
 </div>

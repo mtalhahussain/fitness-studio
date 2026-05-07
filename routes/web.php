@@ -5,6 +5,7 @@ use App\Http\Controllers\Web\AttendanceWebController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\MemberWebController;
 use App\Http\Controllers\Web\POSWebController;
+use App\Http\Controllers\Web\ReportWebController;
 use App\Http\Controllers\Web\TrainerWebController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +42,12 @@ Route::middleware(['auth', 'gym.tenant'])->group(function () {
     Route::post('/trainers/{trainer}/assign',       [TrainerWebController::class, 'assignMember'])->name('trainers.assign');
     Route::get('/trainers/{trainer}/schedule',      [TrainerWebController::class, 'schedule'])->name('trainers.schedule');
     Route::post('/trainers/{trainer}/sessions',     [TrainerWebController::class, 'createSession'])->name('trainers.sessions');
+
+    // Reports
+    Route::get('/reports',                        [ReportWebController::class, 'index'])->name('reports.index');
+    Route::get('/reports/data/revenue',           [ReportWebController::class, 'revenueData'])->name('reports.revenue');
+    Route::get('/reports/data/members',           [ReportWebController::class, 'membersData'])->name('reports.members');
+    Route::get('/reports/data/attendance',        [ReportWebController::class, 'attendanceData'])->name('reports.attendance');
 
     // POS
     Route::get('/pos',                              [POSWebController::class, 'index'])->name('pos.index');

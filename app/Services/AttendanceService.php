@@ -8,7 +8,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class AttendanceService
+class AttendanceService extends BaseService
 {
     /**
      * Unified entry point for both manual and biometric sources.

@@ -5,22 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') — Fitness Studio</title>
+    {{-- Anti-FOUC: apply theme before CSS renders --}}
+    <script>(function(){const t=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        :root {
-            --bg:          #080813;
-            --sidebar-bg:  #0c0c1c;
-            --card:        #10101f;
-            --card-hover:  #13132a;
-            --border:      rgba(255,255,255,0.06);
-            --border-hover:rgba(255,255,255,0.12);
+        /* ── Dark mode (default) ──────────────────────────────────── */
+        :root,
+        [data-theme="dark"] {
+            --bg:          #0f1020;
+            --sidebar-bg:  #131425;
+            --card:        #1a1b2e;
+            --card-hover:  #1f2038;
+            --border:      rgba(255,255,255,0.07);
+            --border-hover:rgba(255,255,255,0.13);
             --primary:     #6C63FF;
-            --primary-dim: rgba(108,99,255,0.12);
-            --primary-glow:rgba(108,99,255,0.3);
+            --primary-dim: rgba(108,99,255,0.13);
+            --primary-glow:rgba(108,99,255,0.28);
             --accent:      #f472b6;
             --success:     #22c55e;
             --success-dim: rgba(34,197,94,0.12);
@@ -37,7 +41,56 @@
             --topbar-h:    60px;
             --radius:      12px;
             --radius-sm:   8px;
+            --shadow:      0 4px 24px rgba(0,0,0,0.4);
         }
+
+        /* ── Light mode ───────────────────────────────────────────── */
+        [data-theme="light"] {
+            --bg:          #f0f2f8;
+            --sidebar-bg:  #ffffff;
+            --card:        #ffffff;
+            --card-hover:  #f8fafc;
+            --border:      rgba(0,0,0,0.08);
+            --border-hover:rgba(0,0,0,0.15);
+            --primary-dim: rgba(108,99,255,0.09);
+            --primary-glow:rgba(108,99,255,0.22);
+            --success-dim: rgba(34,197,94,0.10);
+            --warning-dim: rgba(234,179,8,0.10);
+            --error-dim:   rgba(239,68,68,0.10);
+            --info-dim:    rgba(59,130,246,0.10);
+            --text:        #111827;
+            --text-muted:  #6b7280;
+            --text-dim:    #374151;
+            --shadow:      0 4px 24px rgba(0,0,0,0.10);
+        }
+
+        /* ── Light mode component overrides ──────────────────────── */
+        [data-theme="light"] ::-webkit-scrollbar-thumb              { background: rgba(0,0,0,0.13); }
+        [data-theme="light"] ::-webkit-scrollbar-thumb:hover        { background: rgba(0,0,0,0.23); }
+        [data-theme="light"] .form-input,
+        [data-theme="light"] .form-select,
+        [data-theme="light"] .form-textarea                         { background: #f8fafc; border-color: rgba(0,0,0,0.10); }
+        [data-theme="light"] .form-select option                    { background: #ffffff; color: #111827; }
+        [data-theme="light"] .form-input::placeholder               { color: #9ca3af; }
+        [data-theme="light"] .spinner                               { border-color: rgba(0,0,0,0.12); border-top-color: var(--primary); }
+        [data-theme="light"] .sidebar                               { box-shadow: 2px 0 12px rgba(0,0,0,0.07); }
+        [data-theme="light"] .topbar                                { box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+        [data-theme="light"] .nav-item:hover                        { background: rgba(0,0,0,0.04); color: var(--text); }
+        [data-theme="light"] .nav-item.active                       { background: var(--primary-dim); color: var(--primary); }
+        [data-theme="light"] tbody tr:hover                         { background: rgba(0,0,0,0.02); }
+        [data-theme="light"] .btn-outline:hover:not(:disabled)      { background: rgba(0,0,0,0.04); }
+        [data-theme="light"] .modal-close:hover                     { background: rgba(0,0,0,0.06); }
+        [data-theme="light"] .topbar-btn:hover                      { background: rgba(0,0,0,0.05); }
+        [data-theme="light"] .topbar-toggle:hover                   { background: rgba(0,0,0,0.05); }
+        [data-theme="light"] .user-card:hover                       { background: rgba(0,0,0,0.04); }
+        [data-theme="light"] .stat-card:hover                       { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+        [data-theme="light"] .toast-success { background: rgba(240,253,244,0.98); border-color: rgba(34,197,94,0.35); }
+        [data-theme="light"] .toast-error   { background: rgba(254,242,242,0.98); border-color: rgba(239,68,68,0.35); }
+        [data-theme="light"] .toast-warning { background: rgba(254,252,232,0.98); border-color: rgba(234,179,8,0.35);  }
+        [data-theme="light"] .toast-info    { background: rgba(239,246,255,0.98); border-color: rgba(59,130,246,0.35); }
+        [data-theme="light"] .toast-title   { color: #111827; }
+        [data-theme="light"] .toast-msg     { color: #6b7280; }
+        [data-theme="light"] .toast-close   { color: #6b7280; }
 
         html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
 
@@ -391,6 +444,13 @@
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                 <span class="label" x-show="sidebarOpen">Point of Sale</span>
             </a>
+
+            <div class="nav-section" x-show="sidebarOpen"><span>Analytics</span></div>
+
+            <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs('reports*') ? 'active' : '' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span class="label" x-show="sidebarOpen">Reports</span>
+            </a>
         </nav>
 
         <div class="sidebar-footer">
@@ -415,10 +475,19 @@
             <div class="topbar-title">@yield('title', 'Dashboard')</div>
             <div class="topbar-actions">
                 @if(auth()->user()->gym)
-                <span style="font-size:12px;color:var(--text-muted);padding:4px 10px;background:var(--primary-dim);color:var(--primary);border-radius:20px;font-weight:500">
+                <span style="font-size:12px;padding:4px 10px;background:var(--primary-dim);color:var(--primary);border-radius:20px;font-weight:500">
                     {{ auth()->user()->gym->name }}
                 </span>
                 @endif
+                {{-- Theme toggle --}}
+                <button class="topbar-btn" @click="toggleTheme()" :title="theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'" style="position:relative">
+                    <template x-if="theme === 'dark'">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    </template>
+                    <template x-if="theme === 'light'">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                    </template>
+                </button>
             </div>
         </header>
 
@@ -492,10 +561,18 @@
     function layout() {
         return {
             sidebarOpen: localStorage.getItem('sidebar') !== 'closed',
-            init() {},
+            theme: localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark'),
+            init() {
+                document.documentElement.setAttribute('data-theme', this.theme);
+            },
             toggleSidebar() {
                 this.sidebarOpen = !this.sidebarOpen;
                 localStorage.setItem('sidebar', this.sidebarOpen ? 'open' : 'closed');
+            },
+            toggleTheme() {
+                this.theme = this.theme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', this.theme);
+                localStorage.setItem('theme', this.theme);
             },
         };
     }

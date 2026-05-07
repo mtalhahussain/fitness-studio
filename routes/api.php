@@ -6,10 +6,11 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\MembershipPlanController;
 use App\Http\Controllers\Api\POSController;
+use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TrainerController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:sanctum', 'gym.tenant'])->group(function () {
+Route::middleware(['auth:sanctum', 'resolve.gym'])->group(function () {
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
     Route::get('dashboard', [DashboardController::class, 'index']);
@@ -50,6 +51,13 @@ Route::middleware(['auth:sanctum', 'gym.tenant'])->group(function () {
     Route::prefix('biometric')->middleware('auth:sanctum')->group(function () {
         Route::post('sync',  [BiometricSyncController::class, 'sync']);
         Route::post('punch', [BiometricSyncController::class, 'punch']);
+    });
+
+    // ── Reports ───────────────────────────────────────────────────────────────
+    Route::prefix('reports')->group(function () {
+        Route::get('revenue',    [ReportController::class, 'revenue']);
+        Route::get('members',    [ReportController::class, 'memberGrowth']);
+        Route::get('attendance', [ReportController::class, 'attendanceTrends']);
     });
 
     // ── POS ───────────────────────────────────────────────────────────────────

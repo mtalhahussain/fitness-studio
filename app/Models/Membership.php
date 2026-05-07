@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasGymScope;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Membership extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasGymScope, SoftDeletes;
 
     protected $fillable = [
         'gym_id', 'user_id', 'plan_id', 'start_date',

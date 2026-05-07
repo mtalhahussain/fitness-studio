@@ -9,7 +9,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 
-class POSService
+class POSService extends BaseService
 {
     // ── Products ──────────────────────────────────────────────────────────────
 

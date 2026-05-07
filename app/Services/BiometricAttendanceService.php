@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Log;
  *   punch_type      : 0=check-in, 1=check-out, null=unknown (toggle mode)
  *   device_id       : optional device identifier
  */
-class BiometricAttendanceService
+class BiometricAttendanceService extends BaseService
 {
     // ZKTeco standard punch type constants
     const PUNCH_CHECK_IN  = 0;

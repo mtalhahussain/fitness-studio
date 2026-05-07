@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-class MembershipService
+class MembershipService extends BaseService
 {
     /**
      * Create a new member user and assign an initial membership.

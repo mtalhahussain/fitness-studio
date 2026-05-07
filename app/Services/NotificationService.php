@@ -11,7 +11,7 @@ use App\Models\Invoice;
 use App\Models\Membership;
 use App\Models\Payment;
 
-class NotificationService
+class NotificationService extends BaseService
 {
     public function notifyMembershipExpiring(Membership $membership, int $daysRemaining): void
     {

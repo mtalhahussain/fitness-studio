@@ -8,7 +8,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class TrainerService
+class TrainerService extends BaseService
 {
     // ── Trainer CRUD ─────────────────────────────────────────────────────────
 

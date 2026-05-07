@@ -16,8 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'gym.tenant' => \App\Http\Middleware\GymTenantMiddleware::class,
-            'role'       => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'gym.tenant'  => \App\Http\Middleware\GymTenantMiddleware::class,
+            'resolve.gym' => \App\Http\Middleware\ResolveGym::class,
+            'role'        => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);

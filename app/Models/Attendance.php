@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasGymScope;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Attendance extends Model
 {
-    use HasFactory;
+    use HasFactory, HasGymScope;
 
     protected $fillable = [
         'gym_id', 'user_id', 'check_in_time', 'check_out_time',
