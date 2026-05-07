@@ -19,7 +19,7 @@ class TrainerWebController extends Controller
         $trainers = $this->service->getTrainers($gymId, $filters);
         $members  = User::members()->forGym($gymId)->where('status', 'active')->get(['id', 'name', 'email']);
 
-        if ($request->ajax()) {
+        if ($request->wantsJson()) {
             return response()->json(['trainers' => $trainers->items()]);
         }
 
@@ -29,12 +29,13 @@ class TrainerWebController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'           => ['required', 'string', 'max:255'],
-            'email'          => ['required', 'email', 'unique:users,email'],
-            'phone'          => ['nullable', 'string', 'max:20'],
-            'specialization' => ['required', 'string', 'max:255'],
+            'name'             => ['required', 'string', 'max:255'],
+            'email'            => ['required', 'email', 'unique:users,email'],
+            'phone'            => ['nullable', 'string', 'max:20'],
+            'password'         => ['required', 'string', 'min:6'],
+            'specialization'   => ['required', 'string', 'max:255'],
             'experience_years' => ['nullable', 'integer', 'min:0'],
-            'hourly_rate'    => ['nullable', 'numeric', 'min:0'],
+            'hourly_rate'      => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $trainer = $this->service->createTrainer($data, auth()->user()->gym_id);
@@ -60,7 +61,8 @@ class TrainerWebController extends Controller
 
     public function destroy(User $trainer)
     {
-        abort_if($trainer->gym_id !== auth()->user()->gym_id, 403);
+        $gymId = auth()->user()->gym_id;
+        abort_if($gymId && $trainer->gym_id !== $gymId, 403);
         $trainer->delete();
 
         return response()->json(['message' => 'Trainer deleted successfully.']);

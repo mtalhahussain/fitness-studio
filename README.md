@@ -287,7 +287,7 @@ Centralises the `$this->gymId()` / `$this->requireGymId()` helpers so every serv
 
 ## Author
 
-**Muhammad Talha HUssain** — Full Stack Laravel Developer
+**Muhammad Talha Hussain** — Full Stack Laravel Developer
 
 - Portfolio: [your-portfolio-url]
 - LinkedIn: [your-linkedin]

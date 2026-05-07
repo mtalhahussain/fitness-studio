@@ -32,8 +32,17 @@ class DashboardController extends Controller
         ]);
 
         $recentMembers   = User::members()->forGym($gymId)->with('activeMembership.plan')->latest()->limit(6)->get();
-        $todayAttendance = Attendance::forGym($gymId)->today()->with('user:id,name,email')->latest('check_in_time')->limit(8)->get();
+        $todayAttendance = Attendance::forGym($gymId)->today()->with('user:id,name,email')->latest('check_in_time')->get();
 
-        return view('dashboard', compact('stats', 'recentMembers', 'todayAttendance'));
+        $paymentsDue = Membership::forGym($gymId)
+            ->where('status', 'active')
+            ->join('membership_plans', 'memberships.plan_id', '=', 'membership_plans.id')
+            ->whereRaw('memberships.amount_paid < membership_plans.price')
+            ->select('memberships.*')
+            ->with(['user:id,name,email,phone', 'plan:id,name,type,price'])
+            ->orderByRaw('(membership_plans.price - memberships.amount_paid) DESC')
+            ->get();
+
+        return view('dashboard', compact('stats', 'recentMembers', 'todayAttendance', 'paymentsDue'));
     }
 }

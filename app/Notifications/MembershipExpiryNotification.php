@@ -33,7 +33,7 @@ class MembershipExpiryNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $plan    = $this->membership->plan?->name ?? 'Your plan';
-        $expiry  = $this->membership->end_date?->format('d M Y') ?? 'soon';
+        $expiry  = $this->membership->end_date?->format('d-M-Y') ?? 'soon';
         $days    = $this->daysRemaining;
 
         return (new MailMessage)
@@ -49,7 +49,7 @@ class MembershipExpiryNotification extends Notification implements ShouldQueue
     {
         $plan  = $this->membership->plan?->name ?? 'Your plan';
         $days  = $this->daysRemaining;
-        $expiry = $this->membership->end_date?->format('d M Y') ?? 'soon';
+        $expiry = $this->membership->end_date?->format('d-M-Y') ?? 'soon';
 
         return WhatsAppMessage::create()
             ->to($notifiable->phone)

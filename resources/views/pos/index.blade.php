@@ -69,7 +69,7 @@
                 <svg class="search-icon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input class="form-input search-input" placeholder="Search invoice or member..." x-model="search" @input.debounce.400ms="load()">
             </div>
-            <select class="form-select" style="width:150px" x-model="statusFilter" @change="load()">
+            <select class="form-select" style="width:150px" x-model="statusFilter" @change="load()" x-select2>
                 <option value="">All Statuses</option>
                 <option value="unpaid">Unpaid</option>
                 <option value="partially_paid">Partial</option>
@@ -215,7 +215,7 @@
             {{-- Customer --}}
             <div class="form-group" style="margin-bottom:18px">
                 <label class="form-label">Customer / Member *</label>
-                <select class="form-select" x-model="invoiceForm.user_id">
+                <select class="form-select" x-model="invoiceForm.user_id" x-select2>
                     <option value="">Select a member...</option>
                     @foreach($members as $m)
                     <option value="{{ $m->id }}">{{ $m->name }} ({{ $m->email }})</option>
@@ -226,7 +226,7 @@
             {{-- Quick Add from Catalog --}}
             <div style="margin-bottom:14px">
                 <label class="form-label" style="margin-bottom:6px;display:block">Quick Add from Catalog</label>
-                <select class="form-select" @change="quickAdd($event)">
+                <select class="form-select" id="catalogSelect" @change="quickAdd($event)" x-init="$nextTick(()=>{ const $m=$(el).closest('.modal'); $(el).select2({width:'100%',dropdownParent:$m.length?$m:$('body'),minimumResultsForSearch:1}); $(el).on('select2:select',function(e){ el.dispatchEvent(new Event('change',{bubbles:true})); }); })">
                     <option value="">+ Add product or plan...</option>
                     @if($products->count())
                     <optgroup label="Products">
@@ -319,7 +319,7 @@
                             <span style="color:var(--text-dim);font-weight:500">Mark as paid now</span>
                         </label>
                         <template x-if="invoiceForm.pay_now">
-                            <select class="form-select" x-model="invoiceForm.payment_method" style="margin-top:8px;font-size:12px">
+                            <select class="form-select" x-model="invoiceForm.payment_method" style="margin-top:8px;font-size:12px" x-select2>
                                 <option value="cash">Cash</option>
                                 <option value="card">Card</option>
                                 <option value="bank_transfer">Bank Transfer</option>
@@ -481,7 +481,7 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Method</label>
-                        <select class="form-select" x-model="paymentForm.method">
+                        <select class="form-select" x-model="paymentForm.method" x-select2>
                             <option value="cash">Cash</option>
                             <option value="card">Card</option>
                             <option value="bank_transfer">Bank Transfer</option>
@@ -633,6 +633,7 @@ function posPage() {
                 this.invoiceForm.items.push({ name: item.name, quantity: 1, unit_price: item.price, item_type: item.type, item_id: item.id });
             } catch(e) {}
             event.target.value = '';
+            $(event.target).val('').trigger('change.select2');
         },
 
         addItem() {
@@ -706,6 +707,9 @@ function posPage() {
                 const res = await post(`/pos/invoices/${this.activeInvoice.id}/payment`, this.paymentForm);
                 toast(res.message, 'success');
                 this.paymentModal = false;
+                // Refresh the view modal invoice data so totals/history update in place
+                const r = await get(`/pos/invoices/${this.activeInvoice.id}`);
+                this.activeInvoice = r.invoice;
                 await this.load();
             } catch(e) { toast(e.message, 'error'); }
             this.saving = false;
@@ -768,10 +772,7 @@ function posPage() {
             return { cash: 'Cash', card: 'Card', bank_transfer: 'Bank', wallet: 'Wallet', other: 'Other' }[m] || m;
         },
         fmt(n) { return parseFloat(n || 0).toFixed(2); },
-        fmtDate(d) {
-            if (!d) return '—';
-            return new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-        },
+        fmtDate(d) { return fmtDate(d); },
     };
 }
 </script>

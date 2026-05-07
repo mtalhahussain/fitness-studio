@@ -40,7 +40,7 @@
                     <div class="avatar" style="width:48px;height:48px;border-radius:12px;font-size:16px" :style="`background:${avatarBg(t.name)}`" x-text="initials(t.name)"></div>
                     <div style="flex:1;min-width:0">
                         <div style="font-size:15px;font-weight:600;color:var(--text)" x-text="t.name"></div>
-                        <div style="font-size:12px;color:var(--primary);font-weight:500;margin-top:2px" x-text="t.profile?.specialization || '—'"></div>
+                        <div style="font-size:12px;color:var(--primary);font-weight:500;margin-top:2px" x-text="t.trainer_profile?.specialization || '—'"></div>
                     </div>
                     <span class="badge" :class="t.status==='active'?'badge-green':'badge-red'" x-text="t.status"></span>
                 </div>
@@ -56,17 +56,17 @@
                         <div style="font-size:11px;color:var(--text-muted)">Sessions</div>
                     </div>
                     <div style="flex:1;padding:12px 16px;text-align:center">
-                        <div style="font-size:18px;font-weight:700;color:var(--text)" x-text="t.profile?.experience_years || 0"></div>
+                        <div style="font-size:18px;font-weight:700;color:var(--text)" x-text="t.trainer_profile?.experience_years || 0"></div>
                         <div style="font-size:11px;color:var(--text-muted)">Yrs Exp</div>
                     </div>
                 </div>
 
                 {{-- Info --}}
                 <div style="padding:14px 16px;flex:1">
-                    <div style="font-size:12px;color:var(--text-muted);line-height:1.6" x-text="t.profile?.bio || 'No bio provided.'"></div>
-                    <template x-if="t.profile?.hourly_rate">
+                    <div style="font-size:12px;color:var(--text-muted);line-height:1.6" x-text="t.trainer_profile?.bio || 'No bio provided.'"></div>
+                    <template x-if="t.trainer_profile?.hourly_rate">
                         <div style="margin-top:8px;font-size:12px;color:var(--text-dim)">
-                            <span style="color:var(--text-muted)">Rate:</span> <span x-text="currency(t.profile.hourly_rate)"></span>/hr
+                            <span style="color:var(--text-muted)">Rate:</span> <span x-text="currency(t.trainer_profile.hourly_rate)"></span>/hr
                         </div>
                     </template>
                 </div>
@@ -104,6 +104,13 @@
                             <label class="form-label">Phone</label>
                             <input class="form-input" x-model="modal.form.phone">
                         </div>
+                        <template x-if="!modal.editing">
+                            <div class="form-group">
+                                <label class="form-label">Password *</label>
+                                <input class="form-input" type="password" placeholder="Min 6 characters" x-model="modal.form.password" required>
+                                <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Trainer will use this to login.</div>
+                            </div>
+                        </template>
                         <div class="form-group">
                             <label class="form-label">Specialization *</label>
                             <input class="form-input" placeholder="e.g. CrossFit, Yoga, Boxing" x-model="modal.form.specialization" required>
@@ -120,7 +127,7 @@
                     <template x-if="modal.editing">
                         <div class="form-group">
                             <label class="form-label">Status</label>
-                            <select class="form-select" x-model="modal.form.status">
+                            <select class="form-select" x-model="modal.form.status" x-select2>
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
                             </select>
@@ -150,7 +157,7 @@
             </div>
             <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">Select Member *</label>
-                <select class="form-select" x-model="assignModal.memberId">
+                <select class="form-select" x-model="assignModal.memberId" x-select2>
                     <option value="">Choose a member...</option>
                     @foreach($members as $m)
                     <option value="{{ $m->id }}">{{ $m->name }} ({{ $m->email }})</option>
@@ -236,14 +243,14 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Session Type</label>
-                            <select class="form-select" x-model="sessionModal.form.session_type">
+                            <select class="form-select" x-model="sessionModal.form.session_type" x-select2>
                                 <option value="personal">Personal</option>
                                 <option value="group">Group</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Member (optional)</label>
-                            <select class="form-select" x-model="sessionModal.form.member_id">
+                            <select class="form-select" x-model="sessionModal.form.member_id" x-select2>
                                 <option value="">No specific member</option>
                                 @foreach($members as $m)
                                 <option value="{{ $m->id }}">{{ $m->name }}</option>
@@ -297,15 +304,15 @@ function trainersPage() {
         },
 
         openAdd() {
-            this.modal = { show: true, editing: false, loading: false, trainerId: null, form: { name:'', email:'', phone:'', specialization:'', experience_years:0, hourly_rate:'', status:'active' } };
+            this.modal = { show: true, editing: false, loading: false, trainerId: null, form: { name:'', email:'', phone:'', password:'', specialization:'', experience_years:0, hourly_rate:'', status:'active' } };
         },
 
         openEdit(t) {
             this.modal = { show: true, editing: true, loading: false, trainerId: t.id, form: {
                 name: t.name, email: t.email, phone: t.phone||'',
-                specialization: t.profile?.specialization||'',
-                experience_years: t.profile?.experience_years||0,
-                hourly_rate: t.profile?.hourly_rate||'',
+                specialization: t.trainer_profile?.specialization||'',
+                experience_years: t.trainer_profile?.experience_years||0,
+                hourly_rate: t.trainer_profile?.hourly_rate||'',
                 status: t.status,
             }};
         },

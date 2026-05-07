@@ -17,9 +17,10 @@ class ReportWebController extends Controller
         $year = now()->year;
 
         return view('reports.index', [
-            'revenue'     => $this->service->monthlyRevenue($year),
-            'members'     => $this->service->memberGrowth($year),
-            'attendance'  => $this->service->attendanceTrends(
+            'revenue'           => $this->service->monthlyRevenue($year),
+            'membershipRevenue' => $this->service->membershipRevenue($year),
+            'members'           => $this->service->memberGrowth($year),
+            'attendance'        => $this->service->attendanceTrends(
                 'daily',
                 now()->subDays(29)->toDateString(),
                 now()->toDateString()
@@ -34,6 +35,14 @@ class ReportWebController extends Controller
         $year = (int) $request->input('year', now()->year);
 
         return response()->json($this->service->monthlyRevenue($year));
+    }
+
+    public function membershipRevenueData(Request $request): JsonResponse
+    {
+        $request->validate(['year' => 'sometimes|integer|min:2000|max:2100']);
+        $year = (int) $request->input('year', now()->year);
+
+        return response()->json($this->service->membershipRevenue($year));
     }
 
     public function membersData(Request $request): JsonResponse

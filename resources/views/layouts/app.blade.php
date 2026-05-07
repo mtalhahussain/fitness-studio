@@ -9,6 +9,9 @@
     <script>(function(){const t=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -309,6 +312,51 @@
         .form-input::placeholder { color: var(--text-muted); }
         .form-select option { background: #1a1a2e; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        /* ── Select2 theme ───────────────────────────────────────────── */
+        .select2-container { display: block !important; }
+        .select2-container .select2-selection--single {
+            height: 38px; background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border); border-radius: var(--radius-sm);
+            outline: none; transition: .15s;
+        }
+        .select2-container--default.select2-container--focus .select2-selection--single,
+        .select2-container--default.select2-container--open .select2-selection--single {
+            border-color: var(--primary); background: rgba(108,99,255,0.05);
+            box-shadow: 0 0 0 3px rgba(108,99,255,0.1);
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: var(--text); font-family: 'Inter',sans-serif; font-size: 13px;
+            line-height: 36px; padding-left: 12px; padding-right: 30px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__placeholder { color: var(--text-muted); }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 36px; right: 8px; }
+        .select2-container--default .select2-selection--single .select2-selection__arrow b {
+            border-color: var(--text-muted) transparent transparent transparent;
+        }
+        .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+            border-color: transparent transparent var(--text-muted) transparent;
+        }
+        .select2-dropdown {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); box-shadow: var(--shadow); z-index: 99999;
+        }
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+            border-radius: 6px; color: var(--text); font-family: 'Inter',sans-serif;
+            font-size: 13px; outline: none; padding: 6px 10px;
+        }
+        .select2-container--default .select2-search--dropdown .select2-search__field:focus { border-color: var(--primary); }
+        .select2-results__option { font-family: 'Inter',sans-serif; font-size: 13px; color: var(--text-dim); padding: 8px 12px; }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] { background: var(--primary-dim); color: var(--primary); }
+        .select2-container--default .select2-results__option[aria-selected=true] { background: var(--primary-dim); color: var(--primary); }
+        .select2-results__group { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 8px 12px 4px; }
+        .select2-container--default .select2-results__option--disabled { color: var(--text-muted); opacity: .5; }
+        [data-theme="light"] .select2-container .select2-selection--single { background: #f8fafc; border-color: rgba(0,0,0,0.10); }
+        [data-theme="light"] .select2-dropdown { background: #fff; border-color: rgba(0,0,0,0.10); }
+        [data-theme="light"] .select2-container--default .select2-search--dropdown .select2-search__field { background: #f8fafc; border-color: rgba(0,0,0,0.10); color: #111827; }
+        [data-theme="light"] .select2-results__option { color: #374151; }
+        [data-theme="light"] .select2-container--default .select2-selection--single .select2-selection__rendered { color: #111827; }
         .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 
         /* ── Search bar ──────────────────────────────────────────── */
@@ -423,6 +471,11 @@
 
             <div class="nav-section" x-show="sidebarOpen"><span>Management</span></div>
 
+            <a href="{{ route('plans.index') }}" class="nav-item {{ request()->routeIs('plans*') ? 'active' : '' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                <span class="label" x-show="sidebarOpen">Plans</span>
+            </a>
+
             <a href="{{ route('members.index') }}" class="nav-item {{ request()->routeIs('members*') ? 'active' : '' }}">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span class="label" x-show="sidebarOpen">Members</span>
@@ -522,6 +575,17 @@
 
     const CSRF = () => document.querySelector('meta[name="csrf-token"]').content;
 
+    const _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    function fmtDate(d) {
+        if (!d) return '—';
+        const dt = new Date(d);
+        if (isNaN(dt)) return d;
+        const day   = String(dt.getDate()).padStart(2, '0');
+        const month = _MONTHS[dt.getMonth()];
+        const year  = dt.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
     async function http(method, url, data = null) {
         const opts = {
             method,
@@ -556,6 +620,41 @@
     function initials(name) {
         return name ? name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase() : '?';
     }
+
+    // ── Select2 Alpine directive ──────────────────────────────────
+    document.addEventListener('alpine:init', () => {
+        Alpine.directive('select2', (el, {}, { evaluateLater, effect, cleanup }) => {
+            const modelExpr = el.getAttribute('x-model');
+            const getVal    = modelExpr ? evaluateLater(modelExpr) : null;
+            const $modal    = $(el).closest('.modal');
+
+            $(el).select2({
+                width: '100%',
+                dropdownParent: $modal.length ? $modal : $('body'),
+                minimumResultsForSearch: el.options.length >= 8 ? 1 : Infinity,
+            });
+
+            // Select2 change → fire native change so x-model + @change pick it up
+            $(el).on('select2:select select2:unselect select2:clear', function () {
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+
+            // Alpine model change → update Select2 display
+            if (getVal) {
+                effect(() => {
+                    getVal(val => {
+                        const v = val == null ? '' : String(val);
+                        if ($(el).val() !== v) $(el).val(v).trigger('change.select2');
+                    });
+                });
+            }
+
+            cleanup(() => {
+                $(el).off('select2:select select2:unselect select2:clear');
+                if ($(el).data('select2')) $(el).select2('destroy');
+            });
+        });
+    });
 
     // ── Layout component ──────────────────────────────────────────
     function layout() {

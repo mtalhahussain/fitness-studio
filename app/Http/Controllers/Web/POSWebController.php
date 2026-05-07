@@ -25,7 +25,7 @@ class POSWebController extends Controller
         $plans    = MembershipPlan::active()->forGym($gymId)->get(['id', 'name', 'price', 'type']);
         $members  = User::members()->forGym($gymId)->where('status', 'active')->get(['id', 'name', 'email']);
 
-        if ($request->ajax()) {
+        if ($request->wantsJson()) {
             return response()->json([
                 'invoices' => $invoices->items(),
                 'summary'  => $summary,

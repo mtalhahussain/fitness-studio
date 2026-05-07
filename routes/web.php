@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Web\AttendanceWebController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\MemberWebController;
+use App\Http\Controllers\Web\PlanWebController;
 use App\Http\Controllers\Web\POSWebController;
 use App\Http\Controllers\Web\ReportWebController;
 use App\Http\Controllers\Web\TrainerWebController;
@@ -22,12 +23,19 @@ Route::middleware(['auth', 'gym.tenant'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Plans
+    Route::get('/plans',              [PlanWebController::class, 'index'])->name('plans.index');
+    Route::post('/plans',             [PlanWebController::class, 'store'])->name('plans.store');
+    Route::put('/plans/{plan}',       [PlanWebController::class, 'update'])->name('plans.update');
+    Route::delete('/plans/{plan}',    [PlanWebController::class, 'destroy'])->name('plans.destroy');
+
     // Members
     Route::get('/members',                          [MemberWebController::class, 'index'])->name('members.index');
     Route::post('/members',                         [MemberWebController::class, 'store'])->name('members.store');
     Route::put('/members/{member}',                 [MemberWebController::class, 'update'])->name('members.update');
     Route::delete('/members/{member}',              [MemberWebController::class, 'destroy'])->name('members.destroy');
     Route::post('/members/{member}/membership',     [MemberWebController::class, 'assignMembership'])->name('members.membership');
+    Route::post('/members/{member}/pay-balance',   [MemberWebController::class, 'payBalance'])->name('members.pay-balance');
 
     // Attendance
     Route::get('/attendance',                       [AttendanceWebController::class, 'index'])->name('attendance.index');
@@ -45,9 +53,10 @@ Route::middleware(['auth', 'gym.tenant'])->group(function () {
 
     // Reports
     Route::get('/reports',                        [ReportWebController::class, 'index'])->name('reports.index');
-    Route::get('/reports/data/revenue',           [ReportWebController::class, 'revenueData'])->name('reports.revenue');
-    Route::get('/reports/data/members',           [ReportWebController::class, 'membersData'])->name('reports.members');
-    Route::get('/reports/data/attendance',        [ReportWebController::class, 'attendanceData'])->name('reports.attendance');
+    Route::get('/reports/data/revenue',            [ReportWebController::class, 'revenueData'])->name('reports.revenue');
+    Route::get('/reports/data/membership-revenue',[ReportWebController::class, 'membershipRevenueData'])->name('reports.membership-revenue');
+    Route::get('/reports/data/members',            [ReportWebController::class, 'membersData'])->name('reports.members');
+    Route::get('/reports/data/attendance',         [ReportWebController::class, 'attendanceData'])->name('reports.attendance');
 
     // POS
     Route::get('/pos',                              [POSWebController::class, 'index'])->name('pos.index');

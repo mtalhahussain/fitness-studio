@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasGymScope;
 use Carbon\Carbon;
+use App\Models\Invoice;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,7 +15,7 @@ class Membership extends Model
 
     protected $fillable = [
         'gym_id', 'user_id', 'plan_id', 'start_date',
-        'end_date', 'status', 'amount_paid', 'notes',
+        'end_date', 'status', 'amount_paid', 'notes', 'invoice_id',
     ];
 
     protected $casts = [
@@ -36,6 +37,11 @@ class Membership extends Model
     public function plan()
     {
         return $this->belongsTo(MembershipPlan::class, 'plan_id');
+    }
+
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class);
     }
 
     public function isExpired(): bool

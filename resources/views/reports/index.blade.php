@@ -57,18 +57,37 @@
         <div class="page-title">Reports & Analytics</div>
         <div class="page-sub">Data-driven insights for your gym operations.</div>
     </div>
-    <div style="font-size:12px;color:var(--text-muted)">{{ now()->format('D, M d Y') }}</div>
+    <div style="font-size:12px;color:var(--text-muted)">{{ now()->format('d-M-Y') }}</div>
 </div>
 
 <div x-data="reports()">
 
-    {{-- ── Revenue Report ─────────────────────────────────────────── --}}
+    {{-- ── Combined Income Summary ──────────────────────────────────── --}}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px">
+        <div class="chart-card" style="padding:16px">
+            <div class="sum-label">POS Revenue ({{ now()->year }})</div>
+            <div class="sum-value accent" x-text="'PKR ' + formatNum(revSummary.total || 0)"></div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Sales & invoices</div>
+        </div>
+        <div class="chart-card" style="padding:16px">
+            <div class="sum-label">Membership Revenue ({{ now()->year }})</div>
+            <div class="sum-value" style="color:var(--success)" x-text="'PKR ' + formatNum(memRevSummary.total || 0)"></div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Plan subscriptions</div>
+        </div>
+        <div class="chart-card" style="padding:16px">
+            <div class="sum-label">Total Income ({{ now()->year }})</div>
+            <div class="sum-value" style="color:var(--primary)" x-text="'PKR ' + formatNum((revSummary.total || 0) + (memRevSummary.total || 0))"></div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px">POS + Memberships</div>
+        </div>
+    </div>
+
+    {{-- ── POS Revenue Chart ────────────────────────────────────────── --}}
     <div class="report-grid" style="margin-bottom:20px">
         <div class="chart-card report-full">
             <div class="chart-toolbar">
                 <div class="chart-meta">
-                    <div class="chart-title">Monthly Revenue</div>
-                    <div class="chart-subtitle" x-text="`${revenueYear} vs ${revenueYear - 1} comparison`"></div>
+                    <div class="chart-title">POS Revenue</div>
+                    <div class="chart-subtitle" x-text="`Sales & invoices — ${revenueYear} vs ${revenueYear - 1}`"></div>
                 </div>
                 <div class="chart-controls">
                     <select class="form-select" style="width:auto;padding:5px 10px;font-size:12px" x-model="revenueYear" @change="loadRevenue()">
@@ -76,17 +95,16 @@
                             <option value="{{ $y }}">{{ $y }}</option>
                         @endfor
                     </select>
-                    <button class="export-btn" @click="exportChart('revenueChart', 'revenue')">
+                    <button class="export-btn" @click="exportChart('revenueChart', 'pos-revenue')">
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Export
                     </button>
                 </div>
             </div>
 
-            {{-- Summary strip --}}
             <div class="summary-strip">
                 <div class="sum-item">
-                    <div class="sum-label">Total Revenue</div>
+                    <div class="sum-label">Total POS Revenue</div>
                     <div class="sum-value accent" x-text="revSummary.total ? 'PKR ' + formatNum(revSummary.total) : '—'"></div>
                 </div>
                 <div class="sum-item">
@@ -94,18 +112,65 @@
                     <div class="sum-value" x-text="revSummary.average ? 'PKR ' + formatNum(revSummary.average) : '—'"></div>
                 </div>
                 <div class="sum-item">
-                    <div class="sum-label">Peak Revenue</div>
-                    <div class="sum-value" x-text="revSummary.best_revenue ? 'PKR ' + formatNum(revSummary.best_revenue) : '—'"></div>
+                    <div class="sum-label">Peak Month</div>
+                    <div class="sum-value" x-text="revSummary.best_month || '—'"></div>
                 </div>
             </div>
 
-            <div class="chart-wrap" style="height:300px">
+            <div class="chart-wrap" style="height:260px">
                 <div class="chart-loader" :class="{ active: loadingRevenue }">
                     <div class="loader-dots">
                         <div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div>
                     </div>
                 </div>
                 <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {{-- ── Membership Revenue Chart ─────────────────────────────────── --}}
+    <div class="report-grid" style="margin-bottom:20px">
+        <div class="chart-card report-full">
+            <div class="chart-toolbar">
+                <div class="chart-meta">
+                    <div class="chart-title">Membership Revenue</div>
+                    <div class="chart-subtitle" x-text="`Plan subscriptions — ${memRevYear} vs ${memRevYear - 1}`"></div>
+                </div>
+                <div class="chart-controls">
+                    <select class="form-select" style="width:auto;padding:5px 10px;font-size:12px" x-model="memRevYear" @change="loadMembershipRevenue()">
+                        @for($y = now()->year; $y >= now()->year - 4; $y--)
+                            <option value="{{ $y }}">{{ $y }}</option>
+                        @endfor
+                    </select>
+                    <button class="export-btn" @click="exportChart('membershipRevenueChart', 'membership-revenue')">
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export
+                    </button>
+                </div>
+            </div>
+
+            <div class="summary-strip">
+                <div class="sum-item">
+                    <div class="sum-label">Total Membership Revenue</div>
+                    <div class="sum-value" style="color:var(--success)" x-text="memRevSummary.total ? 'PKR ' + formatNum(memRevSummary.total) : '—'"></div>
+                </div>
+                <div class="sum-item">
+                    <div class="sum-label">Monthly Avg</div>
+                    <div class="sum-value" x-text="memRevSummary.average ? 'PKR ' + formatNum(memRevSummary.average) : '—'"></div>
+                </div>
+                <div class="sum-item">
+                    <div class="sum-label">Peak Month</div>
+                    <div class="sum-value" x-text="memRevSummary.best_month || '—'"></div>
+                </div>
+            </div>
+
+            <div class="chart-wrap" style="height:260px">
+                <div class="chart-loader" :class="{ active: loadingMemRev }">
+                    <div class="loader-dots">
+                        <div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div>
+                    </div>
+                </div>
+                <canvas id="membershipRevenueChart"></canvas>
             </div>
         </div>
     </div>
@@ -274,11 +339,17 @@ function chartDefaults(canvas) {
 // ── Alpine component ──────────────────────────────────────────────────────
 function reports() {
     return {
-        // Revenue
+        // POS Revenue
         revenueYear: {{ $currentYear }},
         revSummary: @json($revenue['summary']),
         loadingRevenue: false,
         revenueChart: null,
+
+        // Membership Revenue
+        memRevYear: {{ $currentYear }},
+        memRevSummary: @json($membershipRevenue['summary']),
+        loadingMemRev: false,
+        membershipRevenueChart: null,
 
         // Members
         membersYear: {{ $currentYear }},
@@ -297,6 +368,7 @@ function reports() {
         init() {
             this.$nextTick(() => {
                 try { this.buildRevenueChart(@json($revenue)); } catch(e) { console.error('Revenue chart:', e); }
+                try { this.buildMembershipRevenueChart(@json($membershipRevenue)); } catch(e) { console.error('Membership revenue chart:', e); }
                 try { this.buildMembersChart(@json($members)); } catch(e) { console.error('Members chart:', e); }
                 try { this.buildAttendanceChart(@json($attendance)); } catch(e) { console.error('Attendance chart:', e); }
             });
@@ -371,6 +443,72 @@ function reports() {
                 this.buildRevenueChart(data);
             } catch(e) { toast('Failed to load revenue data', 'error'); }
             finally { this.loadingRevenue = false; }
+        },
+
+        // ── Membership Revenue ───────────────────────────────────────
+        buildMembershipRevenueChart(data) {
+            const ctx = document.getElementById('membershipRevenueChart');
+            if (this.membershipRevenueChart) this.membershipRevenueChart.destroy();
+
+            this.membershipRevenueChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: data.datasets[0].label,
+                            data: data.datasets[0].data,
+                            backgroundColor: 'rgba(34,197,94,0.15)',
+                            borderColor: PALETTE.success,
+                            borderWidth: 2,
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            order: 2,
+                        },
+                        {
+                            label: data.datasets[1].label,
+                            data: data.datasets[1].data,
+                            type: 'line',
+                            borderColor: PALETTE.warning,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointBackgroundColor: PALETTE.warning,
+                            tension: 0.4,
+                            order: 1,
+                        }
+                    ]
+                },
+                options: {
+                    ...chartDefaults(ctx),
+                    plugins: {
+                        ...chartDefaults(ctx).plugins,
+                        tooltip: {
+                            ...chartDefaults(ctx).plugins.tooltip,
+                            callbacks: {
+                                label: ctx => ` ${ctx.dataset.label}: PKR ${ctx.parsed.y.toLocaleString()}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b' } },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: { color: '#64748b', callback: v => 'PKR ' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) }
+                        }
+                    }
+                }
+            });
+        },
+
+        async loadMembershipRevenue() {
+            this.loadingMemRev = true;
+            try {
+                const data = await get(`/reports/data/membership-revenue?year=${this.memRevYear}`);
+                this.memRevSummary = data.summary;
+                this.buildMembershipRevenueChart(data);
+            } catch(e) { toast('Failed to load membership revenue data', 'error'); }
+            finally { this.loadingMemRev = false; }
         },
 
         // ── Members ──────────────────────────────────────────────────

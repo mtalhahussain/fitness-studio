@@ -37,7 +37,7 @@ class AttendanceNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $time = $this->attendance->check_in_time?->format('h:i A') ?? now()->format('h:i A');
-        $date = $this->attendance->check_in_time?->format('d M Y') ?? now()->format('d M Y');
+        $date = $this->attendance->check_in_time?->format('d-M-Y') ?? now()->format('d-M-Y');
 
         return (new MailMessage)
             ->subject("✅ Check-in Confirmed — {$time}")

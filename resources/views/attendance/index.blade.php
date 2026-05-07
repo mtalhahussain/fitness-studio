@@ -7,7 +7,7 @@
     <div class="page-header">
         <div>
             <div class="page-title">Attendance</div>
-            <div class="page-sub">{{ now()->format('l, M d Y') }}</div>
+            <div class="page-sub">{{ now()->format('d-M-Y') }}</div>
         </div>
         <button class="btn btn-primary" @click="checkInModal = true">
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -161,7 +161,7 @@
             <svg class="search-icon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input class="form-input search-input" placeholder="Search member..." x-model="search" @input.debounce.400ms="load()">
         </div>
-        <select class="form-select" style="width:150px" x-model="statusFilter" @change="load()">
+        <select class="form-select" style="width:150px" x-model="statusFilter" @change="load()" x-select2>
             <option value="">All</option>
             <option value="checked_in">Checked In</option>
             <option value="checked_out">Checked Out</option>
@@ -235,7 +235,7 @@
             <div style="display:flex;flex-direction:column;gap:14px">
                 <div class="form-group">
                     <label class="form-label">Select Member *</label>
-                    <select class="form-select" x-model="selectedMemberId">
+                    <select class="form-select" x-model="selectedMemberId" x-select2>
                         <option value="">Choose a member...</option>
                         @foreach($members as $m)
                         <option value="{{ $m->id }}">{{ $m->name }} ({{ $m->email }})</option>

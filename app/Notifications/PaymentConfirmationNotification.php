@@ -36,7 +36,7 @@ class PaymentConfirmationNotification extends Notification implements ShouldQueu
         $amount  = 'PKR ' . number_format((float) $this->payment->amount, 2);
         $method  = ucfirst(str_replace('_', ' ', $this->payment->method));
         $invNo   = $this->invoice->invoice_number;
-        $date    = $this->payment->paid_at?->format('d M Y, h:i A') ?? now()->format('d M Y');
+        $date    = $this->payment->paid_at?->format('d-M-Y, h:i A') ?? now()->format('d M Y');
 
         return (new MailMessage)
             ->subject("✅ Payment Received — {$invNo}")
