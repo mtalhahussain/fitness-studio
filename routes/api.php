@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AttendanceController;
+use App\Http\Controllers\Api\BiometricPushController;
 use App\Http\Controllers\Api\BiometricSyncController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\MemberController;
@@ -9,6 +10,13 @@ use App\Http\Controllers\Api\POSController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TrainerController;
 use Illuminate\Support\Facades\Route;
+
+// ZKTeco machine push — no Laravel auth, device authenticates via api_key
+Route::prefix('biometric')->group(function () {
+    Route::post('push',  [BiometricPushController::class, 'receive'])->name('biometric.push');
+    Route::get('push',   [BiometricPushController::class, 'ping'])->name('biometric.ping');
+    Route::get('iclock/cdata', [BiometricPushController::class, 'ping'])->name('biometric.iclock');
+});
 
 Route::middleware(['auth:sanctum', 'resolve.gym'])->group(function () {
 

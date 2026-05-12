@@ -75,6 +75,7 @@
                 <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
                     <button class="btn btn-outline btn-sm" @click="openSchedule(t)">📅 Schedule</button>
                     <button class="btn btn-outline btn-sm" @click="openAssign(t)">+ Assign</button>
+                    <a :href="`/trainers/${t.id}/commission`" class="btn btn-outline btn-sm">💰 Commission</a>
                     <button class="btn btn-outline btn-sm" @click="openEdit(t)">Edit</button>
                     <button class="btn btn-danger btn-sm" @click="deleteTrainer(t)">Delete</button>
                 </div>

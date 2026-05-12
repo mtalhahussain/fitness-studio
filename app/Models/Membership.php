@@ -61,21 +61,21 @@ class Membership extends Model
     public function scopeForGym($query, ?int $gymId)
     {
         if ($gymId === null) return $query;
-        return $query->where('gym_id', $gymId);
+        return $query->where('memberships.gym_id', $gymId);
     }
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'active')->where('end_date', '>=', now()->toDateString());
+        return $query->where('memberships.status', 'active')->where('memberships.end_date', '>=', now()->toDateString());
     }
 
     public function scopeExpired($query)
     {
-        return $query->where('status', 'active')->where('end_date', '<', now()->toDateString());
+        return $query->where('memberships.status', 'active')->where('memberships.end_date', '<', now()->toDateString());
     }
 
     public function scopeForUser($query, int $userId)
     {
-        return $query->where('user_id', $userId);
+        return $query->where('memberships.user_id', $userId);
     }
 }

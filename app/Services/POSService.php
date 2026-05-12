@@ -205,9 +205,8 @@ class POSService extends BaseService
     private function generateInvoiceNumber(?int $gymId): string
     {
         $prefix = 'INV-' . now()->format('Ym');
-        $count  = Invoice::when($gymId, fn ($q) => $q->where('gym_id', $gymId))
-            ->whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
+        $count  = Invoice::withoutGlobalScopes()
+            ->where('invoice_number', 'like', $prefix . '-%')
             ->withTrashed()
             ->count() + 1;
 

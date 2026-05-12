@@ -109,6 +109,26 @@ class User extends Authenticatable
         return $this->hasMany(TrainingSession::class, 'member_id');
     }
 
+    public function trainingPeriods()
+    {
+        return $this->hasMany(MemberTrainingPeriod::class, 'member_id');
+    }
+
+    public function trainerPeriods()
+    {
+        return $this->hasMany(MemberTrainingPeriod::class, 'trainer_id');
+    }
+
+    public function commissions()
+    {
+        return $this->hasMany(TrainerCommission::class, 'trainer_id');
+    }
+
+    public function commissionConfig()
+    {
+        return $this->hasMany(TrainerCommissionConfig::class, 'trainer_id');
+    }
+
     // ── Scopes ────────────────────────────────────────────────────────────────
 
     public function scopeForGym($query, ?int $gymId)

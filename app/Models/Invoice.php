@@ -11,7 +11,7 @@ class Invoice extends Model
     use HasGymScope, SoftDeletes;
 
     protected $fillable = [
-        'gym_id', 'user_id', 'invoice_number', 'subtotal', 'tax_amount',
+        'gym_id', 'user_id', 'trainer_id', 'invoice_number', 'subtotal', 'tax_amount',
         'discount_amount', 'total_amount', 'status', 'notes', 'due_date', 'paid_at',
     ];
 
@@ -24,9 +24,11 @@ class Invoice extends Model
         'paid_at'         => 'datetime',
     ];
 
-    public function user()     { return $this->belongsTo(User::class); }
-    public function items()    { return $this->hasMany(InvoiceItem::class); }
-    public function payments() { return $this->hasMany(Payment::class); }
+    public function user()        { return $this->belongsTo(User::class); }
+    public function trainer()     { return $this->belongsTo(User::class, 'trainer_id'); }
+    public function items()       { return $this->hasMany(InvoiceItem::class); }
+    public function payments()    { return $this->hasMany(Payment::class); }
+    public function commissions() { return $this->hasMany(\App\Models\TrainerCommission::class); }
 
     public function scopeForGym($query, ?int $gymId)
     {

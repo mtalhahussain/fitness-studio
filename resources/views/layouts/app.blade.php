@@ -233,7 +233,7 @@
         .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
         .stat-card {
             background: var(--card); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 18px 20px;
+            border-radius: var(--radius); padding: 18px 20px; min-width: 0;
             display: flex; align-items: flex-start; gap: 14px;
             transition: all .2s ease; cursor: default;
         }
@@ -242,8 +242,9 @@
             width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center; font-size: 20px;
         }
+        .stat-content { min-width: 0; overflow: hidden; }
         .stat-content .label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-        .stat-content .value { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.1; margin-top: 2px; }
+        .stat-content .value { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.1; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .stat-content .change { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
         .stat-content .change.up { color: var(--success); }
         .stat-content .change.warn { color: var(--warning); }
@@ -401,7 +402,7 @@
         .toast-error   { background: rgba(20,10,10,0.95); border-color: rgba(239,68,68,0.3); }
         .toast-warning { background: rgba(20,18,8,0.95);  border-color: rgba(234,179,8,0.3); }
         .toast-info    { background: rgba(10,12,22,0.95); border-color: rgba(59,130,246,0.3); }
-        .toast-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .toast-icon { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; display:flex; align-items:center; justify-content:center; }
         .toast-body { flex: 1; }
         .toast-title { font-size: 13px; font-weight: 600; color: var(--text); }
         .toast-msg   { font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
@@ -456,12 +457,23 @@
     {{-- Sidebar --}}
     <aside class="sidebar" :class="{ collapsed: !sidebarOpen }">
         <div class="sidebar-brand">
-            <div class="brand-icon">💪</div>
+            <div class="brand-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5h1M16.5 6.5h1M6 12h12M4 8.5C4 7.67 4.67 7 5.5 7h1C7.33 7 8 7.67 8 8.5v7c0 .83-.67 1.5-1.5 1.5h-1C4.67 17 4 16.33 4 15.5v-7zM16 8.5c0-.83.67-1.5 1.5-1.5h1c.83 0 1.5.67 1.5 1.5v7c0 .83-.67 1.5-1.5 1.5h-1c-.83 0-1.5-.67-1.5-1.5v-7z"/></svg>
+            </div>
             <div class="brand-text" x-show="sidebarOpen" x-transition:enter="transition-all duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                 <div class="name">Fitness Studio</div>
                 <div class="tagline">Gym Management</div>
             </div>
         </div>
+
+        @php
+            $user = auth()->user();
+            $isAdmin   = $user->isAdmin();
+            $isOwner   = $user->hasRole('owner');
+            $isTrainer = $user->isTrainer();
+            $isMember  = $user->isMember();
+            $hasGymContext = $isAdmin ? session('admin_active_gym_id') : true;
+        @endphp
 
         <nav class="sidebar-nav">
             <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -469,6 +481,17 @@
                 <span class="label" x-show="sidebarOpen">Dashboard</span>
             </a>
 
+            @if($isAdmin)
+            {{-- Super Admin: Platform --}}
+            <div class="nav-section" x-show="sidebarOpen"><span>Platform</span></div>
+            <a href="{{ route('gyms.index') }}" class="nav-item {{ request()->routeIs('gyms*') ? 'active' : '' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M3 21h18M3 7v1a3 3 0 006 0V7m0 1a3 3 0 006 0V7m0 1a3 3 0 006 0V7H3l2-4h14l2 4"/><path stroke-linecap="round" d="M5 21V11.5M19 21V11.5M9 21v-5a2 2 0 014 0v5"/></svg>
+                <span class="label" x-show="sidebarOpen">Gyms</span>
+            </a>
+            @endif
+
+            @if(($isAdmin || $isOwner) && $hasGymContext)
+            {{-- Admin (with gym context) + Owner: full management --}}
             <div class="nav-section" x-show="sidebarOpen"><span>Management</span></div>
 
             <a href="{{ route('plans.index') }}" class="nav-item {{ request()->routeIs('plans*') ? 'active' : '' }}">
@@ -491,6 +514,11 @@
                 <span class="label" x-show="sidebarOpen">Attendance</span>
             </a>
 
+            <a href="{{ route('biometric.devices') }}" class="nav-item {{ request()->routeIs('biometric*') ? 'active' : '' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/><path stroke-linecap="round" d="M9 7h6M9 11h4"/></svg>
+                <span class="label" x-show="sidebarOpen">Biometric</span>
+            </a>
+
             <div class="nav-section" x-show="sidebarOpen"><span>Sales</span></div>
 
             <a href="{{ route('pos.index') }}" class="nav-item {{ request()->routeIs('pos*') ? 'active' : '' }}">
@@ -500,10 +528,41 @@
 
             <div class="nav-section" x-show="sidebarOpen"><span>Analytics</span></div>
 
-            <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs('reports*') ? 'active' : '' }}">
+            <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs('reports.index') || request()->routeIs('reports.revenue') || request()->routeIs('reports.members') || request()->routeIs('reports.attendance') ? 'active' : '' }}">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 <span class="label" x-show="sidebarOpen">Reports</span>
             </a>
+
+            <a href="{{ route('reports.commissions') }}" class="nav-item {{ request()->routeIs('reports.commissions') ? 'active' : '' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                <span class="label" x-show="sidebarOpen">Commissions</span>
+            </a>
+            @endif
+
+            @if($isTrainer)
+            {{-- Trainer: attendance + own commission --}}
+            <div class="nav-section" x-show="sidebarOpen"><span>My Work</span></div>
+
+            <a href="{{ route('attendance.index') }}" class="nav-item {{ request()->routeIs('attendance*') ? 'active' : '' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline stroke-linecap="round" points="12 6 12 12 16 14"/></svg>
+                <span class="label" x-show="sidebarOpen">Attendance</span>
+            </a>
+
+            <a href="{{ route('trainers.commission', $user->id) }}" class="nav-item {{ request()->routeIs('trainers.commission') ? 'active' : '' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                <span class="label" x-show="sidebarOpen">My Commission</span>
+            </a>
+            @endif
+
+            @if($isMember)
+            {{-- Member: attendance only --}}
+            <div class="nav-section" x-show="sidebarOpen"><span>My Activity</span></div>
+
+            <a href="{{ route('attendance.index') }}" class="nav-item {{ request()->routeIs('attendance*') ? 'active' : '' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline stroke-linecap="round" points="12 6 12 12 16 14"/></svg>
+                <span class="label" x-show="sidebarOpen">My Attendance</span>
+            </a>
+            @endif
         </nav>
 
         <div class="sidebar-footer">
@@ -527,7 +586,19 @@
             </button>
             <div class="topbar-title">@yield('title', 'Dashboard')</div>
             <div class="topbar-actions">
-                @if(auth()->user()->gym)
+                @if(auth()->user()->isAdmin())
+                    @php $activeGym = session('admin_active_gym_id') ? \App\Models\Gym::find(session('admin_active_gym_id')) : null; @endphp
+                    @if($activeGym)
+                    <div style="display:flex;align-items:center;gap:6px">
+                        <span style="font-size:12px;padding:4px 10px;background:var(--primary-dim);color:var(--primary);border-radius:20px;font-weight:500">
+                            👁 {{ $activeGym->name }}
+                        </span>
+                        <button onclick="clearAdminGymContext()" style="font-size:11px;padding:3px 8px;background:transparent;border:1px solid var(--border);border-radius:20px;color:var(--text-muted);cursor:pointer" title="Back to all gyms">✕ All Gyms</button>
+                    </div>
+                    @else
+                    <span style="font-size:12px;padding:4px 10px;background:rgba(239,68,68,0.12);color:#ef4444;border-radius:20px;font-weight:500">Super Admin</span>
+                    @endif
+                @elseif(auth()->user()->gym)
                 <span style="font-size:12px;padding:4px 10px;background:var(--primary-dim);color:var(--primary);border-radius:20px;font-weight:500">
                     {{ auth()->user()->gym->name }}
                 </span>
@@ -557,14 +628,14 @@
                  x-transition:enter="transition-transform duration-300"
                  x-transition:leave="transition-opacity duration-200"
                  x-transition:leave-end="opacity-0">
-                <div class="toast-icon">
-                    <span x-text="toast.icon"></span>
-                </div>
+                <div class="toast-icon" x-html="toast.icon"></div>
                 <div class="toast-body">
                     <div class="toast-title" x-text="toast.title"></div>
                     <div class="toast-msg" x-text="toast.message" x-show="toast.message"></div>
                 </div>
-                <button class="toast-close" @click="$store.toasts.dismiss(toast.id)">×</button>
+                <button class="toast-close" @click="$store.toasts.dismiss(toast.id)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
             </div>
         </template>
     </div>
@@ -676,13 +747,25 @@
         };
     }
 
+    async function clearAdminGymContext() {
+        try {
+            await post('/admin/clear-gym');
+            window.location.reload();
+        } catch(e) { toast('Failed to clear context', 'error'); }
+    }
+
     function initApp() {
         Alpine.store('toasts', {
             items: [],
             show(title, type = 'success', message = '') {
-                const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+                const icons = {
+                    success: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+                    error:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+                    warning: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+                    info:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+                };
                 const id = Date.now() + Math.random();
-                this.items.push({ id, title, message, type, icon: icons[type] || '✅', visible: true });
+                this.items.push({ id, title, message, type, icon: icons[type] || icons.success, visible: true });
                 setTimeout(() => this.dismiss(id), 4500);
             },
             dismiss(id) {
@@ -691,6 +774,12 @@
                 setTimeout(() => { this.items = this.items.filter(i => i.id !== id); }, 250);
             }
         });
+
+        // Show server-side flash messages as toasts
+        @if(session('success')) toast(@json(session('success')), 'success'); @endif
+        @if(session('error'))   toast(@json(session('error')),   'error');   @endif
+        @if(session('warning')) toast(@json(session('warning')), 'warning'); @endif
+        @if(session('info'))    toast(@json(session('info')),    'info');    @endif
     }
 </script>
 @stack('scripts')

@@ -134,9 +134,8 @@ class MembershipService extends BaseService
     private function createMembershipInvoice(int $userId, MembershipPlan $plan, ?int $gymId, Carbon $startDate, Carbon $endDate, float $amountPaid): Invoice
     {
         $prefix = 'INV-' . now()->format('Ym');
-        $count  = Invoice::when($gymId, fn ($q) => $q->where('gym_id', $gymId))
-            ->whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
+        $count  = Invoice::withoutGlobalScopes()
+            ->where('invoice_number', 'like', $prefix . '-%')
             ->withTrashed()->count() + 1;
 
         $invoice = Invoice::create([

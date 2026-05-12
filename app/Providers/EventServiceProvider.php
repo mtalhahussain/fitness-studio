@@ -9,6 +9,7 @@ use App\Events\PaymentReceived;
 use App\Listeners\SendAttendanceAlert;
 use App\Listeners\SendMembershipExpiredAlert;
 use App\Listeners\SendMembershipExpiryReminder;
+use App\Listeners\CalculateTrainerCommission;
 use App\Listeners\SendPaymentConfirmation;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -23,6 +24,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         PaymentReceived::class => [
             SendPaymentConfirmation::class,
+            CalculateTrainerCommission::class,
         ],
         MemberCheckedIn::class => [
             SendAttendanceAlert::class,

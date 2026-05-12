@@ -86,6 +86,7 @@
                             <td x-text="fmtDate(m.created_at)"></td>
                             <td>
                                 <div style="display:flex;gap:6px;justify-content:flex-end">
+                                    <button class="btn btn-outline btn-sm" @click="openTraining(m)" title="Training">🏋️</button>
                                     <button class="btn btn-outline btn-sm" @click="openEdit(m)">Edit</button>
                                     <button class="btn btn-danger btn-sm" @click="deleteMember(m)">Delete</button>
                                 </div>
@@ -214,6 +215,125 @@
         </div>
     </div>
 
+    {{-- Training Period Modal --}}
+    <div class="modal-overlay" x-show="trainingModal.show" x-transition @click.self="trainingModal.show=false" style="display:none">
+        <div class="modal modal-lg" @click.stop>
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title" x-text="(trainingModal.member?.name || '') + ' — Training'"></div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Manage training periods and history</div>
+                </div>
+                <button class="modal-close" @click="trainingModal.show=false">×</button>
+            </div>
+
+            {{-- Action buttons --}}
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+                <button class="btn btn-success btn-sm" @click="trainingModal.action='start'; trainingModal.actionForm={trainer_id:'',start_date:'',notes:''}">▶ Start</button>
+                <button class="btn btn-outline btn-sm" @click="trainingModal.action='pause'; trainingModal.actionForm={pause_date:'',notes:''}">⏸ Pause</button>
+                <button class="btn btn-outline btn-sm" @click="trainingModal.action='resume'; trainingModal.actionForm={trainer_id:'',resume_date:'',notes:''}">▶▶ Resume</button>
+                <button class="btn btn-danger btn-sm" @click="trainingModal.action='end'; trainingModal.actionForm={end_date:''}">■ End</button>
+            </div>
+
+            {{-- Action form --}}
+            <template x-if="trainingModal.action">
+                <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+                    <div style="font-size:13px;font-weight:600;margin-bottom:12px;text-transform:capitalize" x-text="trainingModal.action + ' Training'"></div>
+
+                    <template x-if="trainingModal.action === 'start' || trainingModal.action === 'resume'">
+                        <div class="form-group" style="margin-bottom:10px">
+                            <label class="form-label">Trainer <span x-show="trainingModal.action === 'start'" style="color:var(--error)">*</span></label>
+                            <select class="form-select" x-model="trainingModal.actionForm.trainer_id"
+                                :required="trainingModal.action === 'start'">
+                                <template x-if="trainingModal.action === 'resume'">
+                                    <option value="">Keep same trainer</option>
+                                </template>
+                                <template x-if="trainingModal.action === 'start'">
+                                    <option value="" disabled>Select a trainer...</option>
+                                </template>
+                                @foreach(\App\Models\User::trainers()->forGym(auth()->user()->gym_id)->get(['id','name']) as $t)
+                                <option value="{{ $t->id }}">{{ $t->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </template>
+
+                    <div class="form-grid">
+                        <template x-if="trainingModal.action === 'start'">
+                            <div class="form-group">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-input" x-model="trainingModal.actionForm.start_date">
+                            </div>
+                        </template>
+                        <template x-if="trainingModal.action === 'pause'">
+                            <div class="form-group">
+                                <label class="form-label">Pause Date</label>
+                                <input type="date" class="form-input" x-model="trainingModal.actionForm.pause_date">
+                            </div>
+                        </template>
+                        <template x-if="trainingModal.action === 'resume'">
+                            <div class="form-group">
+                                <label class="form-label">Resume Date</label>
+                                <input type="date" class="form-input" x-model="trainingModal.actionForm.resume_date">
+                            </div>
+                        </template>
+                        <template x-if="trainingModal.action === 'end'">
+                            <div class="form-group">
+                                <label class="form-label">End Date</label>
+                                <input type="date" class="form-input" x-model="trainingModal.actionForm.end_date">
+                            </div>
+                        </template>
+                    </div>
+
+                    <template x-if="trainingModal.action !== 'end'">
+                        <div class="form-group" style="margin-top:10px">
+                            <label class="form-label">Notes</label>
+                            <input class="form-input" placeholder="Optional" x-model="trainingModal.actionForm.notes">
+                        </div>
+                    </template>
+
+                    <div style="display:flex;gap:8px;margin-top:12px">
+                        <button class="btn btn-primary btn-sm" :disabled="trainingModal.saving" @click="doTrainingAction()">
+                            <span x-show="trainingModal.saving" class="spinner"></span>
+                            Confirm
+                        </button>
+                        <button class="btn btn-outline btn-sm" @click="trainingModal.action=null">Cancel</button>
+                    </div>
+                </div>
+            </template>
+
+            {{-- History table --}}
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px">History</div>
+            <template x-if="trainingModal.loading">
+                <div style="text-align:center;padding:30px;color:var(--text-muted)"><span class="spinner"></span></div>
+            </template>
+            <template x-if="!trainingModal.loading && trainingModal.history.length === 0">
+                <div class="empty-state" style="padding:20px"><p>No training periods recorded.</p></div>
+            </template>
+            <div class="table-wrap" x-show="!trainingModal.loading && trainingModal.history.length > 0">
+                <table>
+                    <thead>
+                        <tr><th>Trainer</th><th>Start</th><th>End/Pause</th><th>Status</th><th>Notes</th></tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="p in trainingModal.history" :key="p.id">
+                            <tr>
+                                <td class="cell-main" x-text="p.trainer?.name || '—'"></td>
+                                <td x-text="fmtDate(p.start_date)"></td>
+                                <td x-text="p.end_date ? fmtDate(p.end_date) : '—'"></td>
+                                <td>
+                                    <span class="badge"
+                                        :class="p.status==='active'?'badge-green':p.status==='paused'?'badge-yellow':'badge-gray'"
+                                        x-text="p.status"></span>
+                                </td>
+                                <td style="font-size:12px;color:var(--text-muted)" x-text="p.notes || '—'"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     {{-- Assign Plan Modal --}}
     <div class="modal-overlay" x-show="planModal.show" x-transition @click.self="planModal.show=false" style="display:none">
         <div class="modal" @click.stop>
@@ -275,6 +395,7 @@ function membersPage() {
         modal: { show: false, editing: false, loading: false, memberId: null, form: { name:'', email:'', phone:'', password:'', status:'active', plan_id:'', amount_paid:'' } },
         planModal: { show: false, loading: false, member: null, form: { plan_id:'', start_date:'', amount_paid:'' } },
         balanceModal: { show: false, loading: false, member: null, form: { amount:'', method:'cash' } },
+        trainingModal: { show: false, loading: false, saving: false, member: null, history: [], action: null, actionForm: {} },
 
         init() {},
 
@@ -377,6 +498,34 @@ function membersPage() {
                 toast('Member deleted');
                 this.load();
             } catch(e) { toast(e.message, 'error'); }
+        },
+
+        async openTraining(m) {
+            this.trainingModal = { show: true, loading: true, saving: false, member: m, history: [], action: null, actionForm: {} };
+            try {
+                const res = await get(`/members/${m.id}/training/history`);
+                this.trainingModal.history = res.history;
+            } catch(e) { toast('Failed to load training history', 'error'); }
+            this.trainingModal.loading = false;
+        },
+
+        async doTrainingAction() {
+            const act = this.trainingModal.action;
+            if (act === 'start' && !this.trainingModal.actionForm.trainer_id) {
+                toast('Please select a trainer.', 'error');
+                return;
+            }
+            this.trainingModal.saving = true;
+            const m   = this.trainingModal.member;
+            const url = `/members/${m.id}/training/${act}`;
+            try {
+                await post(url, this.trainingModal.actionForm);
+                toast(`Training ${act}ed successfully.`);
+                this.trainingModal.action = null;
+                const res = await get(`/members/${m.id}/training/history`);
+                this.trainingModal.history = res.history;
+            } catch(e) { toast(e.message || 'Action failed', 'error'); }
+            this.trainingModal.saving = false;
         },
     };
 }
