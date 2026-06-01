@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'gym.tenant'   => \App\Http\Middleware\GymTenantMiddleware::class,
             'gym.context'  => \App\Http\Middleware\RequireGymContext::class,
             'resolve.gym'  => \App\Http\Middleware\ResolveGym::class,
+            'module'       => \App\Http\Middleware\CheckModuleAccess::class,
             'role'         => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission'   => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,

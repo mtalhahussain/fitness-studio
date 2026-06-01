@@ -473,6 +473,12 @@
             $isTrainer = $user->isTrainer();
             $isMember  = $user->isMember();
             $hasGymContext = $isAdmin ? session('admin_active_gym_id') : true;
+
+            // Load current gym's enabled modules for sidebar visibility
+            $gymContext  = app(\App\GymContext::class);
+            $currentGym  = $gymContext->id() ? \App\Models\Gym::find($gymContext->id()) : null;
+            // Admins always see everything; owners/staff see only enabled modules
+            $canSee = fn($module) => $isAdmin || ($currentGym && $currentGym->hasModule($module));
         @endphp
 
         <nav class="sidebar-nav">
@@ -491,7 +497,7 @@
             @endif
 
             @if(($isAdmin || $isOwner) && $hasGymContext)
-            {{-- Admin (with gym context) + Owner: full management --}}
+            {{-- Admin (with gym context) + Owner: module-filtered management --}}
             <div class="nav-section" x-show="sidebarOpen"><span>Management</span></div>
 
             <a href="{{ route('plans.index') }}" class="nav-item {{ request()->routeIs('plans*') ? 'active' : '' }}">
@@ -499,33 +505,44 @@
                 <span class="label" x-show="sidebarOpen">Plans</span>
             </a>
 
+            @if($canSee('members'))
             <a href="{{ route('members.index') }}" class="nav-item {{ request()->routeIs('members*') ? 'active' : '' }}">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span class="label" x-show="sidebarOpen">Members</span>
             </a>
+            @endif
 
+            @if($canSee('trainers'))
             <a href="{{ route('trainers.index') }}" class="nav-item {{ request()->routeIs('trainers*') ? 'active' : '' }}">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path stroke-linecap="round" d="M16 11l2 2 4-4"/></svg>
                 <span class="label" x-show="sidebarOpen">Trainers</span>
             </a>
+            @endif
 
+            @if($canSee('attendance'))
             <a href="{{ route('attendance.index') }}" class="nav-item {{ request()->routeIs('attendance*') ? 'active' : '' }}">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline stroke-linecap="round" points="12 6 12 12 16 14"/></svg>
                 <span class="label" x-show="sidebarOpen">Attendance</span>
             </a>
+            @endif
 
+            @if($canSee('biometric'))
             <a href="{{ route('biometric.devices') }}" class="nav-item {{ request()->routeIs('biometric*') ? 'active' : '' }}">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/><path stroke-linecap="round" d="M9 7h6M9 11h4"/></svg>
                 <span class="label" x-show="sidebarOpen">Biometric</span>
             </a>
+            @endif
 
+            @if($canSee('pos'))
             <div class="nav-section" x-show="sidebarOpen"><span>Sales</span></div>
 
             <a href="{{ route('pos.index') }}" class="nav-item {{ request()->routeIs('pos*') ? 'active' : '' }}">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                 <span class="label" x-show="sidebarOpen">Point of Sale</span>
             </a>
+            @endif
 
+            @if($canSee('reports'))
             <div class="nav-section" x-show="sidebarOpen"><span>Analytics</span></div>
 
             <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs('reports.index') || request()->routeIs('reports.revenue') || request()->routeIs('reports.members') || request()->routeIs('reports.attendance') ? 'active' : '' }}">
@@ -533,10 +550,13 @@
                 <span class="label" x-show="sidebarOpen">Reports</span>
             </a>
 
+            @if($canSee('trainers'))
             <a href="{{ route('reports.commissions') }}" class="nav-item {{ request()->routeIs('reports.commissions') ? 'active' : '' }}">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
                 <span class="label" x-show="sidebarOpen">Commissions</span>
             </a>
+            @endif
+            @endif
             @endif
 
             @if($isTrainer)

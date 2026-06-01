@@ -103,4 +103,29 @@ class GymWebController extends Controller
         session()->forget('admin_active_gym_id');
         return response()->json(['message' => 'Viewing all gyms.']);
     }
+
+    public function manageModules(Gym $gym)
+    {
+        $available = config('modules.available');
+        $enabled   = $gym->enabledModules();
+
+        return view('gyms.modules', compact('gym', 'available', 'enabled'));
+    }
+
+    public function updateModules(Request $request, Gym $gym)
+    {
+        $available = array_keys(config('modules.available'));
+
+        $data = $request->validate([
+            'modules'   => ['nullable', 'array'],
+            'modules.*' => ['string', 'in:' . implode(',', $available)],
+        ]);
+
+        $gym->update(['modules' => $data['modules'] ?? []]);
+
+        return response()->json([
+            'message' => 'Modules updated successfully.',
+            'modules' => $gym->fresh()->enabledModules(),
+        ]);
+    }
 }

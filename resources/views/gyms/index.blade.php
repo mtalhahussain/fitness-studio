@@ -77,6 +77,10 @@
                     :disabled="activeGymId == gymId">
                     {{ $activeGymId == $gym->id ? '✓ Active Context' : 'Switch Context' }}
                 </button>
+                <a href="{{ route('gyms.modules', $gym) }}" class="btn btn-outline btn-sm" title="Manage Modules">
+                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    Modules
+                </a>
                 <button class="btn btn-outline btn-sm" @click="openEdit({{ $gym->id }}, {{ json_encode(['name'=>$gym->name,'email'=>$gym->email,'phone'=>$gym->phone,'city'=>$gym->city,'country'=>$gym->country]) }})">Edit</button>
                 <button class="btn btn-outline btn-sm" @click="toggleStatus({{ $gym->id }}, '{{ $gym->status }}')">
                     {{ $gym->status === 'active' ? 'Suspend' : 'Activate' }}

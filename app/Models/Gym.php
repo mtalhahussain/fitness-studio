@@ -13,14 +13,26 @@ class Gym extends Model
     protected $fillable = [
         'name', 'slug', 'email', 'phone', 'address', 'city', 'country',
         'logo', 'timezone', 'currency', 'status', 'subscription_plan',
-        'trial_ends_at', 'subscription_ends_at', 'settings',
+        'trial_ends_at', 'subscription_ends_at', 'settings', 'modules',
     ];
 
     protected $casts = [
         'settings'             => 'array',
+        'modules'              => 'array',
         'trial_ends_at'        => 'datetime',
         'subscription_ends_at' => 'datetime',
     ];
+
+    public function hasModule(string $module): bool
+    {
+        $modules = $this->modules ?? config('modules.default');
+        return in_array($module, $modules);
+    }
+
+    public function enabledModules(): array
+    {
+        return $this->modules ?? config('modules.default');
+    }
 
     public function users()
     {
