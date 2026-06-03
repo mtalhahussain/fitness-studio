@@ -426,13 +426,7 @@
 
             <div class="demo">
                 <div class="demo-header">Quick access</div>
-                <div class="demo-row" onclick="fillLogin('admin@fitnessstudio.com')">
-                    <span class="role-dot dot-admin"></span>
-                    <span class="demo-role">Admin</span>
-                    <span class="demo-email">admin@fitnessstudio.com</span>
-                    <button class="demo-use">Use &rarr;</button>
-                </div>
-                <div class="demo-row" onclick="fillLogin('owner@demogym.com')">
+<div class="demo-row" onclick="fillLogin('owner@demogym.com')">
                     <span class="role-dot dot-owner"></span>
                     <span class="demo-role">Owner</span>
                     <span class="demo-email">owner@demogym.com</span>
