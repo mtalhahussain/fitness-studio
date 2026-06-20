@@ -66,7 +66,7 @@
                     <div style="font-size:12px;color:var(--text-muted);line-height:1.6" x-text="t.trainer_profile?.bio || 'No bio provided.'"></div>
                         <div style="margin-top:8px;font-size:12px;color:var(--text-dim)">
                             <span style="color:var(--text-muted)">Compensation:</span>
-                            <strong x-text="compLabel(t.trainer_profile)"></strong>
+                        <span class="badge" :class="compBadgeClass(t.trainer_profile)" x-text="compLabel(t.trainer_profile)"></span>
                         </div>
                     <template x-if="t.trainer_profile?.hourly_rate">
                         <div style="margin-top:8px;font-size:12px;color:var(--text-dim)">
@@ -124,36 +124,22 @@
                             <label class="form-label">Experience (Years)</label>
                             <input type="number" class="form-input" min="0" x-model="modal.form.experience_years">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" x-show="showHourlyRate()" x-transition>
                             <label class="form-label">Hourly Rate (PKR)</label>
                             <input type="number" step="0.01" class="form-input" x-model="modal.form.hourly_rate">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Compensation Mode *</label>
-                            <select class="form-select" x-model="modal.form.compensation_mode">
+                            <select class="form-select" x-model="modal.form.compensation_mode" @change="syncCompensationMode()">
                                 <option value="commission">Commission Only</option>
                                 <option value="salary">Salary Only</option>
                                 <option value="hourly">Hourly Only</option>
                                 <option value="mixed">Salary + Commission</option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" x-show="showBaseSalary()" x-transition>
                             <label class="form-label">Base Salary (PKR)</label>
                             <input type="number" step="0.01" class="form-input" x-model="modal.form.base_salary">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Salary Enabled</label>
-                            <select class="form-select" x-model="modal.form.salary_enabled">
-                                <option :value="false">No</option>
-                                <option :value="true">Yes</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Commission Enabled</label>
-                            <select class="form-select" x-model="modal.form.commission_enabled">
-                                <option :value="false">No</option>
-                                <option :value="true">Yes</option>
-                            </select>
                         </div>
                     </div>
                     <template x-if="modal.editing">
@@ -324,6 +310,38 @@ function trainersPage() {
 
         init() {},
 
+        syncCompensationMode() {
+            const mode = this.modal.form.compensation_mode;
+
+            if (mode === 'commission') {
+                this.modal.form.commission_enabled = true;
+                this.modal.form.salary_enabled = false;
+            }
+
+            if (mode === 'salary') {
+                this.modal.form.salary_enabled = true;
+                this.modal.form.commission_enabled = false;
+            }
+
+            if (mode === 'hourly') {
+                this.modal.form.salary_enabled = false;
+                this.modal.form.commission_enabled = false;
+            }
+
+            if (mode === 'mixed') {
+                this.modal.form.salary_enabled = true;
+                this.modal.form.commission_enabled = true;
+            }
+        },
+
+        showHourlyRate() {
+            return ['hourly', 'mixed'].includes(this.modal.form.compensation_mode);
+        },
+
+        showBaseSalary() {
+            return ['salary', 'mixed'].includes(this.modal.form.compensation_mode);
+        },
+
         async load() {
             this.loading = true;
             try {
@@ -337,6 +355,7 @@ function trainersPage() {
 
         openAdd() {
             this.modal = { show: true, editing: false, loading: false, trainerId: null, form: { name:'', email:'', phone:'', password:'', specialization:'', experience_years:0, hourly_rate:'', compensation_mode:'commission', base_salary:'', commission_enabled:true, salary_enabled:false, status:'active' } };
+            this.syncCompensationMode();
         },
 
         openEdit(t) {
@@ -351,6 +370,7 @@ function trainersPage() {
                 salary_enabled: t.trainer_profile?.salary_enabled ?? false,
                 status: t.status,
             }};
+            this.syncCompensationMode();
         },
 
         openAssign(t) {
@@ -430,6 +450,14 @@ function trainersPage() {
             if (mode === 'mixed') return `Mixed${salary ? ' · ' + salary : ''}${hourly ? ' · ' + hourly : ''}`;
 
             return `Commission${profile.commission_enabled === false ? ' (off)' : ''}`;
+        },
+
+        compBadgeClass(profile) {
+            const mode = profile?.compensation_mode || 'commission';
+            if (mode === 'salary') return 'badge-blue';
+            if (mode === 'hourly') return 'badge-purple';
+            if (mode === 'mixed') return 'badge-green';
+            return 'badge-yellow';
         },
     };
 }

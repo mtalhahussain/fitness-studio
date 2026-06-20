@@ -17,6 +17,7 @@ class User extends Authenticatable
     protected $fillable = [
         'gym_id', 'name', 'email', 'phone', 'avatar', 'password',
         'status', 'date_of_birth', 'gender', 'address', 'last_login_at',
+        'biometric_code',
     ];
 
     protected $hidden = ['password', 'remember_token'];
