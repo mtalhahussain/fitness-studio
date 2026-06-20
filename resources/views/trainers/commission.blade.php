@@ -11,7 +11,9 @@
             <div class="page-sub">{{ $trainer->trainerProfile?->specialization ?? 'Trainer' }} · Current rate: <strong>{{ $currentRate }}%</strong> trainer share</div>
         </div>
         <div style="display:flex;gap:10px">
+            @if ($canManageCommission)
             <button class="btn btn-outline" @click="configModal.show=true">⚙ Set Rate</button>
+            @endif
             <a href="{{ route('trainers.index') }}" class="btn btn-outline">← Back</a>
         </div>
     </div>
@@ -205,6 +207,7 @@
         </div>
     </div>
 
+    @if ($canManageCommission)
     {{-- Set commission rate modal --}}
     <div class="modal-overlay" x-show="configModal.show" x-transition @click.self="configModal.show=false" style="display:none">
         <div class="modal" @click.stop style="max-width:420px">
@@ -255,6 +258,7 @@
             </form>
         </div>
     </div>
+    @endif
 
 </div>
 @endsection

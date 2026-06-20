@@ -31,6 +31,8 @@ class GymWebController extends Controller
         $data = $request->validate([
             'name'           => ['required', 'string', 'max:255'],
             'email'          => ['required', 'email', 'max:255'],
+            'domain'         => ['nullable', 'string', 'max:255', 'unique:gyms,domain'],
+            'subdomain'      => ['nullable', 'alpha_dash', 'max:63', 'unique:gyms,subdomain'],
             'phone'          => ['nullable', 'string', 'max:20'],
             'city'           => ['nullable', 'string', 'max:100'],
             'country'        => ['nullable', 'string', 'max:100'],
@@ -43,6 +45,8 @@ class GymWebController extends Controller
             $gym = Gym::create([
                 'name'    => $data['name'],
                 'slug'    => Str::slug($data['name']) . '-' . Str::random(4),
+                'domain'  => $this->normalizeDomain($data['domain'] ?? null),
+                'subdomain' => $this->normalizeSubdomain($data['subdomain'] ?? null),
                 'email'   => $data['email'],
                 'phone'   => $data['phone'] ?? null,
                 'city'    => $data['city'] ?? null,
@@ -70,10 +74,20 @@ class GymWebController extends Controller
         $data = $request->validate([
             'name'    => ['sometimes', 'string', 'max:255'],
             'email'   => ['sometimes', 'email', 'max:255'],
+            'domain'  => ['nullable', 'string', 'max:255', 'unique:gyms,domain,' . $gym->id],
+            'subdomain' => ['nullable', 'alpha_dash', 'max:63', 'unique:gyms,subdomain,' . $gym->id],
             'phone'   => ['nullable', 'string', 'max:20'],
             'city'    => ['nullable', 'string', 'max:100'],
             'country' => ['nullable', 'string', 'max:100'],
         ]);
+
+        if (array_key_exists('domain', $data)) {
+            $data['domain'] = $this->normalizeDomain($data['domain']);
+        }
+
+        if (array_key_exists('subdomain', $data)) {
+            $data['subdomain'] = $this->normalizeSubdomain($data['subdomain']);
+        }
 
         $gym->update($data);
 
@@ -127,5 +141,48 @@ class GymWebController extends Controller
             'message' => 'Modules updated successfully.',
             'modules' => $gym->fresh()->enabledModules(),
         ]);
+    }
+
+    public function manageWhatsAppSettings(Gym $gym)
+    {
+        return view('gyms.whatsapp-settings', compact('gym'));
+    }
+
+    public function updateWhatsAppSettings(Request $request, Gym $gym)
+    {
+        $data = $request->validate([
+            'whatsapp_enabled'         => ['boolean'],
+            'whatsapp_token'           => ['required_if:whatsapp_enabled,true', 'string', 'max:500'],
+            'whatsapp_phone_number_id' => ['required_if:whatsapp_enabled,true', 'string', 'max:100'],
+            'whatsapp_business_account_id' => ['required_if:whatsapp_enabled,true', 'string', 'max:100'],
+        ]);
+
+        $gym->update($data);
+
+        return response()->json([
+            'message' => 'WhatsApp settings updated successfully.',
+            'gym' => $gym->fresh()->only(['whatsapp_enabled', 'whatsapp_token', 'whatsapp_phone_number_id', 'whatsapp_business_account_id']),
+        ]);
+    }
+
+    private function normalizeDomain(?string $domain): ?string
+    {
+        if ($domain === null || trim($domain) === '') {
+            return null;
+        }
+
+        $domain = strtolower(trim($domain));
+        $domain = preg_replace('#^https?://#', '', $domain);
+
+        return rtrim($domain, '/');
+    }
+
+    private function normalizeSubdomain(?string $subdomain): ?string
+    {
+        if ($subdomain === null || trim($subdomain) === '') {
+            return null;
+        }
+
+        return strtolower(trim($subdomain));
     }
 }

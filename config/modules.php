@@ -36,6 +36,11 @@ return [
             'description' => 'Revenue reports, member analytics, attendance trends, and commission reports.',
             'icon'        => '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
         ],
+        'whatsapp' => [
+            'label'       => 'WhatsApp Reminders',
+            'description' => 'Send WhatsApp payment due reminders automatically via Meta Cloud API.',
+            'icon'        => '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3 .97 4.29L2 22l6.05-1.62c1.2.64 2.56 1 4 1 5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.2 0-2.36-.23-3.41-.68l-.24-.13-2.5.67.68-2.42-.13-.24C4.23 14.36 4 13.2 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8z"/></svg>',
+        ],
     ],
 
     // Default modules enabled when a gym is first created

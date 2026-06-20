@@ -29,6 +29,7 @@ class Invoice extends Model
     public function items()       { return $this->hasMany(InvoiceItem::class); }
     public function payments()    { return $this->hasMany(Payment::class); }
     public function commissions() { return $this->hasMany(\App\Models\TrainerCommission::class); }
+    public function whatsappMessageLogs() { return $this->hasMany(WhatsAppMessageLog::class); }
 
     public function scopeForGym($query, ?int $gymId)
     {

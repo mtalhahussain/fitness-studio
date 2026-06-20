@@ -62,12 +62,18 @@
             @endforeach
         </div>
 
-        <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:10px">
-            <a href="{{ route('gyms.index') }}" class="btn btn-outline">Cancel</a>
-            <button class="btn btn-primary" @click="save()" :disabled="saving">
-                <span x-show="saving" class="spinner" style="width:13px;height:13px;border-width:2px"></span>
-                <span x-text="saving ? 'Saving...' : 'Save Changes'"></span>
-            </button>
+        <div style="margin-top:20px;display:flex;justify-content:space-between;align-items:center;gap:10px">
+            <a href="{{ route('gyms.whatsapp', $gym) }}" class="btn btn-outline btn-sm" style="background:var(--success-dim);color:var(--success);border-color:var(--success)">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3 .97 4.29L2 22l6.05-1.62c1.2.64 2.56 1 4 1 5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
+                WhatsApp Settings
+            </a>
+            <div style="display:flex;justify-content:flex-end;gap:10px">
+                <a href="{{ route('gyms.index') }}" class="btn btn-outline">Cancel</a>
+                <button class="btn btn-primary" @click="save()" :disabled="saving">
+                    <span x-show="saving" class="spinner" style="width:13px;height:13px;border-width:2px"></span>
+                    <span x-text="saving ? 'Saving...' : 'Save Changes'"></span>
+                </button>
+            </div>
         </div>
     </div>
 </div>

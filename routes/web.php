@@ -11,6 +11,7 @@ use App\Http\Controllers\Web\POSWebController;
 use App\Http\Controllers\Web\ReportWebController;
 use App\Http\Controllers\Web\TrainerCommissionWebController;
 use App\Http\Controllers\Web\TrainerWebController;
+use App\Http\Controllers\Web\WhatsAppReminderWebController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('login'));
@@ -35,6 +36,8 @@ Route::middleware(['auth', 'gym.tenant'])->group(function () {
         Route::post('/gyms/{gym}/toggle-status',   [GymWebController::class, 'toggleStatus'])->name('gyms.toggle-status');
         Route::get('/gyms/{gym}/modules',          [GymWebController::class, 'manageModules'])->name('gyms.modules');
         Route::post('/gyms/{gym}/modules',         [GymWebController::class, 'updateModules'])->name('gyms.modules.update');
+        Route::get('/gyms/{gym}/whatsapp',         [GymWebController::class, 'manageWhatsAppSettings'])->name('gyms.whatsapp');
+        Route::post('/gyms/{gym}/whatsapp',        [GymWebController::class, 'updateWhatsAppSettings'])->name('gyms.whatsapp.update');
         Route::post('/admin/switch-gym/{gym}',     [GymWebController::class, 'switchGym'])->name('admin.switch-gym');
         Route::post('/admin/clear-gym',            [GymWebController::class, 'clearGym'])->name('admin.clear-gym');
     });
@@ -80,7 +83,7 @@ Route::middleware(['auth', 'gym.tenant'])->group(function () {
             Route::post('/trainers/{trainer}/sessions',     [TrainerWebController::class, 'createSession'])->name('trainers.sessions');
             Route::get('/trainers/{trainer}/commission',    [TrainerCommissionWebController::class, 'overview'])->name('trainers.commission');
             Route::get('/trainers/{trainer}/earnings',      [TrainerCommissionWebController::class, 'trainerEarnings'])->name('trainers.earnings');
-            Route::post('/commission-config',               [TrainerCommissionWebController::class, 'setConfig'])->name('commission.config');
+            Route::post('/commission-config',               [TrainerCommissionWebController::class, 'setConfig'])->middleware('role:owner')->name('commission.config');
         });
 
         // Biometric Devices
@@ -116,6 +119,13 @@ Route::middleware(['auth', 'gym.tenant'])->group(function () {
             Route::get('/reports/data/membership-revenue',  [ReportWebController::class, 'membershipRevenueData'])->name('reports.membership-revenue');
             Route::get('/reports/data/members',             [ReportWebController::class, 'membersData'])->name('reports.members');
             Route::get('/reports/data/attendance',          [ReportWebController::class, 'attendanceData'])->name('reports.attendance');
+        });
+
+        // WhatsApp reminders
+        Route::middleware(['module:whatsapp', 'role:owner|admin'])->group(function () {
+            Route::get('/whatsapp-reminders',               [WhatsAppReminderWebController::class, 'index'])->name('whatsapp-reminders.index');
+            Route::post('/whatsapp-reminders/send',         [WhatsAppReminderWebController::class, 'send'])->name('whatsapp-reminders.send');
+            Route::post('/whatsapp-reminders/template',     [WhatsAppReminderWebController::class, 'updateTemplate'])->name('whatsapp-reminders.template');
         });
 
     }); // end gym.context

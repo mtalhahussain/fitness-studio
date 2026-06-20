@@ -19,6 +19,7 @@ class TrainerCommissionWebController extends Controller
     {
         $user  = auth()->user();
         $gymId = $user->isTrainer() ? $user->gym_id : ($user->isAdmin() ? (int) session('admin_active_gym_id') : $user->gym_id);
+        $canManageCommission = $user->isOwner();
 
         if ($user->isTrainer() && $user->id !== $trainer->id) {
             abort(403, 'You can only view your own commission.');
@@ -33,7 +34,7 @@ class TrainerCommissionWebController extends Controller
         $members     = $this->trainingService->getMembersByTrainer($trainer, $gymId);
 
         return view('trainers.commission', compact(
-            'trainer', 'earnings', 'monthly', 'memberStats', 'currentRate', 'month', 'members'
+            'trainer', 'earnings', 'monthly', 'memberStats', 'currentRate', 'month', 'members', 'canManageCommission'
         ));
     }
 
@@ -52,6 +53,8 @@ class TrainerCommissionWebController extends Controller
 
     public function setConfig(Request $request)
     {
+        abort_unless(auth()->user()?->isOwner(), 403, 'Only owner can manage commission rates.');
+
         $data = $request->validate([
             'trainer_id'      => ['nullable', 'integer', 'exists:users,id'],
             'commission_rate' => ['required', 'numeric', 'min:0', 'max:100'],

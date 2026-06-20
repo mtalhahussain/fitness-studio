@@ -11,9 +11,11 @@ class Gym extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name', 'slug', 'email', 'phone', 'address', 'city', 'country',
+        'name', 'slug', 'domain', 'subdomain', 'email', 'phone', 'address', 'city', 'country',
         'logo', 'timezone', 'currency', 'status', 'subscription_plan',
         'trial_ends_at', 'subscription_ends_at', 'settings', 'modules',
+        'whatsapp_enabled', 'whatsapp_token', 'whatsapp_phone_number_id', 'whatsapp_business_account_id',
+        'whatsapp_message_template',
     ];
 
     protected $casts = [

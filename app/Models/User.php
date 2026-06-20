@@ -124,6 +124,11 @@ class User extends Authenticatable
         return $this->hasMany(TrainerCommission::class, 'trainer_id');
     }
 
+    public function whatsappMessageLogs()
+    {
+        return $this->hasMany(WhatsAppMessageLog::class);
+    }
+
     public function commissionConfig()
     {
         return $this->hasMany(TrainerCommissionConfig::class, 'trainer_id');

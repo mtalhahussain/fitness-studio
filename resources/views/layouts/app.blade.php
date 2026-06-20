@@ -556,6 +556,15 @@
                 <span class="label" x-show="sidebarOpen">Commissions</span>
             </a>
             @endif
+
+            @if($canSee('whatsapp'))
+            <div class="nav-section" x-show="sidebarOpen"><span>Automation</span></div>
+
+            <a href="{{ route('whatsapp-reminders.index') }}" class="nav-item {{ request()->routeIs('whatsapp-reminders.*') ? 'active' : '' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3 .97 4.29L2 22l6.05-1.62c1.2.64 2.56 1 4 1 5.52 0 10-4.48 10-10S17.52 2 12 2z"/><path d="M8.5 9.5c.3-1 1-1.5 1.8-1.2.6.2 1.3 1.3 1.2 1.8-.1.5-.5.8-.9 1.1.5.9 1.3 1.7 2.2 2.2.3-.4.6-.8 1.1-.9.5-.1 1.6.6 1.8 1.2.3.8-.2 1.5-1.2 1.8-1.4.4-3.4-.5-5.1-2.2-1.7-1.7-2.6-3.7-2.2-5.1z"/></svg>
+                <span class="label" x-show="sidebarOpen">WhatsApp Reminders</span>
+            </a>
+            @endif
             @endif
             @endif
 

@@ -4,13 +4,17 @@ namespace App\Http\Middleware;
 
 use App\GymContext;
 use App\Models\Gym;
+use App\Services\GymDomainResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ResolveGym
 {
-    public function __construct(private GymContext $context) {}
+    public function __construct(
+        private GymContext $context,
+        private GymDomainResolver $domainResolver,
+    ) {}
 
     public function handle(Request $request, Closure $next): mixed
     {
@@ -29,7 +33,13 @@ class ResolveGym
             abort(403, 'No gym assigned to this account.');
         }
 
-        $gym = Gym::find($user->gym_id);
+        $hostGym = $this->domainResolver->resolveByHost($request->getHost());
+
+        if ($hostGym && (int) $hostGym->id !== (int) $user->gym_id) {
+            abort(403, 'This account is not linked to this gym domain.');
+        }
+
+        $gym = $hostGym ?: Gym::find($user->gym_id);
 
         if (! $gym) {
             abort(403, 'Gym not found.');

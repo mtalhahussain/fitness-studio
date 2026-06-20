@@ -68,6 +68,8 @@
             <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">
                 <div>📧 {{ $gym->email }}</div>
                 @if($gym->phone)<div style="margin-top:3px">📞 {{ $gym->phone }}</div>@endif
+                @if($gym->subdomain)<div style="margin-top:3px">🌐 {{ $gym->subdomain }}.{{ config('tenancy.base_domain') ?: 'your-domain.com' }}</div>@endif
+                @if($gym->domain)<div style="margin-top:3px">🔗 {{ $gym->domain }}</div>@endif
             </div>
 
             {{-- Actions --}}
@@ -81,7 +83,7 @@
                     <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                     Modules
                 </a>
-                <button class="btn btn-outline btn-sm" @click="openEdit({{ $gym->id }}, {{ json_encode(['name'=>$gym->name,'email'=>$gym->email,'phone'=>$gym->phone,'city'=>$gym->city,'country'=>$gym->country]) }})">Edit</button>
+                <button class="btn btn-outline btn-sm" @click="openEdit({{ $gym->id }}, {{ json_encode(['name'=>$gym->name,'email'=>$gym->email,'phone'=>$gym->phone,'city'=>$gym->city,'country'=>$gym->country,'domain'=>$gym->domain,'subdomain'=>$gym->subdomain]) }})">Edit</button>
                 <button class="btn btn-outline btn-sm" @click="toggleStatus({{ $gym->id }}, '{{ $gym->status }}')">
                     {{ $gym->status === 'active' ? 'Suspend' : 'Activate' }}
                 </button>
@@ -117,6 +119,15 @@
                     <div class="form-group">
                         <label class="form-label">Phone</label>
                         <input class="form-input" placeholder="+92 300 0000000" x-model="modal.form.phone">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Subdomain</label>
+                        <input class="form-input" placeholder="elitefitness" x-model="modal.form.subdomain">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Final URL: subdomain.{{ config('tenancy.base_domain') ?: 'your-domain.com' }}</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Custom Domain</label>
+                        <input class="form-input" placeholder="gym.example.com" x-model="modal.form.domain">
                     </div>
                     <div class="form-group">
                         <label class="form-label">City</label>
@@ -171,7 +182,7 @@ function gymsPage() {
         activeGymId: {{ $activeGymId ?? 'null' }},
         activeGymName: '{{ optional($gyms->firstWhere("id", $activeGymId))->name ?? "" }}',
         modal: { show: false, editing: false, loading: false, gymId: null,
-                 form: { name:'', email:'', phone:'', city:'', country:'', owner_name:'', owner_email:'', owner_password:'' } },
+                 form: { name:'', email:'', phone:'', city:'', country:'', domain:'', subdomain:'', owner_name:'', owner_email:'', owner_password:'' } },
 
         init() {
             // sync context badge name from local data
@@ -182,12 +193,12 @@ function gymsPage() {
 
         openAdd() {
             this.modal = { show: true, editing: false, loading: false, gymId: null,
-                           form: { name:'', email:'', phone:'', city:'', country:'', owner_name:'', owner_email:'', owner_password:'' } };
+                           form: { name:'', email:'', phone:'', city:'', country:'', domain:'', subdomain:'', owner_name:'', owner_email:'', owner_password:'' } };
         },
 
         openEdit(id, data) {
             this.modal = { show: true, editing: true, loading: false, gymId: id,
-                           form: { name: data.name, email: data.email, phone: data.phone||'', city: data.city||'', country: data.country||'' } };
+                           form: { name: data.name, email: data.email, phone: data.phone||'', city: data.city||'', country: data.country||'', domain: data.domain||'', subdomain: data.subdomain||'' } };
         },
 
         async saveGym() {
