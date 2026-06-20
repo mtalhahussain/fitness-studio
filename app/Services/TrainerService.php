@@ -34,6 +34,10 @@ class TrainerService extends BaseService
                 'experience_years' => $data['experience_years'] ?? 0,
                 'certifications'   => $data['certifications'] ?? [],
                 'hourly_rate'      => $data['hourly_rate'] ?? null,
+                'compensation_mode'=> $data['compensation_mode'] ?? 'commission',
+                'base_salary'      => $data['base_salary'] ?? null,
+                'commission_enabled' => $data['commission_enabled'] ?? true,
+                'salary_enabled'   => $data['salary_enabled'] ?? false,
             ]);
 
             return $trainer->load('trainerProfile');
@@ -50,7 +54,8 @@ class TrainerService extends BaseService
 
             $profileData = array_intersect_key($data, array_flip([
                 'specialization', 'bio', 'experience_years',
-                'certifications', 'hourly_rate', 'is_active',
+                'certifications', 'hourly_rate', 'compensation_mode',
+                'base_salary', 'commission_enabled', 'salary_enabled', 'is_active',
             ]));
 
             if (! empty($profileData)) {

@@ -12,12 +12,16 @@ class TrainerProfile extends Model
 
     protected $fillable = [
         'user_id', 'gym_id', 'specialization', 'bio',
-        'experience_years', 'certifications', 'hourly_rate', 'is_active',
+        'experience_years', 'certifications', 'hourly_rate', 'compensation_mode',
+        'base_salary', 'commission_enabled', 'salary_enabled', 'is_active',
     ];
 
     protected $casts = [
         'certifications'   => 'array',
         'hourly_rate'      => 'decimal:2',
+        'base_salary'      => 'decimal:2',
+        'commission_enabled' => 'boolean',
+        'salary_enabled'   => 'boolean',
         'is_active'        => 'boolean',
         'experience_years' => 'integer',
     ];

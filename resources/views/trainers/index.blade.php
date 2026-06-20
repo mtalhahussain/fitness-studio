@@ -64,6 +64,10 @@
                 {{-- Info --}}
                 <div style="padding:14px 16px;flex:1">
                     <div style="font-size:12px;color:var(--text-muted);line-height:1.6" x-text="t.trainer_profile?.bio || 'No bio provided.'"></div>
+                        <div style="margin-top:8px;font-size:12px;color:var(--text-dim)">
+                            <span style="color:var(--text-muted)">Compensation:</span>
+                            <strong x-text="compLabel(t.trainer_profile)"></strong>
+                        </div>
                     <template x-if="t.trainer_profile?.hourly_rate">
                         <div style="margin-top:8px;font-size:12px;color:var(--text-dim)">
                             <span style="color:var(--text-muted)">Rate:</span> <span x-text="currency(t.trainer_profile.hourly_rate)"></span>/hr
@@ -123,6 +127,33 @@
                         <div class="form-group">
                             <label class="form-label">Hourly Rate (PKR)</label>
                             <input type="number" step="0.01" class="form-input" x-model="modal.form.hourly_rate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Compensation Mode *</label>
+                            <select class="form-select" x-model="modal.form.compensation_mode">
+                                <option value="commission">Commission Only</option>
+                                <option value="salary">Salary Only</option>
+                                <option value="hourly">Hourly Only</option>
+                                <option value="mixed">Salary + Commission</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Base Salary (PKR)</label>
+                            <input type="number" step="0.01" class="form-input" x-model="modal.form.base_salary">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Salary Enabled</label>
+                            <select class="form-select" x-model="modal.form.salary_enabled">
+                                <option :value="false">No</option>
+                                <option :value="true">Yes</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Commission Enabled</label>
+                            <select class="form-select" x-model="modal.form.commission_enabled">
+                                <option :value="false">No</option>
+                                <option :value="true">Yes</option>
+                            </select>
                         </div>
                     </div>
                     <template x-if="modal.editing">
@@ -286,7 +317,7 @@ function trainersPage() {
         totalCount: {{ $trainers->total() }},
         loading: false,
         search: '',
-        modal: { show: false, editing: false, loading: false, trainerId: null, form: { name:'', email:'', phone:'', specialization:'', experience_years:0, hourly_rate:'', status:'active' } },
+        modal: { show: false, editing: false, loading: false, trainerId: null, form: { name:'', email:'', phone:'', specialization:'', experience_years:0, hourly_rate:'', compensation_mode:'commission', base_salary:'', commission_enabled:true, salary_enabled:false, status:'active' } },
         assignModal: { show: false, loading: false, trainer: null, memberId: '' },
         scheduleModal: { show: false, loading: false, trainer: null, sessions: [] },
         sessionModal: { show: false, loading: false, form: { title:'', scheduled_at:'', duration_mins:60, session_type:'personal', member_id:'', notes:'' } },
@@ -305,7 +336,7 @@ function trainersPage() {
         },
 
         openAdd() {
-            this.modal = { show: true, editing: false, loading: false, trainerId: null, form: { name:'', email:'', phone:'', password:'', specialization:'', experience_years:0, hourly_rate:'', status:'active' } };
+            this.modal = { show: true, editing: false, loading: false, trainerId: null, form: { name:'', email:'', phone:'', password:'', specialization:'', experience_years:0, hourly_rate:'', compensation_mode:'commission', base_salary:'', commission_enabled:true, salary_enabled:false, status:'active' } };
         },
 
         openEdit(t) {
@@ -314,6 +345,10 @@ function trainersPage() {
                 specialization: t.trainer_profile?.specialization||'',
                 experience_years: t.trainer_profile?.experience_years||0,
                 hourly_rate: t.trainer_profile?.hourly_rate||'',
+                compensation_mode: t.trainer_profile?.compensation_mode || 'commission',
+                base_salary: t.trainer_profile?.base_salary || '',
+                commission_enabled: t.trainer_profile?.commission_enabled ?? true,
+                salary_enabled: t.trainer_profile?.salary_enabled ?? false,
                 status: t.status,
             }};
         },
@@ -382,6 +417,19 @@ function trainersPage() {
                 toast('Trainer deleted');
                 this.load();
             } catch(e) { toast(e.message, 'error'); }
+        },
+
+        compLabel(profile) {
+            if (!profile) return 'Commission Only';
+            const mode = profile.compensation_mode || 'commission';
+            const salary = profile.base_salary ? `${currency(profile.base_salary)}/mo` : '';
+            const hourly = profile.hourly_rate ? `${currency(profile.hourly_rate)}/hr` : '';
+
+            if (mode === 'salary') return `Salary${salary ? ' · ' + salary : ''}`;
+            if (mode === 'hourly') return `Hourly${hourly ? ' · ' + hourly : ''}`;
+            if (mode === 'mixed') return `Mixed${salary ? ' · ' + salary : ''}${hourly ? ' · ' + hourly : ''}`;
+
+            return `Commission${profile.commission_enabled === false ? ' (off)' : ''}`;
         },
     };
 }

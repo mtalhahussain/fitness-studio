@@ -36,6 +36,10 @@ class TrainerWebController extends Controller
             'specialization'   => ['required', 'string', 'max:255'],
             'experience_years' => ['nullable', 'integer', 'min:0'],
             'hourly_rate'      => ['nullable', 'numeric', 'min:0'],
+            'compensation_mode'=> ['required', 'in:commission,salary,hourly,mixed'],
+            'base_salary'      => ['nullable', 'numeric', 'min:0'],
+            'commission_enabled' => ['nullable', 'boolean'],
+            'salary_enabled'   => ['nullable', 'boolean'],
         ]);
 
         $trainer = $this->service->createTrainer($data, auth()->user()->gym_id);
@@ -52,6 +56,10 @@ class TrainerWebController extends Controller
             'specialization'   => ['sometimes', 'string', 'max:255'],
             'experience_years' => ['nullable', 'integer', 'min:0'],
             'hourly_rate'      => ['nullable', 'numeric', 'min:0'],
+            'compensation_mode'=> ['sometimes', 'in:commission,salary,hourly,mixed'],
+            'base_salary'      => ['nullable', 'numeric', 'min:0'],
+            'commission_enabled' => ['nullable', 'boolean'],
+            'salary_enabled'   => ['nullable', 'boolean'],
         ]);
 
         $updated = $this->service->updateTrainer($trainer, $data);
