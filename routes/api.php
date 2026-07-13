@@ -11,7 +11,7 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TrainerController;
 use Illuminate\Support\Facades\Route;
 
-// ZKTeco machine push — no Laravel auth, device authenticates via api_key
+// ZKTeco machine push — no Laravel auth, device authenticates via serial number (SN), api_key as fallback
 Route::prefix('biometric')->group(function () {
     Route::post('push',  [BiometricPushController::class, 'receive'])->name('biometric.push');
     Route::get('push',   [BiometricPushController::class, 'ping'])->name('biometric.ping');

@@ -59,20 +59,15 @@ class BiometricPushController extends Controller
             return response('OK', 200);
         }
 
-        $processed = 0;
-        $errors    = [];
-
         foreach ($logs as $log) {
             try {
-                $result = $this->processLog($log, $device);
-                if ($result) $processed++;
+                $this->processLog($log, $device);
             } catch (\Throwable $e) {
                 Log::warning('Biometric log error', [
                     'device'  => $device->serial_number,
                     'log'     => $log,
                     'error'   => $e->getMessage(),
                 ]);
-                $errors[] = $e->getMessage();
             }
         }
 
