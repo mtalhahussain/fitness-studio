@@ -24,7 +24,10 @@ Consequences of the current implementation, if a real device is pointed at it to
 
 The existing multi-format log parsing (JSON / XML / form-POST `Stamp`) in
 `BiometricPushController` already covers the different payload shapes various ZKTeco
-models/firmware send, and stays unchanged.
+models/firmware send, and stays unchanged. Likewise, `resolveOrCreateUser()` (matching a
+device's `employee_id` against `biometric_code`, then `id`, then `phone`, then auto-creating a
+member) is already solid and stays unchanged — only the duplicate-window check is added on top
+of it.
 
 ## Scope
 
@@ -42,17 +45,18 @@ All changes are in-place in the existing `BiometricPushController` — no new en
    `biometric_devices.serial_number`. The existing `api_key` header/param check is kept as an
    optional fallback (useful for manual testing via Postman/curl) but is no longer required.
 2. **Plain-text `OK` response.** A successful POST to the push endpoint always replies with the
-   literal body `OK` (`Content-Type: text/plain`), regardless of individual record outcomes.
-   Per-record failures (e.g. unknown employee id) continue to be logged server-side only, same
-   as today — they must not change the batch-level response, or the device will resend already-
-   processed records.
-3. **Unified processing via `BiometricAttendanceService`.** `processLog()` in
-   `BiometricPushController` routes each parsed record through
-   `BiometricAttendanceService::processLog()` (the same path `/sync` and `/punch` use) instead of
-   calling `AttendanceService::processLog()` directly. This gives push-mode the same 60-second
-   duplicate-window guard and user-resolution logic as the other two entry points. The parsed
-   `{employee_id, time, type}` shape is mapped to the `{device_user_id, punch_time, punch_type}`
-   shape `BiometricAttendanceService::processLog()` expects.
+   literal body `OK` (same `response('OK', 200)` convention the existing `ping()` method already
+   uses), regardless of individual record outcomes. Per-record failures (e.g. unknown employee
+   id) continue to be logged server-side only, same as today — they must not change the
+   batch-level response, or the device will resend already-processed records.
+3. **Add the duplicate-window guard, keep the existing user resolution.**
+   `BiometricAttendanceService::isDuplicate(int $userId, ?int $gymId, Carbon $punchTime): bool`
+   already implements the 60-second duplicate check used by `/sync` and `/punch`. Inject
+   `BiometricAttendanceService` into `BiometricPushController` and call `isDuplicate()` right
+   after `resolveOrCreateUser()` succeeds, before calling `AttendanceService::processLog()` — if
+   it returns `true`, skip the record (same as a resend) instead of toggling attendance again.
+   `resolveOrCreateUser()` itself (the `biometric_code` → `id` → `phone` → auto-create chain)
+   is not changed.
 4. **GET handshake unchanged.** `/iclock/cdata` and the push endpoint's `ping()` already reply
    `OK`; this is sufficient for devices to start pushing and stays as-is. Full `options=all`
    config-line responses (for advanced provisioning) are out of scope per the scope decision
@@ -65,7 +69,7 @@ Any WiFi/finger/face device
  → GET  /api/biometric/iclock/cdata?SN=xxx      → "OK" (handshake)
  → POST /api/biometric/push?SN=xxx  (JSON/XML/form-POST — existing parsers unchanged)
       → device resolved by SN (biometric_devices.serial_number)
-      → each record → BiometricAttendanceService::processLog()  (dedup + user resolution)
+      → each record → resolveOrCreateUser() (unchanged) → isDuplicate() guard → AttendanceService::processLog()
       → "OK" (plain text) always, on success
 ```
 
@@ -85,9 +89,9 @@ No biometric tests exist yet in `tests/`. New feature tests for `BiometricPushCo
 cover:
 
 - Device resolved correctly by `SN` query param (no API key sent).
-- Unregistered/unknown `SN` → `401`.
-- Successful push → response body is exactly `OK`, `Content-Type: text/plain`.
+- Unregistered/unknown `SN` (and no fallback `api_key`) → `401`.
+- Successful push → response body is exactly `OK`.
 - Same `Stamp`/batch posted twice (simulating a device retry) → only one `Attendance` record is
-  created, not two (duplicate-window guard via `BiometricAttendanceService`).
-- Existing JSON/XML/form-POST parsing paths still produce correct `Attendance` records
-  (regression coverage for the parsers that already exist).
+  created, not two (duplicate-window guard via `BiometricAttendanceService::isDuplicate()`).
+- Existing JSON/XML/form-POST parsing and `resolveOrCreateUser()` behavior are unchanged
+  (regression coverage).
