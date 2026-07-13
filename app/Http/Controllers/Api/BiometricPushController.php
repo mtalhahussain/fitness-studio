@@ -52,7 +52,7 @@ class BiometricPushController extends Controller
         $logs = $this->parseLogs($request, $device);
 
         if (empty($logs)) {
-            return response()->json(['ok' => true, 'processed' => 0]);
+            return response('OK', 200);
         }
 
         $processed = 0;
@@ -72,7 +72,7 @@ class BiometricPushController extends Controller
             }
         }
 
-        return response()->json(['ok' => true, 'processed' => $processed, 'errors' => $errors]);
+        return response('OK', 200);
     }
 
     /**

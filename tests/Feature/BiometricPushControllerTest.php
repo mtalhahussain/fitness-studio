@@ -68,4 +68,26 @@ class BiometricPushControllerTest extends TestCase
 
         $response->assertStatus(401);
     }
+
+    public function test_successful_push_replies_with_plain_ok_body(): void
+    {
+        $gym    = $this->makeGym();
+        $device = $this->makeDevice($gym);
+        $user   = User::create([
+            'gym_id'   => $gym->id,
+            'name'     => 'Member Two',
+            'email'    => 'member2@test.local',
+            'password' => 'irrelevant',
+            'status'   => 'active',
+        ]);
+
+        $response = $this->postJson('/api/biometric/push?SN=' . $device->serial_number, [
+            'records' => [
+                ['employee_id' => (string) $user->id, 'time' => '2026-07-13 09:00:00', 'type' => 0],
+            ],
+        ]);
+
+        $response->assertOk();
+        $this->assertSame('OK', $response->getContent());
+    }
 }
