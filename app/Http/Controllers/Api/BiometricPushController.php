@@ -18,7 +18,11 @@ use Illuminate\Support\Str;
  *   Server Address : yoursaas.com
  *   Server Port    : 443 (HTTPS) or 80
  *   URL Path       : /api/biometric/push
- *   API Key        : (copy from device registration page)
+ *
+ * Devices identify themselves via the standard iClock `SN` query param
+ * (their serial number, matched against biometric_devices.serial_number) --
+ * no custom header configuration is required. `api_key` is still accepted
+ * as a fallback for manual testing (Postman/curl).
  *
  * ZKTeco PUSH sends XML or JSON depending on model/firmware.
  * We handle both formats here.
@@ -36,16 +40,7 @@ class BiometricPushController extends Controller
      */
     public function receive(Request $request)
     {
-        // Identify device by API key (sent as header or query param)
-        $apiKey = $request->header('X-Api-Key')
-            ?? $request->query('api_key')
-            ?? $request->input('api_key');
-
-        if (! $apiKey) {
-            return response()->json(['error' => 'Missing API key'], 401);
-        }
-
-        $device = BiometricDevice::where('api_key', $apiKey)->active()->first();
+        $device = $this->resolveDevice($request);
 
         if (! $device) {
             return response()->json(['error' => 'Device not registered or inactive'], 401);
@@ -90,6 +85,28 @@ class BiometricPushController extends Controller
     }
 
     // ── Private ───────────────────────────────────────────────────────────────
+
+    private function resolveDevice(Request $request): ?BiometricDevice
+    {
+        $serialNumber = $request->query('SN') ?? $request->input('SN');
+
+        if ($serialNumber) {
+            $device = BiometricDevice::where('serial_number', $serialNumber)->active()->first();
+            if ($device) {
+                return $device;
+            }
+        }
+
+        $apiKey = $request->header('X-Api-Key')
+            ?? $request->query('api_key')
+            ?? $request->input('api_key');
+
+        if (! $apiKey) {
+            return null;
+        }
+
+        return BiometricDevice::where('api_key', $apiKey)->active()->first();
+    }
 
     private function parseLogs(Request $request, BiometricDevice $device): array
     {
