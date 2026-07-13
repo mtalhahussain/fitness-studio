@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BiometricDevice;
 use App\Models\User;
 use App\Services\AttendanceService;
+use App\Services\BiometricAttendanceService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -32,7 +33,10 @@ use Illuminate\Support\Str;
  */
 class BiometricPushController extends Controller
 {
-    public function __construct(private AttendanceService $attendance) {}
+    public function __construct(
+        private AttendanceService $attendance,
+        private BiometricAttendanceService $biometricAttendance,
+    ) {}
 
     /**
      * ZKTeco ADMS / PUSH SDK endpoint.
@@ -235,6 +239,16 @@ class BiometricPushController extends Controller
         }
 
         $time = Carbon::parse($log['time']);
+
+        if ($this->biometricAttendance->isDuplicate($user->id, $device->gym_id, $time)) {
+            Log::info('Biometric push: duplicate punch skipped', [
+                'user_id'     => $user->id,
+                'employee_id' => $employeeId,
+                'time'        => $time,
+                'device'      => $device->serial_number,
+            ]);
+            return true;
+        }
 
         // Use toggle mode — machine punch = check-in OR check-out automatically
         $this->attendance->processLog(

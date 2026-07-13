@@ -90,4 +90,33 @@ class BiometricPushControllerTest extends TestCase
         $response->assertOk();
         $this->assertSame('OK', $response->getContent());
     }
+
+    public function test_resent_batch_does_not_double_record_attendance(): void
+    {
+        $gym    = $this->makeGym();
+        $device = $this->makeDevice($gym);
+        $user   = User::create([
+            'gym_id'   => $gym->id,
+            'name'     => 'Member Three',
+            'email'    => 'member3@test.local',
+            'password' => 'irrelevant',
+            'status'   => 'active',
+        ]);
+
+        $payload = [
+            'records' => [
+                ['employee_id' => (string) $user->id, 'time' => '2026-07-13 09:00:00', 'type' => 0],
+            ],
+        ];
+
+        // Device sends the same batch twice because it never got an ack it recognized before.
+        $this->postJson('/api/biometric/push?SN=' . $device->serial_number, $payload)->assertOk();
+        $this->postJson('/api/biometric/push?SN=' . $device->serial_number, $payload)->assertOk();
+
+        $this->assertDatabaseCount('attendances', 1);
+        $this->assertDatabaseHas('attendances', [
+            'user_id'        => $user->id,
+            'check_out_time' => null,
+        ]);
+    }
 }
