@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -I{} basename {})",
+      "Bash(xargs -I{} echo {})",
+      "Read(//c/Users/114056/.claude/plugins/cache/superpowers-dev/superpowers/5.1.0/skills/requesting-code-review/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\laragon\\bin\\php\\php-8.2.30-Win32-vs16-x64"
+    ]
+  }
+}
