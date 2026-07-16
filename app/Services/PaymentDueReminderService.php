@@ -39,6 +39,9 @@ class PaymentDueReminderService
         $skipped = 0;
 
         foreach ($gyms as $gym) {
+            $gymTemplateName = $gym->whatsapp_template_name ?: $templateName;
+            $gymLanguage = $gym->whatsapp_template_language ?: 'en_US';
+
             $invoices = $this->baseDueInvoicesQuery($gym->id)
                 ->whereDate('due_date', '<=', today())
                 ->get();
@@ -46,14 +49,14 @@ class PaymentDueReminderService
             $totalDue += $invoices->count();
 
             foreach ($invoices as $invoice) {
-                if ($this->alreadyRemindedToday((int) $invoice->id, $templateName, $today)) {
+                if ($this->alreadyRemindedToday((int) $invoice->id, $gymTemplateName, $today)) {
                     $skipped++;
                     continue;
                 }
 
                 $log = WhatsAppMessageLog::firstOrCreate([
                     'invoice_id' => $invoice->id,
-                    'template_name' => $templateName,
+                    'template_name' => $gymTemplateName,
                     'reminder_date' => $today,
                 ], [
                     'user_id' => $invoice->user_id,
@@ -70,9 +73,10 @@ class PaymentDueReminderService
                 SendPaymentDueReminderJob::dispatch(
                     logId: (int) $log->id,
                     phone: (string) $invoice->user?->phone,
-                    templateName: $templateName,
+                    templateName: $gymTemplateName,
                     components: $this->buildTemplateComponents($invoice),
                     gymId: $gym->id,
+                    language: $gymLanguage,
                 );
 
                 $queued++;
@@ -116,7 +120,8 @@ class PaymentDueReminderService
 
     public function queueManualRemindersForInvoices(Gym $gym, array $invoiceIds): array
     {
-        $templateName = config('whatsapp.reminders.template_name', 'payment_due');
+        $templateName = $gym->whatsapp_template_name ?: config('whatsapp.reminders.template_name', 'payment_due');
+        $language = $gym->whatsapp_template_language ?: 'en_US';
         $today = today()->toDateString();
 
         $invoices = $this->baseDueInvoicesQuery($gym->id)
@@ -154,6 +159,7 @@ class PaymentDueReminderService
                 templateName: $templateName,
                 components: $this->buildTemplateComponents($invoice),
                 gymId: $gym->id,
+                language: $language,
             );
 
             $queued++;

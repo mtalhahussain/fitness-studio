@@ -71,6 +71,38 @@
                 <div style="padding:14px;background:var(--primary-dim);border-radius:8px;font-size:12px;color:var(--primary);line-height:1.5">
                     <strong>⚠️ Security Note:</strong> Store this token securely. It grants full access to your WhatsApp messaging capabilities.
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label">Payment Reminder Template Name</label>
+                    <input type="text" class="form-input" placeholder="payment_due" x-model="form.whatsapp_template_name">
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Name of your Meta-approved message template (leave blank to use the platform default)</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Template Language</label>
+                    <select class="form-input" x-model="form.whatsapp_template_language">
+                        <option value="en_US">English (US)</option>
+                        <option value="en">English</option>
+                        <option value="ur">Urdu</option>
+                    </select>
+                </div>
+
+                <div x-data="{ open: false }" style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+                    <button type="button" @click="open = !open" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg-secondary);border:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)">
+                        <span>How to create &amp; get your template approved on Meta</span>
+                        <span x-text="open ? '−' : '+'"></span>
+                    </button>
+                    <div x-show="open" x-transition style="padding:14px;font-size:12px;color:var(--text-muted);line-height:1.7">
+                        <ol style="margin:0;padding-left:18px">
+                            <li>Log into <a href="https://business.facebook.com" target="_blank" style="color:var(--primary);text-decoration:underline">Meta Business Manager</a>.</li>
+                            <li>Open <strong>WhatsApp Manager</strong> for this business, then go to <strong>Message Templates</strong>.</li>
+                            <li>Click <strong>Create Template</strong> — pick a category (e.g. Utility for payment reminders), choose a language, and write the body text with variables (e.g. <code>@{{1}}</code>, <code>@{{2}}</code>) for name, invoice number, amount, due date.</li>
+                            <li>Submit the template for review.</li>
+                            <li>Wait for Meta's approval (usually within minutes to a few hours).</li>
+                            <li>Once approved, copy the exact template <strong>name</strong> and <strong>language</strong> and paste them into the fields above.</li>
+                        </ol>
+                    </div>
+                </div>
             </div>
 
             {{-- Status Badge --}}
@@ -93,6 +125,8 @@ function whatsAppSettings() {
             whatsapp_token: '{{ $gym->whatsapp_token ? '••••••••' : '' }}',
             whatsapp_phone_number_id: @json($gym->whatsapp_phone_number_id ?? ''),
             whatsapp_business_account_id: @json($gym->whatsapp_business_account_id ?? ''),
+            whatsapp_template_name: @json($gym->whatsapp_template_name ?? ''),
+            whatsapp_template_language: @json($gym->whatsapp_template_language ?? 'en_US'),
         },
         saving: false,
 
@@ -109,6 +143,8 @@ function whatsAppSettings() {
                     payload.whatsapp_phone_number_id = this.form.whatsapp_phone_number_id;
                     payload.whatsapp_business_account_id = this.form.whatsapp_business_account_id;
                 }
+                payload.whatsapp_template_name = this.form.whatsapp_template_name;
+                payload.whatsapp_template_language = this.form.whatsapp_template_language;
                 await post(`/gyms/{{ $gym->id }}/whatsapp`, payload);
                 toast('WhatsApp configuration saved successfully.');
                 window.location.reload();

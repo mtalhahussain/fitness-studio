@@ -6,7 +6,7 @@
     <title>Sign In — Fitness Studio</title>
     <script>(function(){const t=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -102,8 +102,9 @@
         .kicker-bar { width: 18px; height: 1.5px; background: rgba(167,139,250,.45); border-radius: 2px; }
 
         .hero h1 {
-            font-size: 36px; font-weight: 800; color: #fff;
-            line-height: 1.14; letter-spacing: -1.4px; margin-bottom: 18px;
+            font-family: 'Bricolage Grotesque', 'Inter', sans-serif;
+            font-size: 42px; font-weight: 800; color: #fff;
+            line-height: 1.1; letter-spacing: -1.6px; margin-bottom: 18px;
         }
         .hero h1 em {
             font-style: normal;
@@ -112,8 +113,21 @@
         }
         .hero-desc {
             font-size: 14px; color: rgba(255,255,255,.38);
-            line-height: 1.78; margin-bottom: 48px; max-width: 340px;
+            line-height: 1.78; margin-bottom: 26px; max-width: 340px;
         }
+
+        /* Trust strip */
+        .trust-row { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+        .trust-avatars { display: flex; }
+        .trust-avatar {
+            width: 26px; height: 26px; border-radius: 50%; margin-left: -8px;
+            border: 2px solid var(--left-bg); display: flex; align-items: center; justify-content: center;
+            font-size: 9.5px; font-weight: 700; color: #fff; font-family: 'Bricolage Grotesque', sans-serif;
+        }
+        .trust-avatar:first-child { margin-left: 0; }
+        .trust-copy { font-size: 12px; color: rgba(255,255,255,.42); line-height: 1.4; }
+        .trust-copy strong { color: rgba(255,255,255,.75); }
+        .trust-stars { color: #facc15; letter-spacing: 1px; font-size: 11px; }
 
         /* Feature list */
         .features { display: flex; flex-direction: column; gap: 18px; }
@@ -125,6 +139,77 @@
         }
         .feat-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.82); }
         .feat-desc  { font-size: 12px; color: rgba(255,255,255,.30); margin-top: 3px; line-height: 1.55; }
+
+        /* ────────── Product mockup ────────── */
+        @keyframes float-y {
+            0%, 100% { transform: translateY(-50%) rotate(-4deg); }
+            50%      { transform: translateY(-54%) rotate(-2.5deg); }
+        }
+        @keyframes float-badge {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
+        }
+        .mockup-wrap {
+            position: absolute; top: 50%; right: 54px; z-index: 2;
+            width: 322px; animation: float-y 7s ease-in-out infinite;
+        }
+        .mockup-card {
+            background: #12132a; border-radius: 16px;
+            border: 1px solid rgba(255,255,255,.09);
+            box-shadow: 0 30px 70px -20px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.02),
+                        0 0 90px -30px rgba(108,99,255,.5);
+            overflow: hidden;
+        }
+        .mockup-bar {
+            display: flex; align-items: center; gap: 6px; padding: 10px 12px;
+            background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+        .mockup-dot { width: 7px; height: 7px; border-radius: 50%; }
+        .mockup-dot.r { background: #f87171; } .mockup-dot.y { background: #facc15; } .mockup-dot.g { background: #4ade80; }
+        .mockup-url {
+            margin-left: 8px; font-size: 9.5px; color: rgba(255,255,255,.28);
+            font-family: 'Inter', sans-serif; letter-spacing: .2px;
+        }
+        .mockup-body { padding: 16px; }
+        .mockup-stats { display: flex; gap: 10px; margin-bottom: 14px; }
+        .mockup-stat {
+            flex: 1; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.06);
+            border-radius: 10px; padding: 10px 11px;
+        }
+        .mockup-stat-label { font-size: 9px; color: rgba(255,255,255,.32); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+        .mockup-stat-value { font-family: 'Bricolage Grotesque', sans-serif; font-size: 16px; font-weight: 700; color: #fff; }
+        .mockup-stat-trend { font-size: 10px; color: #4ade80; font-weight: 600; margin-top: 3px; }
+        .mockup-chart {
+            display: flex; align-items: flex-end; gap: 5px; height: 56px;
+            padding: 10px 4px 0; margin-bottom: 14px;
+            border-bottom: 1px dashed rgba(255,255,255,.08);
+        }
+        .mockup-chart .bar { flex: 1; border-radius: 3px 3px 0 0; background: rgba(108,99,255,.28); }
+        .mockup-chart .bar.peak { background: linear-gradient(180deg, #a78bfa 0%, #6C63FF 100%); box-shadow: 0 0 12px rgba(108,99,255,.5); }
+        .mockup-members-row { display: flex; align-items: center; justify-content: space-between; }
+        .mockup-avatars { display: flex; }
+        .mockup-avatars span {
+            width: 22px; height: 22px; border-radius: 50%; margin-left: -7px;
+            border: 2px solid #12132a; font-size: 8.5px; font-weight: 700; color: #fff;
+            display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif;
+        }
+        .mockup-avatars span:first-child { margin-left: 0; }
+        .mockup-members-count { font-size: 10.5px; color: rgba(255,255,255,.4); font-weight: 500; }
+
+        .badge-float {
+            position: absolute; display: flex; align-items: center; gap: 6px;
+            background: #171833; border: 1px solid rgba(255,255,255,.1); border-radius: 30px;
+            padding: 7px 12px 7px 8px; font-size: 11px; font-weight: 600; color: #fff;
+            box-shadow: 0 12px 30px -8px rgba(0,0,0,.6); white-space: nowrap; z-index: 3;
+        }
+        .badge-float .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+        .badge-sync { top: -16px; left: -26px; animation: float-badge 5s ease-in-out infinite; }
+        .badge-checkin { bottom: 8px; right: -34px; animation: float-badge 6s ease-in-out infinite .7s; }
+        .badge-float .dot.blue { background: #60a5fa; box-shadow: 0 0 6px #60a5fa; }
+
+        @media (max-width: 1180px) {
+            .mockup-wrap { display: none; }
+        }
 
         /* Footer strip */
         .left-footer {
@@ -301,13 +386,26 @@
                     Gym Management
                 </div>
 
-                <h1>Run your gym,<br>not your <em>spreadsheets.</em></h1>
+                <h1>Run your gym like<br>a real <em>business.</em></h1>
 
                 <p class="hero-desc">
                     Everything a gym owner needs — memberships, trainers,
                     biometric attendance, and revenue — in one platform
                     that actually makes sense to use.
                 </p>
+
+                <div class="trust-row">
+                    <div class="trust-avatars">
+                        <div class="trust-avatar" style="background:linear-gradient(145deg,#6C63FF,#9333ea)">RA</div>
+                        <div class="trust-avatar" style="background:linear-gradient(145deg,#f472b6,#fb7185)">SK</div>
+                        <div class="trust-avatar" style="background:linear-gradient(145deg,#4ade80,#22c55e)">HN</div>
+                        <div class="trust-avatar" style="background:linear-gradient(145deg,#facc15,#f59e0b)">+</div>
+                    </div>
+                    <div class="trust-copy">
+                        <span class="trust-stars">★★★★★</span><br>
+                        Trusted by <strong>120+ gyms</strong> across Pakistan
+                    </div>
+                </div>
 
                 <div class="features">
                     <div class="feat">
@@ -335,6 +433,67 @@
                         <div>
                             <div class="feat-title">Revenue & Reports</div>
                             <div class="feat-desc">Daily revenue, membership trends, attendance heatmaps</div>
+                        </div>
+                    </div>
+                    <div class="feat">
+                        <div class="feat-dot">
+                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                        </div>
+                        <div>
+                            <div class="feat-title">WhatsApp Reminders</div>
+                            <div class="feat-desc">Automatic payment due alerts sent straight to members</div>
+                        </div>
+                    </div>
+                    <div class="feat">
+                        <div class="feat-dot">
+                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><path d="M6 2l1.5 4M18 2l-1.5 4M3.5 6h17l-1.7 12a2 2 0 01-2 1.8H7.2a2 2 0 01-2-1.8L3.5 6z"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="12" y1="10" x2="12" y2="14"/><line x1="16" y1="10" x2="16" y2="14"/></svg>
+                        </div>
+                        <div>
+                            <div class="feat-title">Point of Sale</div>
+                            <div class="feat-desc">Sell products & supplements with live stock tracking, billed to invoices</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ── Product mockup (floating) ─────────────────── --}}
+            <div class="mockup-wrap">
+                <div class="badge-float badge-sync"><span class="dot"></span> Live sync active</div>
+                <div class="badge-float badge-checkin"><span class="dot blue"></span> 312 check-ins today</div>
+                <div class="mockup-card">
+                    <div class="mockup-bar">
+                        <span class="mockup-dot r"></span><span class="mockup-dot y"></span><span class="mockup-dot g"></span>
+                        <span class="mockup-url">app.fitnessstudio.io/dashboard</span>
+                    </div>
+                    <div class="mockup-body">
+                        <div class="mockup-stats">
+                            <div class="mockup-stat">
+                                <div class="mockup-stat-label">Today's Revenue</div>
+                                <div class="mockup-stat-value">PKR 84,200</div>
+                                <div class="mockup-stat-trend">&uarr; 12.4%</div>
+                            </div>
+                            <div class="mockup-stat">
+                                <div class="mockup-stat-label">Active Members</div>
+                                <div class="mockup-stat-value">1,284</div>
+                                <div class="mockup-stat-trend">&uarr; 8 new</div>
+                            </div>
+                        </div>
+                        <div class="mockup-chart">
+                            <div class="bar" style="height:35%"></div>
+                            <div class="bar" style="height:55%"></div>
+                            <div class="bar" style="height:42%"></div>
+                            <div class="bar peak" style="height:88%"></div>
+                            <div class="bar" style="height:60%"></div>
+                            <div class="bar" style="height:70%"></div>
+                            <div class="bar" style="height:48%"></div>
+                        </div>
+                        <div class="mockup-members-row">
+                            <div class="mockup-avatars">
+                                <span style="background:#6C63FF">A</span>
+                                <span style="background:#f472b6">B</span>
+                                <span style="background:#4ade80">C</span>
+                            </div>
+                            <span class="mockup-members-count">+1,281 members active</span>
                         </div>
                     </div>
                 </div>

@@ -26,6 +26,7 @@ class SendPaymentDueReminderJob implements ShouldQueue
         public string $templateName,
         public array $components = [],
         public ?int $gymId = null,
+        public string $language = 'en_US',
     ) {}
 
     public function handle(WhatsAppService $whatsAppService): void
@@ -58,6 +59,7 @@ class SendPaymentDueReminderJob implements ShouldQueue
                 to: $this->phone,
                 templateName: $this->templateName,
                 components: $this->components,
+                language: $this->language,
             );
 
             $ok = ($result['status_code'] ?? 0) >= 200 && ($result['status_code'] ?? 0) < 300;

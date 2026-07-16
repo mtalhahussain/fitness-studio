@@ -155,13 +155,18 @@ class GymWebController extends Controller
             'whatsapp_token'           => ['required_if:whatsapp_enabled,true', 'string', 'max:500'],
             'whatsapp_phone_number_id' => ['required_if:whatsapp_enabled,true', 'string', 'max:100'],
             'whatsapp_business_account_id' => ['required_if:whatsapp_enabled,true', 'string', 'max:100'],
+            'whatsapp_template_name'     => ['nullable', 'string', 'max:512'],
+            'whatsapp_template_language' => ['nullable', 'string', 'in:en_US,en,ur'],
         ]);
 
         $gym->update($data);
 
         return response()->json([
             'message' => 'WhatsApp settings updated successfully.',
-            'gym' => $gym->fresh()->only(['whatsapp_enabled', 'whatsapp_token', 'whatsapp_phone_number_id', 'whatsapp_business_account_id']),
+            'gym' => $gym->fresh()->only([
+                'whatsapp_enabled', 'whatsapp_token', 'whatsapp_phone_number_id', 'whatsapp_business_account_id',
+                'whatsapp_template_name', 'whatsapp_template_language',
+            ]),
         ]);
     }
 

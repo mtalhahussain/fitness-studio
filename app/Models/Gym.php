@@ -15,7 +15,7 @@ class Gym extends Model
         'logo', 'timezone', 'currency', 'status', 'subscription_plan',
         'trial_ends_at', 'subscription_ends_at', 'settings', 'modules',
         'whatsapp_enabled', 'whatsapp_token', 'whatsapp_phone_number_id', 'whatsapp_business_account_id',
-        'whatsapp_message_template',
+        'whatsapp_message_template', 'whatsapp_template_name', 'whatsapp_template_language',
     ];
 
     protected $casts = [
