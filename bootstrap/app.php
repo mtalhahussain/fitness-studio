@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(\App\Http\Middleware\CheckLicense::class);
+
         $middleware->alias([
             'gym.tenant'   => \App\Http\Middleware\GymTenantMiddleware::class,
             'gym.context'  => \App\Http\Middleware\RequireGymContext::class,
