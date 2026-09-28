@@ -51,6 +51,12 @@ class BiometricPunchProcessor
 
         // Machine said "in" but member is already inside, or "out" with nothing open: ignore.
         if (($log->type === PunchLog::IN && $open) || ($log->type === PunchLog::OUT && ! $open)) {
+            Log::info('Biometric: redundant in/out punch ignored', [
+                'user_id'   => $user->id,
+                'type'      => $log->type,
+                'time'      => $time,
+                'device_id' => $device->id,
+            ]);
             return true;
         }
 

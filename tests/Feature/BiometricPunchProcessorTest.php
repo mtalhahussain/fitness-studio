@@ -76,4 +76,31 @@ class BiometricPunchProcessorTest extends TestCase
 
         $this->assertDatabaseHas('users', ['biometric_code' => '999', 'gym_id' => $this->device->gym_id]);
     }
+
+    public function test_explicit_in_with_nothing_open_checks_in(): void
+    {
+        $this->process('2026-09-28 09:00:00', PunchLog::IN);
+
+        $this->assertSame(1, Attendance::count());
+        $this->assertNull(Attendance::first()->check_out_time);
+    }
+
+    public function test_explicit_out_with_open_session_checks_out(): void
+    {
+        $this->process('2026-09-28 09:00:00');
+        $this->process('2026-09-28 10:30:00', PunchLog::OUT);
+
+        $a = Attendance::first();
+        $this->assertSame('2026-09-28 10:30:00', $a->check_out_time->format('Y-m-d H:i:s'));
+    }
+
+    public function test_member_of_another_gym_with_same_code_is_not_matched(): void
+    {
+        $otherGym  = Gym::create(['name' => 'G2', 'slug' => 'g2', 'email' => 'g2@test.local', 'status' => 'active']);
+        $otherUser = User::create(['gym_id' => $otherGym->id, 'name' => 'O', 'email' => 'o@test.local', 'password' => 'x', 'status' => 'active', 'biometric_code' => '55']);
+
+        app(BiometricPunchProcessor::class)->process(new PunchLog('55', Carbon::parse('2026-09-28 09:00:00')), $this->device);
+
+        $this->assertSame(0, Attendance::where('user_id', $otherUser->id)->count());
+    }
 }
