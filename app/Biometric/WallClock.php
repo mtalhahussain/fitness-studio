@@ -22,12 +22,17 @@ final class WallClock
         return self::fromInstant(Carbon::createFromTimestamp($seconds, 'UTC'), $deviceTz);
     }
 
-    /** A string that may or may not carry an offset. Without one it is already wall-clock. */
+    /**
+     * A string that may or may not carry a zone/offset. Without one it is already wall-clock.
+     *
+     * @throws \Carbon\Exceptions\InvalidFormatException for unparseable input (drivers skip such records).
+     */
     public static function parse(string $value, string $deviceTz): Carbon
     {
-        $hasOffset = (bool) preg_match('/(Z|[+-]\d{2}:?\d{2})$/', trim($value));
+        $info = date_parse($value);
+        $hasZone = ! empty($info['is_localtime']);
 
-        return $hasOffset
+        return $hasZone
             ? self::fromInstant(Carbon::parse($value), $deviceTz)
             : Carbon::parse($value, config('app.timezone'));
     }
