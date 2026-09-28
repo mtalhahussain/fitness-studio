@@ -190,4 +190,27 @@ class BiometricPushControllerTest extends TestCase
         $this->assertDatabaseHas('users', ['gym_id' => $gym->id, 'biometric_code' => '999']);
         $this->assertDatabaseCount('attendances', 1);
     }
+
+    public function test_unparseable_punch_time_is_skipped_and_rest_of_batch_still_saves(): void
+    {
+        $gym    = $this->makeGym();
+        $device = $this->makeDevice($gym, ['serial_number' => 'SN-BADTIME']);
+        $user   = User::create([
+            'gym_id'   => $gym->id,
+            'name'     => 'Member Six',
+            'email'    => 'member6@test.local',
+            'password' => 'irrelevant',
+            'status'   => 'active',
+        ]);
+
+        $response = $this->postJson('/api/biometric/push?SN=' . $device->serial_number, [
+            'records' => [
+                ['employee_id' => (string) $user->id, 'time' => 'not-a-date'],
+                ['employee_id' => (string) $user->id, 'time' => '2026-07-13 09:00:00'],
+            ],
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseCount('attendances', 1);
+    }
 }
