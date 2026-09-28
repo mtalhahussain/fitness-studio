@@ -174,7 +174,11 @@ class TrainerController extends Controller
     {
         $this->authorize('schedule.manage');
 
-        $request->validate([
+        $user = $request->user();
+        abort_if(! $user->isAdmin() && (int) $session->gym_id !== (int) $user->gym_id, 403, 'Access denied.');
+        abort_if($user->isTrainer() && (int) $session->trainer_id !== (int) $user->id, 403, 'You can only update your own sessions.');
+
+        $data = $request->validate([
             'title'         => ['sometimes', 'string', 'max:255'],
             'scheduled_at'  => ['sometimes', 'date'],
             'duration_mins' => ['sometimes', 'integer', 'min:15', 'max:480'],
@@ -182,7 +186,7 @@ class TrainerController extends Controller
             'notes'         => ['nullable', 'string'],
         ]);
 
-        $updated = $this->service->updateSession($session, $request->all());
+        $updated = $this->service->updateSession($session, $data);
 
         return (new TrainingSessionResource($updated))->response();
     }
@@ -203,10 +207,14 @@ class TrainerController extends Controller
 
     private function assertSameGym(Request $request, User $trainer): void
     {
-        if ($request->user()->isAdmin()) {
+        $user = $request->user();
+
+        abort_if($user->isTrainer() && (int) $trainer->id !== (int) $user->id, 403, 'You can only access your own data.');
+
+        if ($user->isAdmin()) {
             return;
         }
 
-        abort_if($trainer->gym_id !== $request->user()->gym_id, 403, 'Access denied.');
+        abort_if($trainer->gym_id !== $user->gym_id, 403, 'Access denied.');
     }
 }

@@ -62,6 +62,9 @@ class TrainerWebController extends Controller
             'salary_enabled'   => ['nullable', 'boolean'],
         ]);
 
+        $gymId = auth()->user()->gym_id;
+        abort_if($gymId && $trainer->gym_id !== $gymId, 403);
+
         $updated = $this->service->updateTrainer($trainer, $data);
 
         return response()->json(['message' => 'Trainer updated successfully.', 'trainer' => $updated]);

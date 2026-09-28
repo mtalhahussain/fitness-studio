@@ -14,7 +14,7 @@
             @if ($canManageCommission)
             <button class="btn btn-outline" @click="configModal.show=true">⚙ Set Rate</button>
             @endif
-            <a href="{{ route('trainers.index') }}" class="btn btn-outline">← Back</a>
+            <a href="{{ auth()->user()->isTrainer() ? route('dashboard') : route('trainers.index') }}" class="btn btn-outline">← Back</a>
         </div>
     </div>
 

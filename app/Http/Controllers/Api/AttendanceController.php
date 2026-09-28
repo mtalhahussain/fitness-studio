@@ -18,7 +18,7 @@ class AttendanceController extends Controller
     /**
      * POST /api/attendance/check-in
      *
-     * Owner/trainer can check in on behalf of a member by passing user_id.
+     * Owner/admin can check in on behalf of a member by passing user_id.
      * A member calling this endpoint checks themselves in.
      */
     public function checkIn(CheckInRequest $request): JsonResponse
@@ -73,8 +73,8 @@ class AttendanceController extends Controller
 
         $filters = $request->only(['source', 'status', 'search', 'per_page']);
 
-        if ($authUser->isMember()) {
-            // Members see only their own attendance
+        if (! $authUser->isOwner() && ! $authUser->isAdmin()) {
+            // Members and trainers see only their own attendance
             $filters['user_id'] = $authUser->id;
         }
 
@@ -116,12 +116,12 @@ class AttendanceController extends Controller
 
     private function resolveTargetUser(Request $request, User $authUser, ?int $gymId): User
     {
-        // Members can only act for themselves
-        if ($authUser->isMember()) {
+        // Only owners/admins may act on behalf of someone else
+        if (! $authUser->isOwner() && ! $authUser->isAdmin()) {
             return $authUser;
         }
 
-        // Owners/trainers/admins can pass a user_id to act on behalf of a member
+        // Owners/admins can pass a user_id to act on behalf of a member
         if ($request->filled('user_id') && (int) $request->user_id !== $authUser->id) {
             $target = User::forGym($gymId)->findOrFail($request->user_id);
 

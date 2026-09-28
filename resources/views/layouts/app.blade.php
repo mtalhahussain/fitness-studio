@@ -569,12 +569,24 @@
             @endif
 
             @if($isTrainer)
-            {{-- Trainer: attendance + own commission --}}
+            {{-- Trainer: own members, sessions, attendance + commission --}}
             <div class="nav-section" x-show="sidebarOpen"><span>My Work</span></div>
+
+            @if($canSee('trainers'))
+            <a href="{{ route('my.members') }}" class="nav-item {{ request()->routeIs('my.members*') ? 'active' : '' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span class="label" x-show="sidebarOpen">My Members</span>
+            </a>
+
+            <a href="{{ route('my.sessions') }}" class="nav-item {{ request()->routeIs('my.sessions*') ? 'active' : '' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span class="label" x-show="sidebarOpen">My Sessions</span>
+            </a>
+            @endif
 
             <a href="{{ route('attendance.index') }}" class="nav-item {{ request()->routeIs('attendance*') ? 'active' : '' }}">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline stroke-linecap="round" points="12 6 12 12 16 14"/></svg>
-                <span class="label" x-show="sidebarOpen">Attendance</span>
+                <span class="label" x-show="sidebarOpen">My Attendance</span>
             </a>
 
             <a href="{{ route('trainers.commission', $user->id) }}" class="nav-item {{ request()->routeIs('trainers.commission') ? 'active' : '' }}">

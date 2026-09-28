@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Trainer\TrainerPortalController;
 use App\Http\Controllers\Web\AttendanceWebController;
 use App\Http\Controllers\Web\BiometricDeviceWebController;
 use App\Http\Controllers\Web\DashboardController;
@@ -45,87 +46,107 @@ Route::middleware(['auth', 'gym.tenant'])->group(function () {
     // ── Gym-scoped routes — admin must have switched into a gym context ───────
     Route::middleware('gym.context')->group(function () {
 
-        // Plans + Members (core — always available)
-        Route::get('/plans',              [PlanWebController::class, 'index'])->name('plans.index');
-        Route::post('/plans',             [PlanWebController::class, 'store'])->name('plans.store');
-        Route::put('/plans/{plan}',       [PlanWebController::class, 'update'])->name('plans.update');
-        Route::delete('/plans/{plan}',    [PlanWebController::class, 'destroy'])->name('plans.destroy');
+        // ── Owner + Admin: gym management ─────────────────────────────────────
+        Route::middleware('role:owner|admin')->group(function () {
 
-        Route::middleware('module:members')->group(function () {
-            Route::get('/members',                               [MemberWebController::class, 'index'])->name('members.index');
-            Route::post('/members',                              [MemberWebController::class, 'store'])->name('members.store');
-            Route::put('/members/{member}',                      [MemberWebController::class, 'update'])->name('members.update');
-            Route::delete('/members/{member}',                   [MemberWebController::class, 'destroy'])->name('members.destroy');
-            Route::post('/members/{member}/membership',          [MemberWebController::class, 'assignMembership'])->name('members.membership');
-            Route::post('/members/{member}/pay-balance',         [MemberWebController::class, 'payBalance'])->name('members.pay-balance');
-            Route::post('/members/{member}/training/start',      [MemberWebController::class, 'startTraining'])->name('members.training.start');
-            Route::post('/members/{member}/training/pause',      [MemberWebController::class, 'pauseTraining'])->name('members.training.pause');
-            Route::post('/members/{member}/training/resume',     [MemberWebController::class, 'resumeTraining'])->name('members.training.resume');
-            Route::post('/members/{member}/training/end',        [MemberWebController::class, 'endTraining'])->name('members.training.end');
-            Route::get('/members/{member}/training/history',     [MemberWebController::class, 'trainingHistory'])->name('members.training.history');
-        });
+            // Plans + Members (core — always available)
+            Route::get('/plans',              [PlanWebController::class, 'index'])->name('plans.index');
+            Route::post('/plans',             [PlanWebController::class, 'store'])->name('plans.store');
+            Route::put('/plans/{plan}',       [PlanWebController::class, 'update'])->name('plans.update');
+            Route::delete('/plans/{plan}',    [PlanWebController::class, 'destroy'])->name('plans.destroy');
 
-        // Attendance
-        Route::middleware('module:attendance')->group(function () {
-            Route::get('/attendance',             [AttendanceWebController::class, 'index'])->name('attendance.index');
-            Route::post('/attendance/check-in',   [AttendanceWebController::class, 'checkIn'])->name('attendance.check-in');
-            Route::post('/attendance/check-out',  [AttendanceWebController::class, 'checkOut'])->name('attendance.check-out');
-        });
+            Route::middleware('module:members')->group(function () {
+                Route::get('/members',                               [MemberWebController::class, 'index'])->name('members.index');
+                Route::post('/members',                              [MemberWebController::class, 'store'])->name('members.store');
+                Route::put('/members/{member}',                      [MemberWebController::class, 'update'])->name('members.update');
+                Route::delete('/members/{member}',                   [MemberWebController::class, 'destroy'])->name('members.destroy');
+                Route::post('/members/{member}/membership',          [MemberWebController::class, 'assignMembership'])->name('members.membership');
+                Route::post('/members/{member}/pay-balance',         [MemberWebController::class, 'payBalance'])->name('members.pay-balance');
+                Route::post('/members/{member}/training/start',      [MemberWebController::class, 'startTraining'])->name('members.training.start');
+                Route::post('/members/{member}/training/pause',      [MemberWebController::class, 'pauseTraining'])->name('members.training.pause');
+                Route::post('/members/{member}/training/resume',     [MemberWebController::class, 'resumeTraining'])->name('members.training.resume');
+                Route::post('/members/{member}/training/end',        [MemberWebController::class, 'endTraining'])->name('members.training.end');
+                Route::get('/members/{member}/training/history',     [MemberWebController::class, 'trainingHistory'])->name('members.training.history');
+            });
 
-        // Trainers + Commissions
-        Route::middleware('module:trainers')->group(function () {
-            Route::get('/trainers',                         [TrainerWebController::class, 'index'])->name('trainers.index');
-            Route::post('/trainers',                        [TrainerWebController::class, 'store'])->name('trainers.store');
-            Route::put('/trainers/{trainer}',               [TrainerWebController::class, 'update'])->name('trainers.update');
-            Route::delete('/trainers/{trainer}',            [TrainerWebController::class, 'destroy'])->name('trainers.destroy');
-            Route::post('/trainers/{trainer}/assign',       [TrainerWebController::class, 'assignMember'])->name('trainers.assign');
-            Route::get('/trainers/{trainer}/schedule',      [TrainerWebController::class, 'schedule'])->name('trainers.schedule');
-            Route::post('/trainers/{trainer}/sessions',     [TrainerWebController::class, 'createSession'])->name('trainers.sessions');
+            // Attendance check-in/out (the attendance list itself is open to all roles, below)
+            Route::middleware('module:attendance')->group(function () {
+                Route::post('/attendance/check-in',   [AttendanceWebController::class, 'checkIn'])->name('attendance.check-in');
+                Route::post('/attendance/check-out',  [AttendanceWebController::class, 'checkOut'])->name('attendance.check-out');
+            });
+
+            // Trainers + Commissions
+            Route::middleware('module:trainers')->group(function () {
+                Route::get('/trainers',                         [TrainerWebController::class, 'index'])->name('trainers.index');
+                Route::post('/trainers',                        [TrainerWebController::class, 'store'])->name('trainers.store');
+                Route::put('/trainers/{trainer}',               [TrainerWebController::class, 'update'])->name('trainers.update');
+                Route::delete('/trainers/{trainer}',            [TrainerWebController::class, 'destroy'])->name('trainers.destroy');
+                Route::post('/trainers/{trainer}/assign',       [TrainerWebController::class, 'assignMember'])->name('trainers.assign');
+                Route::get('/trainers/{trainer}/schedule',      [TrainerWebController::class, 'schedule'])->name('trainers.schedule');
+                Route::post('/trainers/{trainer}/sessions',     [TrainerWebController::class, 'createSession'])->name('trainers.sessions');
+                Route::post('/commission-config',               [TrainerCommissionWebController::class, 'setConfig'])->middleware('role:owner')->name('commission.config');
+            });
+
+            // WhatsApp reminders
+            Route::middleware('module:whatsapp')->group(function () {
+                Route::get('/whatsapp-reminders',               [WhatsAppReminderWebController::class, 'index'])->name('whatsapp-reminders.index');
+                Route::post('/whatsapp-reminders/send',         [WhatsAppReminderWebController::class, 'send'])->name('whatsapp-reminders.send');
+                Route::post('/whatsapp-reminders/template',     [WhatsAppReminderWebController::class, 'updateTemplate'])->name('whatsapp-reminders.template');
+            });
+
+            // Biometric Devices
+            Route::middleware('module:biometric')->group(function () {
+                Route::get('/biometric/devices',                          [BiometricDeviceWebController::class, 'index'])->name('biometric.devices');
+                Route::post('/biometric/devices',                         [BiometricDeviceWebController::class, 'store'])->name('biometric.devices.store');
+                Route::put('/biometric/devices/{device}',                 [BiometricDeviceWebController::class, 'update'])->name('biometric.devices.update');
+                Route::delete('/biometric/devices/{device}',              [BiometricDeviceWebController::class, 'destroy'])->name('biometric.devices.destroy');
+                Route::post('/biometric/devices/{device}/toggle',         [BiometricDeviceWebController::class, 'toggleStatus'])->name('biometric.devices.toggle');
+                Route::post('/biometric/devices/{device}/regenerate-key', [BiometricDeviceWebController::class, 'regenerateKey'])->name('biometric.devices.regenerate-key');
+            });
+
+            // POS
+            Route::middleware('module:pos')->group(function () {
+                Route::get('/pos',                              [POSWebController::class, 'index'])->name('pos.index');
+                Route::get('/pos/products',                     [POSWebController::class, 'products'])->name('pos.products');
+                Route::post('/pos/products',                    [POSWebController::class, 'createProduct'])->name('pos.products.store');
+                Route::put('/pos/products/{product}',           [POSWebController::class, 'updateProduct'])->name('pos.products.update');
+                Route::delete('/pos/products/{product}',        [POSWebController::class, 'deleteProduct'])->name('pos.products.destroy');
+                Route::post('/pos/invoices',                    [POSWebController::class, 'createInvoice'])->name('pos.invoices.store');
+                Route::get('/pos/invoices/{invoice}',           [POSWebController::class, 'showInvoice'])->name('pos.invoices.show');
+                Route::post('/pos/invoices/{invoice}/pay',      [POSWebController::class, 'markPaid'])->name('pos.invoices.pay');
+                Route::post('/pos/invoices/{invoice}/unpay',    [POSWebController::class, 'markUnpaid'])->name('pos.invoices.unpay');
+                Route::post('/pos/invoices/{invoice}/payment',  [POSWebController::class, 'addPayment'])->name('pos.invoices.payment');
+                Route::post('/pos/invoices/{invoice}/cancel',   [POSWebController::class, 'cancel'])->name('pos.invoices.cancel');
+            });
+
+            // Reports
+            Route::middleware('module:reports')->group(function () {
+                Route::get('/reports/commissions',              [TrainerCommissionWebController::class, 'report'])->name('reports.commissions');
+                Route::get('/reports',                          [ReportWebController::class, 'index'])->name('reports.index');
+                Route::get('/reports/data/revenue',             [ReportWebController::class, 'revenueData'])->name('reports.revenue');
+                Route::get('/reports/data/membership-revenue',  [ReportWebController::class, 'membershipRevenueData'])->name('reports.membership-revenue');
+                Route::get('/reports/data/members',             [ReportWebController::class, 'membersData'])->name('reports.members');
+                Route::get('/reports/data/attendance',          [ReportWebController::class, 'attendanceData'])->name('reports.attendance');
+            });
+
+        }); // end owner|admin
+
+        // ── Every role: own attendance history (controller branches per role) ──
+        Route::get('/attendance', [AttendanceWebController::class, 'index'])->middleware('module:attendance')->name('attendance.index');
+
+        // ── Owner + Admin + Trainer: commission (trainer limited to own in controller) ──
+        Route::middleware(['module:trainers', 'role:owner|admin|trainer'])->group(function () {
             Route::get('/trainers/{trainer}/commission',    [TrainerCommissionWebController::class, 'overview'])->name('trainers.commission');
             Route::get('/trainers/{trainer}/earnings',      [TrainerCommissionWebController::class, 'trainerEarnings'])->name('trainers.earnings');
-            Route::post('/commission-config',               [TrainerCommissionWebController::class, 'setConfig'])->middleware('role:owner')->name('commission.config');
         });
 
-        // Biometric Devices
-        Route::middleware('module:biometric')->group(function () {
-            Route::get('/biometric/devices',                          [BiometricDeviceWebController::class, 'index'])->name('biometric.devices');
-            Route::post('/biometric/devices',                         [BiometricDeviceWebController::class, 'store'])->name('biometric.devices.store');
-            Route::put('/biometric/devices/{device}',                 [BiometricDeviceWebController::class, 'update'])->name('biometric.devices.update');
-            Route::delete('/biometric/devices/{device}',              [BiometricDeviceWebController::class, 'destroy'])->name('biometric.devices.destroy');
-            Route::post('/biometric/devices/{device}/toggle',         [BiometricDeviceWebController::class, 'toggleStatus'])->name('biometric.devices.toggle');
-            Route::post('/biometric/devices/{device}/regenerate-key', [BiometricDeviceWebController::class, 'regenerateKey'])->name('biometric.devices.regenerate-key');
-        });
-
-        // POS
-        Route::middleware('module:pos')->group(function () {
-            Route::get('/pos',                              [POSWebController::class, 'index'])->name('pos.index');
-            Route::get('/pos/products',                     [POSWebController::class, 'products'])->name('pos.products');
-            Route::post('/pos/products',                    [POSWebController::class, 'createProduct'])->name('pos.products.store');
-            Route::put('/pos/products/{product}',           [POSWebController::class, 'updateProduct'])->name('pos.products.update');
-            Route::delete('/pos/products/{product}',        [POSWebController::class, 'deleteProduct'])->name('pos.products.destroy');
-            Route::post('/pos/invoices',                    [POSWebController::class, 'createInvoice'])->name('pos.invoices.store');
-            Route::get('/pos/invoices/{invoice}',           [POSWebController::class, 'showInvoice'])->name('pos.invoices.show');
-            Route::post('/pos/invoices/{invoice}/pay',      [POSWebController::class, 'markPaid'])->name('pos.invoices.pay');
-            Route::post('/pos/invoices/{invoice}/unpay',    [POSWebController::class, 'markUnpaid'])->name('pos.invoices.unpay');
-            Route::post('/pos/invoices/{invoice}/payment',  [POSWebController::class, 'addPayment'])->name('pos.invoices.payment');
-            Route::post('/pos/invoices/{invoice}/cancel',   [POSWebController::class, 'cancel'])->name('pos.invoices.cancel');
-        });
-
-        // Reports
-        Route::middleware('module:reports')->group(function () {
-            Route::get('/reports/commissions',              [TrainerCommissionWebController::class, 'report'])->name('reports.commissions');
-            Route::get('/reports',                          [ReportWebController::class, 'index'])->name('reports.index');
-            Route::get('/reports/data/revenue',             [ReportWebController::class, 'revenueData'])->name('reports.revenue');
-            Route::get('/reports/data/membership-revenue',  [ReportWebController::class, 'membershipRevenueData'])->name('reports.membership-revenue');
-            Route::get('/reports/data/members',             [ReportWebController::class, 'membersData'])->name('reports.members');
-            Route::get('/reports/data/attendance',          [ReportWebController::class, 'attendanceData'])->name('reports.attendance');
-        });
-
-        // WhatsApp reminders
-        Route::middleware(['module:whatsapp', 'role:owner|admin'])->group(function () {
-            Route::get('/whatsapp-reminders',               [WhatsAppReminderWebController::class, 'index'])->name('whatsapp-reminders.index');
-            Route::post('/whatsapp-reminders/send',         [WhatsAppReminderWebController::class, 'send'])->name('whatsapp-reminders.send');
-            Route::post('/whatsapp-reminders/template',     [WhatsAppReminderWebController::class, 'updateTemplate'])->name('whatsapp-reminders.template');
+        // Trainer workspace — own members, their attendance, sessions
+        Route::middleware(['module:trainers', 'role:trainer'])->prefix('my')->name('my.')->group(function () {
+            Route::get('/members',                          [TrainerPortalController::class, 'members'])->name('members');
+            Route::get('/members/{member}',                 [TrainerPortalController::class, 'showMember'])->name('members.show');
+            Route::get('/sessions',                         [TrainerPortalController::class, 'sessions'])->name('sessions');
+            Route::post('/sessions',                        [TrainerPortalController::class, 'storeSession'])->name('sessions.store');
+            Route::patch('/sessions/{session}/status',      [TrainerPortalController::class, 'updateSessionStatus'])->name('sessions.status');
         });
 
     }); // end gym.context

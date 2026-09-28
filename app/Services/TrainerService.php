@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\MemberTrainingPeriod;
 use App\Models\TrainerProfile;
 use App\Models\TrainingSession;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class TrainerService extends BaseService
@@ -160,6 +162,26 @@ class TrainerService extends BaseService
         return $query->paginate($filters['per_page'] ?? 15);
     }
 
+    /**
+     * IDs of every member this trainer is responsible for — assigned directly
+     * (trainer_member) or through an active/paused training period.
+     */
+    public function myMemberIds(User $trainer, ?int $gymId): Collection
+    {
+        $assigned = DB::table('trainer_member')
+            ->where('gym_id', $gymId)
+            ->where('trainer_id', $trainer->id)
+            ->where('is_active', true)
+            ->pluck('member_id');
+
+        $training = MemberTrainingPeriod::forGym($gymId)
+            ->forTrainer($trainer->id)
+            ->whereIn('status', ['active', 'paused'])
+            ->pluck('member_id');
+
+        return $assigned->merge($training)->unique()->values();
+    }
+
     // ── Training Sessions ─────────────────────────────────────────────────────
 
     public function createSession(User $trainer, ?int $gymId, array $data): TrainingSession
@@ -169,17 +191,17 @@ class TrainerService extends BaseService
             $this->validateBothBelongToGym($trainer, $member, $gymId);
         }
 
-        // Prevent scheduling overlap for the same trainer
+        // Prevent scheduling overlap for the same trainer (back-to-back is allowed).
+        // Candidates are narrowed in SQL, overlap is checked in PHP to stay DB-agnostic.
         $scheduledAt  = Carbon::parse($data['scheduled_at']);
         $endTime      = (clone $scheduledAt)->addMinutes($data['duration_mins'] ?? 60);
 
         $conflict = TrainingSession::forTrainer($trainer->id)
             ->where('status', 'scheduled')
-            ->where(fn ($q) => $q
-                ->whereBetween('scheduled_at', [$scheduledAt, $endTime])
-                ->orWhereRaw('DATE_ADD(scheduled_at, INTERVAL duration_mins MINUTE) BETWEEN ? AND ?', [$scheduledAt, $endTime])
-            )
-            ->first();
+            ->where('scheduled_at', '<', $endTime)
+            ->where('scheduled_at', '>', (clone $scheduledAt)->subMinutes(480))
+            ->get()
+            ->first(fn ($s) => $s->scheduled_at->copy()->addMinutes($s->duration_mins)->gt($scheduledAt));
 
         if ($conflict) {
             throw new \RuntimeException(

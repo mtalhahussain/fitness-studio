@@ -11,7 +11,9 @@ use App\Models\Payment;
 use App\Models\TrainerCommission;
 use App\Models\TrainingSession;
 use App\Models\User;
+use App\Http\Controllers\Trainer\TrainerPortalController;
 use App\Services\DashboardService;
+use App\Services\TrainerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -118,11 +120,8 @@ class DashboardController extends Controller
 
     private function trainerDashboard(User $user, int $gymId)
     {
-        $assignedCount = DB::table('trainer_member')
-            ->where('trainer_id', $user->id)
-            ->where('gym_id', $gymId)
-            ->where('is_active', true)
-            ->count();
+        $memberIds     = app(TrainerService::class)->myMemberIds($user, $gymId);
+        $assignedCount = $memberIds->count();
 
         $sessionsToday = TrainingSession::where('trainer_id', $user->id)
             ->whereDate('scheduled_at', today())
@@ -148,16 +147,22 @@ class DashboardController extends Controller
             ->get();
 
         $assignedMembers = User::members()
-            ->whereHas('trainerPeriods', fn ($q) => $q
-                ->where('trainer_id', $user->id)
-                ->where('status', 'active')
-            )
+            ->whereIn('id', $memberIds)
             ->with('activeMembership.plan')
+            ->orderBy('name')
             ->get();
+
+        $presentToday = Attendance::whereIn('user_id', $memberIds)
+            ->whereDate('check_in_time', today())
+            ->pluck('user_id')->unique()->flip();
+
+        $formMembers   = $assignedMembers;
+        $trainingTypes = TrainerPortalController::TRAINING_TYPES;
 
         return view('dashboard-trainer', compact(
             'assignedCount', 'sessionsToday', 'sessionsThisMonth',
-            'monthEarnings', 'upcomingSessions', 'assignedMembers', 'user'
+            'monthEarnings', 'upcomingSessions', 'assignedMembers', 'user',
+            'presentToday', 'formMembers', 'trainingTypes'
         ));
     }
 

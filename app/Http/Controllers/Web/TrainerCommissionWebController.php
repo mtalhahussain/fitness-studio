@@ -24,6 +24,7 @@ class TrainerCommissionWebController extends Controller
         if ($user->isTrainer() && $user->id !== $trainer->id) {
             abort(403, 'You can only view your own commission.');
         }
+        abort_if((int) $trainer->gym_id !== (int) $gymId, 403);
 
         $month = $request->get('month', now()->format('Y-m'));
 
@@ -75,6 +76,7 @@ class TrainerCommissionWebController extends Controller
             abort(403);
         }
         $gymId   = $user->isTrainer() ? $user->gym_id : ($user->isAdmin() ? (int) session('admin_active_gym_id') : $user->gym_id);
+        abort_if((int) $trainer->gym_id !== (int) $gymId, 403);
         $month   = $request->get('month');
         $earnings = $this->commissionService->getTrainerEarnings($trainer->id, $gymId, $month);
         $monthly  = $this->commissionService->getMonthlyBreakdown($trainer->id, $gymId);

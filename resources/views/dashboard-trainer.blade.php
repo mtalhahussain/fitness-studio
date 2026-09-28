@@ -7,7 +7,11 @@
         <div class="page-title">Good {{ now()->hour < 12 ? 'Morning' : (now()->hour < 17 ? 'Afternoon' : 'Evening') }}, {{ explode(' ', auth()->user()->name)[0] }}</div>
         <div class="page-sub">Your sessions, members, and earnings at a glance.</div>
     </div>
-    <div style="font-size:12px;color:var(--text-muted)">{{ now()->format('d-M-Y') }}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="{{ route('my.members') }}" class="btn btn-outline">👥 My Members</a>
+        <a href="{{ route('my.sessions') }}" class="btn btn-outline">📅 My Sessions</a>
+        <button class="btn btn-primary" @click="$dispatch('open-session')">+ Add Session</button>
+    </div>
 </div>
 
 {{-- KPI Cards --}}
@@ -59,7 +63,7 @@
                 <div class="card-title">Upcoming Sessions</div>
                 <div class="card-subtitle">Next scheduled training</div>
             </div>
-            <a href="{{ route('trainers.commission', auth()->id()) }}" class="btn btn-outline btn-sm">Full Schedule →</a>
+            <a href="{{ route('my.sessions') }}" class="btn btn-outline btn-sm">Full Schedule →</a>
         </div>
         @if($upcomingSessions->isEmpty())
             <div class="empty-state" style="padding:32px">
@@ -94,8 +98,9 @@
         <div class="card-header">
             <div>
                 <div class="card-title">My Members</div>
-                <div class="card-subtitle">Active training assignments</div>
+                <div class="card-subtitle">{{ $presentToday->count() }} of {{ $assignedCount }} in gym today</div>
             </div>
+            <a href="{{ route('my.members') }}" class="btn btn-outline btn-sm">View All →</a>
         </div>
         @if($assignedMembers->isEmpty())
             <div class="empty-state" style="padding:32px">
@@ -111,13 +116,20 @@
                         @foreach($assignedMembers as $member)
                         <tr>
                             <td>
-                                <div style="display:flex;align-items:center;gap:10px">
+                                <a href="{{ route('my.members.show', $member) }}" style="display:flex;align-items:center;gap:10px;text-decoration:none">
                                     <div class="avatar" style="background:{{ collect(['#6C63FF','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'])[abs(crc32($member->name)) % 7] }};font-size:11px;font-weight:700">{{ strtoupper(substr($member->name,0,2)) }}</div>
                                     <div>
                                         <div class="cell-main">{{ $member->name }}</div>
-                                        <div class="cell-sub">{{ $member->email }}</div>
+                                        <div class="cell-sub">{{ $member->phone ?: $member->email }}</div>
                                     </div>
-                                </div>
+                                </a>
+                            </td>
+                            <td>
+                                @if(isset($presentToday[$member->id]))
+                                    <span class="badge badge-green" style="font-size:10px">✓ In gym</span>
+                                @else
+                                    <span class="badge badge-gray" style="font-size:10px">Not yet</span>
+                                @endif
                             </td>
                             <td>
                                 @if($member->activeMembership)
@@ -125,6 +137,9 @@
                                 @else
                                     <span class="badge badge-gray" style="font-size:10px">No plan</span>
                                 @endif
+                            </td>
+                            <td style="text-align:right">
+                                <button type="button" class="btn btn-outline btn-sm" @click="$dispatch('open-session', { memberId: {{ $member->id }} })">+ Session</button>
                             </td>
                         </tr>
                         @endforeach
@@ -135,4 +150,6 @@
     </div>
 
 </div>
+
+@include('trainer._session-modal')
 @endsection
