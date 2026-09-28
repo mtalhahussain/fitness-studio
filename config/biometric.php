@@ -12,6 +12,13 @@ return [
         'generic'   => App\Biometric\Drivers\GenericWebhookDriver::class,
     ],
 
+    // Hikvision minor event types that mean "access granted". Anything else (failed face/fingerprint,
+    // expired card, no permission, door events…) is ignored. Verify against the ISAPI minor-type
+    // table for your firmware; skipped sub-types are logged so new pass codes can be added here.
+    'hikvision' => [
+        'pass_sub_events' => [1, 2, 38, 40, 42, 44, 75, 104, 105],
+    ],
+
     // Starting points for the Generic Webhook form. UNVERIFIED against real payloads:
     // the UI tells the user to confirm with a test punch and the Last received data panel.
     'generic_presets' => [

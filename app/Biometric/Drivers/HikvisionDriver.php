@@ -7,6 +7,7 @@ use App\Biometric\PunchLog;
 use App\Biometric\WallClock;
 use App\Models\BiometricDevice;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -47,6 +48,7 @@ class HikvisionDriver implements BiometricDriver
             "URL: {$path}",
             "(Full URL, if the screen asks for one: {$url})",
             'Protocol: HTTP (use HTTPS only if the firmware supports it). Save.',
+            'Choose JSON as the event data format if the terminal offers JSON/XML.',
             'Under Event / Linkage, make sure Access Control events are sent to the listening host.',
             'Set each member\'s Employee No. on the terminal to their Biometric Code (or User ID).',
         ];
@@ -64,16 +66,33 @@ class HikvisionDriver implements BiometricDriver
             return [];
         }
 
-        $employee = $ace['employeeNoString'] ?? $ace['employeeNo'] ?? null;
-        $time     = $event['dateTime'] ?? null;
-        if ($employee === null || $employee === '' || ! $time) {
+        // majorEventType 5 covers both granted AND denied access (failed face/fingerprint,
+        // expired card, no permission, …). Only the sub-types below mean the door actually opened.
+        $sub = (int) ($ace['subEventType'] ?? 0);
+        if (! in_array($sub, config('biometric.hikvision.pass_sub_events', []), true)) {
+            Log::debug('Hikvision: non-pass access event skipped', [
+                'device_id'    => $device->id,
+                'subEventType' => $sub,
+            ]);
+
+            return [];
+        }
+
+        $employee = $ace['employeeNoString'] ?? null;
+        if (! is_scalar($employee) || trim((string) $employee) === '') {
+            $employee = $ace['employeeNo'] ?? null;
+        }
+
+        $time = $event['dateTime'] ?? null;
+
+        if (! is_scalar($employee) || trim((string) $employee) === '' || ! is_string($time) || $time === '') {
             return [];
         }
 
         $type = match ($ace['attendanceStatus'] ?? null) {
-            'checkIn'  => PunchLog::IN,
-            'checkOut' => PunchLog::OUT,
-            default    => null,
+            'checkIn', 'breakIn', 'overtimeIn'    => PunchLog::IN,
+            'checkOut', 'breakOut', 'overtimeOut' => PunchLog::OUT,
+            default                                => null,
         };
 
         try {
@@ -97,6 +116,16 @@ class HikvisionDriver implements BiometricDriver
             $value = $request->input($part);
             if (is_string($value) && ($decoded = json_decode($value, true)) && is_array($decoded)) {
                 return $decoded;
+            }
+
+            // Some firmware sends the JSON part as an uploaded file (filename + application/json)
+            // instead of a plain form field.
+            $file = $request->file($part);
+            if ($file instanceof UploadedFile) {
+                $decoded = json_decode($file->get(), true);
+                if (is_array($decoded)) {
+                    return $decoded;
+                }
             }
         }
 
