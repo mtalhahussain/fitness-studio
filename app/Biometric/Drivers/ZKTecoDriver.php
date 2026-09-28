@@ -29,14 +29,18 @@ class ZKTecoDriver implements BiometricDriver
 
     public function setupSteps(BiometricDevice $device, string $baseUrl): array
     {
-        $host = parse_url($baseUrl, PHP_URL_HOST);
+        $host = parse_url($baseUrl, PHP_URL_HOST) ?: $baseUrl;
         $port = parse_url($baseUrl, PHP_URL_PORT) ?: (str_starts_with($baseUrl, 'https') ? 443 : 80);
+
+        $portLine = $port === 443
+            ? "Server port: {$port} (if the machine won't connect over HTTPS, try port 80 / HTTP)."
+            : "Server port: {$port}";
 
         return [
             'On the machine open COMM → Cloud Server Setting (ADMS).',
             "Server address: {$host}",
-            "Server port: {$port} (if the machine won't connect over HTTPS, try port 80 / HTTP).",
-            'Leave the URL path empty or set it to /api/biometric/push.',
+            $portLine,
+            'Set the URL path to exactly /api/biometric/push (do not leave it empty).',
             "The machine's serial number must be exactly: " . ($device->serial_number ?: '—'),
             "Enroll each member on the machine with their Biometric Code (or User ID) as the Employee Number.",
         ];
@@ -68,6 +72,8 @@ class ZKTecoDriver implements BiometricDriver
                 Log::warning('ZKTeco: unparseable punch time skipped', [
                     'employee_id' => $r['employee_id'] ?? null,
                     'time'        => $r['time'] ?? null,
+                    'device_id'   => $device->id,
+                    'error'       => $e->getMessage(),
                 ]);
             }
         }
