@@ -70,7 +70,7 @@ class HikvisionDriver implements BiometricDriver
         // expired card, no permission, …). Only the sub-types below mean the door actually opened.
         $sub = (int) ($ace['subEventType'] ?? 0);
         if (! in_array($sub, config('biometric.hikvision.pass_sub_events', []), true)) {
-            Log::debug('Hikvision: non-pass access event skipped', [
+            Log::info('Hikvision: non-pass access event skipped', [
                 'device_id'    => $device->id,
                 'subEventType' => $sub,
             ]);

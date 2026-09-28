@@ -12,11 +12,11 @@ return [
         'generic'   => App\Biometric\Drivers\GenericWebhookDriver::class,
     ],
 
-    // Hikvision minor event types that mean "access granted". Anything else (failed face/fingerprint,
-    // expired card, no permission, door events…) is ignored. Verify against the ISAPI minor-type
-    // table for your firmware; skipped sub-types are logged so new pass codes can be added here.
+    // Only codes confirmed as access-granted are listed. If a terminal uses combined modes
+    // (card+fingerprint etc.), find its pass code in the 'non-pass access event skipped' log
+    // and add it here, then run php artisan config:clear.
     'hikvision' => [
-        'pass_sub_events' => [1, 2, 38, 40, 42, 44, 75, 104, 105],
+        'pass_sub_events' => [1, 38, 75], // 1 card pass, 38 fingerprint pass, 75 face pass.
     ],
 
     // Starting points for the Generic Webhook form. UNVERIFIED against real payloads:

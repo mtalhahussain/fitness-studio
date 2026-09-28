@@ -115,6 +115,17 @@ class HikvisionDriverTest extends TestCase
         $this->assertCount(1, $logs);
     }
 
+    public function test_failure_and_timeout_codes_are_rejected(): void
+    {
+        $driver = app(HikvisionDriver::class);
+
+        foreach ([42, 44, 39, 76, 13] as $sub) {
+            $e = $this->event(['AccessControllerEvent' => ['subEventType' => $sub]]);
+
+            $this->assertSame([], $driver->parse($this->jsonRequest($e), $this->device()), "subEventType {$sub} should be rejected");
+        }
+    }
+
     public function test_break_out_attendance_status_maps_to_out(): void
     {
         $e = $this->event(['AccessControllerEvent' => ['attendanceStatus' => 'breakOut']]);
