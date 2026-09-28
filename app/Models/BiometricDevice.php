@@ -9,9 +9,11 @@ class BiometricDevice extends Model
 {
     protected $fillable = [
         'gym_id', 'brand', 'serial_number', 'name', 'model',
-        'location', 'api_key', 'webhook_token', 'settings',
+        'location', 'api_key', 'settings',
         'is_active', 'last_seen_at',
     ];
+
+    protected $hidden = ['last_payload'];
 
     protected $casts = [
         'is_active'       => 'boolean',
@@ -46,14 +48,18 @@ class BiometricDevice extends Model
     /** Timezone the machine's clock runs in. */
     public function timezone(): string
     {
-        return $this->settings['timezone'] ?? config('biometric.timezone');
+        $tz = $this->settings['timezone'] ?? null;
+
+        return $tz && in_array($tz, timezone_identifiers_list(), true)
+            ? $tz
+            : (config('biometric.timezone') ?: 'Asia/Karachi');
     }
 
     /** Keep a copy of the last raw request (capped at 10 KB) for the Setup / Test panel. */
     public function storePayload(string $raw): void
     {
         $this->forceFill([
-            'last_payload'    => substr($raw, 0, 10240),
+            'last_payload'    => mb_scrub(mb_strcut($raw, 0, 10240, 'UTF-8'), 'UTF-8'),
             'last_payload_at' => now(),
         ])->saveQuietly();
     }

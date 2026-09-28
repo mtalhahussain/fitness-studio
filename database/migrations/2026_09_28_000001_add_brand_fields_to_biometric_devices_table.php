@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('serial_number')->nullable()->change();
         });
 
-        DB::table('biometric_devices')->whereNull('webhook_token')->orderBy('id')->each(function ($row) {
+        DB::table('biometric_devices')->whereNull('webhook_token')->lazyById()->each(function ($row) {
             DB::table('biometric_devices')->where('id', $row->id)->update(['webhook_token' => Str::random(40)]);
         });
     }
