@@ -35,7 +35,7 @@ class GenericWebhookDriver implements BiometricDriver
             'settings.type_field'     => ['nullable', 'string', 'max:100'],
             'settings.type_in_value'  => ['nullable', 'string', 'max:50'],
             'settings.type_out_value' => ['nullable', 'string', 'max:50'],
-            'settings.secret_header'  => ['nullable', 'string', 'max:100', 'required_with:settings.secret_value'],
+            'settings.secret_header'  => ['nullable', 'string', 'max:100', 'required_with:settings.secret_value', 'regex:/^[A-Za-z0-9-]+$/'],
             'settings.secret_value'   => ['nullable', 'string', 'max:200', 'required_with:settings.secret_header'],
             'settings.timezone'       => ['nullable', 'timezone'],
         ];
@@ -66,7 +66,14 @@ class GenericWebhookDriver implements BiometricDriver
             return true;
         }
 
-        return hash_equals((string) ($device->settings['secret_value'] ?? ''), (string) $request->header($header, ''));
+        $expected = (string) ($device->settings['secret_value'] ?? '');
+        if ($expected === '') {
+            // A header is configured but no secret is saved: fail closed rather than
+            // matching an empty request header.
+            return false;
+        }
+
+        return hash_equals($expected, (string) $request->header($header, ''));
     }
 
     public function parse(Request $request, BiometricDevice $device): array
@@ -75,8 +82,9 @@ class GenericWebhookDriver implements BiometricDriver
         $body = json_decode($request->getContent(), true);
 
         if (! is_array($body)) {
-            // Some vendor clouds post form-encoded fields instead of JSON.
-            $fallback = $request->all();
+            // Some vendor clouds post form-encoded fields instead of JSON. Only the POST
+            // body counts here — query-string params must never be able to create punches.
+            $fallback = $request->request->all();
             $body     = ! empty($fallback) ? $fallback : null;
         }
 
@@ -97,10 +105,10 @@ class GenericWebhookDriver implements BiometricDriver
             $employee = data_get($rec, $s['employee_field'] ?? '');
             $rawTime  = data_get($rec, $s['time_field'] ?? '');
 
-            if (! is_scalar($employee) || ! is_scalar($rawTime)) {
+            if (! is_scalar($employee) || ! is_scalar($rawTime) || is_bool($employee)) {
                 continue;
             }
-            if ($employee === '' || $rawTime === '') {
+            if (trim((string) $employee) === '' || $rawTime === '') {
                 continue;
             }
 
@@ -118,15 +126,27 @@ class GenericWebhookDriver implements BiometricDriver
     private function toTime(mixed $raw, string $format, string $tz): ?Carbon
     {
         try {
-            return match (true) {
-                $format === 'unix'                     => WallClock::fromUnix((float) $raw, $tz),
-                $format === 'unix_ms'                  => WallClock::fromUnix(((float) $raw) / 1000, $tz),
-                $format === 'auto' && is_numeric($raw) => WallClock::fromUnix(strlen((string) (int) $raw) > 10 ? ((float) $raw) / 1000 : (float) $raw, $tz),
-                default                                => WallClock::parse((string) $raw, $tz),
+            $time = match (true) {
+                $format === 'unix'    => is_numeric($raw) ? WallClock::fromUnix((float) $raw, $tz) : null,
+                $format === 'unix_ms' => is_numeric($raw) ? WallClock::fromUnix(((float) $raw) / 1000, $tz) : null,
+                // Exactly 14 digits: a YmdHis date string (already wall-clock, like any naive string).
+                $format === 'auto' && preg_match('/^\d{14}$/', (string) $raw) === 1
+                    => Carbon::createFromFormat('YmdHis', (string) $raw, config('app.timezone')) ?: null,
+                $format === 'auto' && is_numeric($raw)
+                    => WallClock::fromUnix(strlen((string) (int) $raw) > 10 ? ((float) $raw) / 1000 : (float) $raw, $tz),
+                default => WallClock::parse((string) $raw, $tz),
             };
         } catch (\Throwable) {
             return null;
         }
+
+        // Sanity floor: a bad/garbage numeric value (0, tiny numbers, …) parses to some time
+        // near the Unix epoch rather than throwing. Reject anything obviously not a real punch.
+        if (! $time instanceof Carbon || $time->lt(Carbon::create(2000, 1, 1))) {
+            return null;
+        }
+
+        return $time;
     }
 
     private function toType(mixed $rec, array $s): ?string
@@ -135,7 +155,11 @@ class GenericWebhookDriver implements BiometricDriver
             return null;
         }
 
-        $value = (string) data_get($rec, $s['type_field'], '');
+        $value = data_get($rec, $s['type_field']);
+        if ($value === null || $value === '' || ! is_scalar($value) || is_bool($value)) {
+            return null;
+        }
+        $value = (string) $value;
 
         return match (true) {
             isset($s['type_in_value'])  && $value === (string) $s['type_in_value']  => PunchLog::IN,

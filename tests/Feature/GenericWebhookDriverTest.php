@@ -46,9 +46,13 @@ class GenericWebhookDriverTest extends TestCase
 
         $logs = app(GenericWebhookDriver::class)->parse($this->req(['emp' => 9, 'ts' => $ts, 'dir' => 'O']), $device);
 
+        $this->assertCount(1, $logs);
         $this->assertSame('9', $logs[0]->employeeId);
         $this->assertSame('2026-09-28 09:00:00', $logs[0]->time->format('Y-m-d H:i:s'));
         $this->assertSame(PunchLog::OUT, $logs[0]->type);
+
+        $inLogs = app(GenericWebhookDriver::class)->parse($this->req(['emp' => 9, 'ts' => $ts, 'dir' => 'I']), $device);
+        $this->assertSame(PunchLog::IN, $inLogs[0]->type);
     }
 
     public function test_unix_ms_and_auto_formats(): void
@@ -89,7 +93,20 @@ class GenericWebhookDriverTest extends TestCase
 
         $this->assertTrue($driver->secretMatches($good, $device));
         $this->assertFalse($driver->secretMatches($bad, $device));
+        $this->assertFalse($driver->secretMatches($this->req([]), $device)); // no header sent at all
         $this->assertTrue($driver->secretMatches($this->req([]), $this->device(['employee_field' => 'e', 'time_field' => 't', 'time_format' => 'auto'])));
+    }
+
+    public function test_secret_fails_closed_when_header_configured_but_no_value_saved(): void
+    {
+        $driver = app(GenericWebhookDriver::class);
+        $device = $this->device(['employee_field' => 'e', 'time_field' => 't', 'time_format' => 'auto', 'secret_header' => 'X-Secret']);
+
+        $request = $this->req([]);
+        $request->headers->set('X-Secret', ''); // even an empty header must not match
+
+        $this->assertFalse($driver->secretMatches($request, $device));
+        $this->assertFalse($driver->secretMatches($this->req([]), $device));
     }
 
     public function test_non_scalar_employee_or_time_is_skipped(): void
@@ -130,5 +147,93 @@ class GenericWebhookDriverTest extends TestCase
 
         $this->assertTrue(collect($steps)->contains(fn ($s) => str_contains($s, 'X-Secret')));
         $this->assertTrue(collect($steps)->contains(fn ($s) => str_contains($s, '/api/biometric/hook/TOK')));
+    }
+
+    public function test_type_field_as_array_still_parses_punch_with_null_type(): void
+    {
+        $device = $this->device([
+            'employee_field' => 'e', 'time_field' => 't', 'time_format' => 'iso',
+            'type_field' => 'meta', 'type_in_value' => 'I',
+        ]);
+        $body = ['e' => 1, 't' => '2026-09-28T04:00:00Z', 'meta' => ['nested' => true]];
+
+        $logs = app(GenericWebhookDriver::class)->parse($this->req($body), $device);
+
+        $this->assertCount(1, $logs);
+        $this->assertNull($logs[0]->type);
+    }
+
+    public function test_missing_type_field_with_empty_in_value_does_not_match(): void
+    {
+        $device = $this->device([
+            'employee_field' => 'e', 'time_field' => 't', 'time_format' => 'iso',
+            'type_field' => 'dir', 'type_in_value' => '',
+        ]);
+        $body = ['e' => 1, 't' => '2026-09-28T04:00:00Z']; // no 'dir' key at all
+
+        $logs = app(GenericWebhookDriver::class)->parse($this->req($body), $device);
+
+        $this->assertCount(1, $logs);
+        $this->assertNull($logs[0]->type);
+    }
+
+    public function test_unix_format_with_non_numeric_raw_is_skipped(): void
+    {
+        $device = $this->device(['employee_field' => 'e', 'time_field' => 't', 'time_format' => 'unix']);
+
+        $this->assertSame([], app(GenericWebhookDriver::class)->parse($this->req(['e' => 1, 't' => 'abc']), $device));
+    }
+
+    public function test_unix_ms_format_with_non_numeric_raw_is_skipped(): void
+    {
+        $device = $this->device(['employee_field' => 'e', 'time_field' => 't', 'time_format' => 'unix_ms']);
+
+        $this->assertSame([], app(GenericWebhookDriver::class)->parse($this->req(['e' => 1, 't' => 'abc']), $device));
+    }
+
+    public function test_auto_format_detects_fourteen_digit_date_string(): void
+    {
+        $device = $this->device(['employee_field' => 'e', 'time_field' => 't', 'time_format' => 'auto']);
+
+        $logs = app(GenericWebhookDriver::class)->parse($this->req(['e' => 1, 't' => '20260928090000']), $device);
+
+        $this->assertCount(1, $logs);
+        $this->assertSame('2026-09-28 09:00:00', $logs[0]->time->format('Y-m-d H:i:s'));
+    }
+
+    public function test_auto_format_detects_millisecond_timestamps(): void
+    {
+        $ms     = Carbon::parse('2026-09-28T04:00:00Z')->getTimestampMs();
+        $device = $this->device(['employee_field' => 'e', 'time_field' => 't', 'time_format' => 'auto']);
+
+        $logs = app(GenericWebhookDriver::class)->parse($this->req(['e' => 1, 't' => $ms]), $device);
+
+        $this->assertCount(1, $logs);
+        $this->assertSame('2026-09-28 09:00:00', $logs[0]->time->format('Y-m-d H:i:s'));
+    }
+
+    public function test_auto_format_with_zero_is_skipped_by_sanity_floor(): void
+    {
+        $device = $this->device(['employee_field' => 'e', 'time_field' => 't', 'time_format' => 'auto']);
+
+        $this->assertSame([], app(GenericWebhookDriver::class)->parse($this->req(['e' => 1, 't' => 0]), $device));
+    }
+
+    public function test_boolean_and_whitespace_employee_is_skipped(): void
+    {
+        $device = $this->device(['employee_field' => 'e', 'time_field' => 't', 'time_format' => 'iso']);
+
+        foreach ([true, false, '  '] as $bad) {
+            $logs = app(GenericWebhookDriver::class)->parse($this->req(['e' => $bad, 't' => '2026-09-28T04:00:00Z']), $device);
+            $this->assertSame([], $logs, 'employee value ' . var_export($bad, true) . ' should be skipped');
+        }
+    }
+
+    public function test_query_string_params_are_not_used_as_form_fallback(): void
+    {
+        $device  = $this->device(['employee_field' => 'e', 'time_field' => 't', 'time_format' => 'iso']);
+        $request = Request::create('/x?e=7&t=2026-09-28%2009:00:00', 'POST', [], [], [], [], 'garbage');
+
+        $this->assertSame([], app(GenericWebhookDriver::class)->parse($request, $device));
     }
 }
