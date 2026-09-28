@@ -7,6 +7,7 @@ use App\Models\BiometricDevice;
 use App\Models\User;
 use App\Services\AttendanceService;
 use App\Services\BiometricAttendanceService;
+use App\Services\UnknownBiometricDevices;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +37,7 @@ class BiometricPushController extends Controller
     public function __construct(
         private AttendanceService $attendance,
         private BiometricAttendanceService $biometricAttendance,
+        private UnknownBiometricDevices $unknownDevices,
     ) {}
 
     /**
@@ -44,13 +46,19 @@ class BiometricPushController extends Controller
      */
     public function receive(Request $request)
     {
-        $device = $this->resolveDevice($request);
+        $device = $this->findDevice($request);
 
         if (! $device) {
+            $this->recordUnknown($request, 'push');
             return response()->json(['error' => 'Device not registered or inactive'], 401);
         }
 
+        // Mark seen even when disabled, so the owner can see the machine is still trying to connect.
         $device->markSeen();
+
+        if (! $device->is_active) {
+            return response()->json(['error' => 'Device not registered or inactive'], 401);
+        }
 
         // Parse the punch log — handle XML and JSON
         $logs = $this->parseLogs($request, $device);
@@ -80,17 +88,22 @@ class BiometricPushController extends Controller
      */
     public function ping(Request $request)
     {
+        $device = $this->findDevice($request);
+
+        $device ? $device->markSeen() : $this->recordUnknown($request, 'ping');
+
         return response('OK', 200);
     }
 
     // ── Private ───────────────────────────────────────────────────────────────
 
-    private function resolveDevice(Request $request): ?BiometricDevice
+    /** Registered device by SN (or api_key fallback), active or not — callers check is_active. */
+    private function findDevice(Request $request): ?BiometricDevice
     {
-        $serialNumber = $request->query('SN') ?? $request->input('SN');
+        $serialNumber = $this->serialNumber($request);
 
         if ($serialNumber) {
-            $device = BiometricDevice::where('serial_number', $serialNumber)->active()->first();
+            $device = BiometricDevice::where('serial_number', $serialNumber)->first();
             if ($device) {
                 return $device;
             }
@@ -104,7 +117,21 @@ class BiometricPushController extends Controller
             return null;
         }
 
-        return BiometricDevice::where('api_key', $apiKey)->active()->first();
+        return BiometricDevice::where('api_key', $apiKey)->first();
+    }
+
+    private function serialNumber(Request $request): ?string
+    {
+        $sn = $request->query('SN') ?? $request->input('SN');
+
+        return is_string($sn) && $sn !== '' ? $sn : null;
+    }
+
+    private function recordUnknown(Request $request, string $endpoint): void
+    {
+        if ($sn = $this->serialNumber($request)) {
+            $this->unknownDevices->record($sn, $request->ip(), $endpoint);
+        }
     }
 
     private function parseLogs(Request $request, BiometricDevice $device): array

@@ -5,12 +5,19 @@ namespace Tests\Feature;
 use App\Models\BiometricDevice;
 use App\Models\Gym;
 use App\Models\User;
+use App\Services\LicenseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class BiometricPushControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->mock(LicenseService::class, fn ($m) => $m->shouldReceive('check')->andReturn(true));
+    }
 
     private function makeGym(): Gym
     {

@@ -27,7 +27,7 @@
                     <th>Serial / Model</th>
                     <th>Location</th>
                     <th>API Key</th>
-                    <th>Last Seen</th>
+                    <th>Connection</th>
                     <th style="text-align:center">Status</th>
                     <th style="text-align:right">Actions</th>
                 </tr>
@@ -51,11 +51,22 @@
                         </div>
                     </td>
                     <td>
-                        @if($device->last_seen_at)
-                            <span title="{{ $device->last_seen_at->format('d-M-Y H:i:s') }}">{{ $device->last_seen_at->diffForHumans() }}</span>
-                        @else
-                            <span style="color:var(--text-muted)">Never</span>
-                        @endif
+                        @php
+                            [$connClass, $connLabel] = [
+                                'online'   => ['badge-green',  '🟢 Online'],
+                                'offline'  => ['badge-red',    '🔴 Offline'],
+                                'never'    => ['badge-gray',   '⚪ Never connected'],
+                                'disabled' => ['badge-yellow', '🟡 Connecting, but disabled'],
+                            ][$device->connectionState()];
+                        @endphp
+                        <span class="badge {{ $connClass }}" style="font-size:10px;white-space:nowrap">{{ $connLabel }}</span>
+                        <div class="cell-sub" style="margin-top:3px">
+                            @if($device->last_seen_at)
+                                <span title="{{ $device->last_seen_at->format('d-M-Y H:i:s') }}">{{ $device->last_seen_at->diffForHumans() }}</span>
+                            @else
+                                Waiting for first contact
+                            @endif
+                        </div>
                     </td>
                     <td style="text-align:center">
                         <span id="status-{{ $device->id }}" class="badge {{ $device->is_active ? 'badge-green' : 'badge-red' }}">
@@ -67,6 +78,37 @@
                         <button class="btn btn-outline btn-sm" onclick="toggleDevice({{ $device->id }})">Toggle</button>
                         <button class="btn btn-outline btn-sm" style="color:var(--danger)" onclick="deleteDevice({{ $device->id }})">Delete</button>
                     </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    <div style="padding:10px 16px;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border)">
+        Online = the machine contacted this gym in the last {{ \App\Models\BiometricDevice::ONLINE_MINUTES }} minutes. Machines check in every few seconds on their own, so a newly configured machine should turn Online within a minute. Refresh the page to update.
+    </div>
+</div>
+@endif
+
+@if(!empty($unknownDevices))
+<div class="card" style="margin-top:20px;border-color:var(--warning)">
+    <div class="card-header">
+        <div>
+            <div class="card-title">⚠ Unregistered machines trying to connect</div>
+            <div class="card-subtitle">These serial numbers are not registered in any gym, so their punches are rejected. Add the device (with this exact serial number) inside the correct gym. Only super admins see this.</div>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Serial Number</th><th>IP Address</th><th>Last Try</th><th>Attempts</th></tr>
+            </thead>
+            <tbody>
+                @foreach($unknownDevices as $u)
+                <tr>
+                    <td style="font-family:monospace;font-size:12px">{{ $u['serial_number'] }}</td>
+                    <td class="cell-sub">{{ $u['ip'] ?? '—' }}</td>
+                    <td class="cell-sub">{{ \Carbon\Carbon::parse($u['last_seen_at'])->diffForHumans() }}</td>
+                    <td class="cell-sub">{{ $u['hits'] }}</td>
                 </tr>
                 @endforeach
             </tbody>

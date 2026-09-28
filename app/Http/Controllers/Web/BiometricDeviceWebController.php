@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\BiometricDevice;
+use App\Services\UnknownBiometricDevices;
 use Illuminate\Http\Request;
 
 class BiometricDeviceWebController extends Controller
@@ -13,7 +14,17 @@ class BiometricDeviceWebController extends Controller
         $gymId  = $this->gymId();
         $devices = BiometricDevice::where('gym_id', $gymId)->latest()->get();
 
-        return view('biometric.devices', compact('devices'));
+        // Unregistered machines are platform-wide, so only the super admin sees them.
+        $unknownDevices = [];
+        if (auth()->user()->isAdmin()) {
+            $registered     = BiometricDevice::pluck('serial_number')->flip();
+            $unknownDevices = array_values(array_filter(
+                app(UnknownBiometricDevices::class)->recent(),
+                fn ($d) => ! isset($registered[$d['serial_number']])
+            ));
+        }
+
+        return view('biometric.devices', compact('devices', 'unknownDevices'));
     }
 
     public function store(Request $request)
@@ -29,6 +40,7 @@ class BiometricDeviceWebController extends Controller
         $data['api_key'] = BiometricDevice::generateApiKey();
 
         $device = BiometricDevice::create($data);
+        app(UnknownBiometricDevices::class)->forget($device->serial_number);
 
         return response()->json(['ok' => true, 'device' => $device]);
     }
