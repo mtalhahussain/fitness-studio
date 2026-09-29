@@ -41,7 +41,9 @@ class BiometricWebhookController extends Controller
         }
 
         if (! $device || ! $driver || $driver->identifiesBy() !== 'token') {
-            $this->unknownDevices->record('token:' . mb_substr($token, 0, 6) . '…', $request->ip(), 'hook');
+            // One fixed key for every unmatched token: a per-prefix key would grow the
+            // unknown-devices cache unboundedly under scanning / brute-force traffic.
+            $this->unknownDevices->record('token:unknown', $request->ip(), 'hook');
             abort(404);
         }
 
@@ -49,6 +51,14 @@ class BiometricWebhookController extends Controller
 
         if ($request->isMethod('GET')) {
             return response('OK', 200);
+        }
+
+        if ($driver instanceof GenericWebhookDriver && ! $driver->secretMatches($request, $device)) {
+            return response()->json(['error' => 'Invalid secret'], 401);
+        }
+
+        if (! $device->is_active) {
+            return response()->json(['error' => 'Device inactive'], 401);
         }
 
         $rawBody = $request->getContent();
@@ -61,14 +71,6 @@ class BiometricWebhookController extends Controller
         // REAL event for the Setup panel instead of getting clobbered by heartbeat noise.
         if (! $isHeartbeat) {
             $device->storePayload($rawBody ?: json_encode($request->except(array_keys($request->allFiles()))));
-        }
-
-        if (! $device->is_active) {
-            return response()->json(['error' => 'Device inactive'], 401);
-        }
-
-        if ($driver instanceof GenericWebhookDriver && ! $driver->secretMatches($request, $device)) {
-            return response()->json(['error' => 'Invalid secret'], 401);
         }
 
         try {

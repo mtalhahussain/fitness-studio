@@ -3,13 +3,16 @@
 namespace Tests\Feature;
 
 use App\Biometric\BiometricPunchProcessor;
+use App\Biometric\Drivers\HikvisionDriver;
 use App\Models\BiometricDevice;
 use App\Models\Gym;
 use App\Models\User;
 use App\Services\LicenseService;
 use App\Services\UnknownBiometricDevices;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -75,13 +78,14 @@ class BiometricWebhookTest extends TestCase
         $this->postJson("/api/biometric/hook/{$d->webhook_token}", ['emp' => '42', 'at' => '2026-09-28 09:00:00'], ['X-Secret' => 'wrong'])
             ->assertStatus(401);
         $this->assertDatabaseCount('attendances', 0);
+        $this->assertNull($d->fresh()->last_payload);
     }
 
     public function test_unknown_token_is_404_and_recorded(): void
     {
         $this->postJson('/api/biometric/hook/doesnotexist123', [])->assertNotFound();
 
-        $this->assertSame('token:doesno…', app(UnknownBiometricDevices::class)->recent()[0]['serial_number']);
+        $this->assertSame('token:unknown', app(UnknownBiometricDevices::class)->recent()[0]['serial_number']);
     }
 
     public function test_disabled_device_is_seen_but_rejected(): void
@@ -90,8 +94,10 @@ class BiometricWebhookTest extends TestCase
 
         $this->postJson("/api/biometric/hook/{$d->webhook_token}", $this->hikEvent())->assertStatus(401);
 
-        $this->assertNotNull($d->fresh()->last_seen_at);
+        $d->refresh();
+        $this->assertNotNull($d->last_seen_at);
         $this->assertDatabaseCount('attendances', 0);
+        $this->assertNull($d->last_payload);
     }
 
     public function test_get_is_a_heartbeat(): void
@@ -156,6 +162,8 @@ class BiometricWebhookTest extends TestCase
         DB::table('biometric_devices')->where('id', $d->id)->update(['brand' => 'removed']);
 
         $this->postJson("/api/biometric/hook/{$d->webhook_token}", ['emp' => '42', 'at' => '2026-09-28 09:00:00'])->assertNotFound();
+
+        $this->assertSame('token:unknown', app(UnknownBiometricDevices::class)->recent()[0]['serial_number']);
     }
 
     public function test_heartbeat_is_acknowledged_without_storing_payload(): void
@@ -167,5 +175,45 @@ class BiometricWebhookTest extends TestCase
         $d->refresh();
         $this->assertNotNull($d->last_seen_at);
         $this->assertNull($d->last_payload);
+    }
+
+    public function test_heartbeat_lowercase_event_type_is_also_recognized(): void
+    {
+        $d = $this->device();
+
+        $this->postJson("/api/biometric/hook/{$d->webhook_token}", ['eventType' => 'heartbeat'])->assertOk();
+
+        $this->assertNull($d->fresh()->last_payload);
+    }
+
+    public function test_driver_parse_exception_still_acknowledges(): void
+    {
+        $d = $this->device();
+
+        $this->mock(HikvisionDriver::class, function ($m) {
+            $m->shouldReceive('identifiesBy')->andReturn('token');
+            $m->shouldReceive('parse')->andThrow(new \RuntimeException('boom'));
+            $m->shouldReceive('acknowledge')->andReturn(response('OK', 200));
+        });
+
+        $this->postJson("/api/biometric/hook/{$d->webhook_token}", $this->hikEvent())->assertOk();
+    }
+
+    public function test_hook_route_has_rate_limit_middleware(): void
+    {
+        $middleware = app('router')->getRoutes()->getByName('biometric.hook')->gatherMiddleware();
+
+        $this->assertContains('throttle:biometric-hook', $middleware);
+    }
+
+    public function test_hook_route_is_rate_limited(): void
+    {
+        $d = $this->device();
+
+        RateLimiter::for('biometric-hook', fn () => Limit::perMinute(2));
+
+        $this->get("/api/biometric/hook/{$d->webhook_token}")->assertOk();
+        $this->get("/api/biometric/hook/{$d->webhook_token}")->assertOk();
+        $this->get("/api/biometric/hook/{$d->webhook_token}")->assertStatus(429);
     }
 }

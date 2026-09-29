@@ -19,7 +19,7 @@ Route::prefix('biometric')->group(function () {
     Route::get('iclock/cdata', [BiometricPushController::class, 'ping'])->name('biometric.iclock');
     // Per-device URL for Hikvision / generic webhook brands
     Route::match(['get', 'post'], 'hook/{token}', BiometricWebhookController::class)
-        ->where('token', '[A-Za-z0-9]{10,64}')->name('biometric.hook');
+        ->where('token', '[A-Za-z0-9]{10,64}')->middleware('throttle:biometric-hook')->name('biometric.hook');
 });
 
 Route::middleware(['auth:sanctum', 'resolve.gym'])->group(function () {
