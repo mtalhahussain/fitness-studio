@@ -91,7 +91,7 @@ The route sits outside `auth:sanctum`, next to the existing push routes.
 ### HikvisionDriver
 - Accepts JSON either as the raw body or inside a multipart part named `event_log` or `AccessControllerEvent`. Image parts are ignored.
 - Uses only events where `AccessControllerEvent.majorEventType == 5` and `employeeNoString` (fallback `employeeNo`) is present. All other events are skipped.
-- `time` comes from `dateTime` (ISO 8601 with offset) and is converted to the app timezone.
+- `time` from `dateTime`: converted to the machine's wall-clock time (device timezone, default `config('biometric.timezone')`) and labelled with the app timezone — the same form ZKTeco punches have always been stored in. See `WallClock`.
 - `type` comes from `attendanceStatus`: `checkIn` → `in`, `checkOut` → `out`, anything else → `null`.
 - Always acknowledges with `200`, so the terminal does not resend in a loop.
 

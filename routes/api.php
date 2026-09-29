@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\BiometricPushController;
 use App\Http\Controllers\Api\BiometricSyncController;
+use App\Http\Controllers\Api\BiometricWebhookController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\MembershipPlanController;
@@ -16,6 +17,9 @@ Route::prefix('biometric')->group(function () {
     Route::post('push',  [BiometricPushController::class, 'receive'])->name('biometric.push');
     Route::get('push',   [BiometricPushController::class, 'ping'])->name('biometric.ping');
     Route::get('iclock/cdata', [BiometricPushController::class, 'ping'])->name('biometric.iclock');
+    // Per-device URL for Hikvision / generic webhook brands
+    Route::match(['get', 'post'], 'hook/{token}', BiometricWebhookController::class)
+        ->where('token', '[A-Za-z0-9]{10,64}')->middleware('throttle:biometric-hook')->name('biometric.hook');
 });
 
 Route::middleware(['auth:sanctum', 'resolve.gym'])->group(function () {

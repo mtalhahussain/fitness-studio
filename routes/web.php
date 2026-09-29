@@ -102,6 +102,8 @@ Route::middleware(['auth', 'gym.tenant'])->group(function () {
                 Route::delete('/biometric/devices/{device}',              [BiometricDeviceWebController::class, 'destroy'])->name('biometric.devices.destroy');
                 Route::post('/biometric/devices/{device}/toggle',         [BiometricDeviceWebController::class, 'toggleStatus'])->name('biometric.devices.toggle');
                 Route::post('/biometric/devices/{device}/regenerate-key', [BiometricDeviceWebController::class, 'regenerateKey'])->name('biometric.devices.regenerate-key');
+                Route::post('/biometric/devices/{device}/regenerate-token', [BiometricDeviceWebController::class, 'regenerateToken'])->name('biometric.devices.regenerate-token');
+                Route::get('/biometric/devices/{device}/setup',             [BiometricDeviceWebController::class, 'setup'])->name('biometric.devices.setup');
             });
 
             // POS
