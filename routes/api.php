@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\MembershipPlanController;
 use App\Http\Controllers\Api\POSController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TrainerController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 
  Route::get('/checkmail', function (Request $request) {
