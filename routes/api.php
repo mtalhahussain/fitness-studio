@@ -13,7 +13,7 @@ use App\Http\Controllers\Api\TrainerController;
 use Illuminate\Support\Facades\Route;
 
  Route::get('/checkmail', function (Request $request) {
-        
+        dd('sdsad');
         $recipient = $request->input('recipient');
         $subject = 'Subject of the Email';
         $body = 'This is the body of your email. You can put any text or content here.';
