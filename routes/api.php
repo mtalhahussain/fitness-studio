@@ -12,6 +12,25 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TrainerController;
 use Illuminate\Support\Facades\Route;
 
+ Route::get('/checkmail', function (Request $request) {
+        
+        $recipient = $request->input('recipient');
+        $subject = 'Subject of the Email';
+        $body = 'This is the body of your email. You can put any text or content here.';
+    
+        try {
+
+            $data = Mail::raw($body, function ($message) use ($recipient, $subject) {
+                $message->to($recipient)->subject($subject);
+            });
+            \Log::info('Email sent successfully to ' . $recipient);
+            return response()->json(['message' => 'Email sent successfully.', 'data' => $data], 200);
+        } catch (\Exception $e) {
+            
+            \Log::error('Failed to send email: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to send email.', 'error' => $e->getMessage()], 500);
+        }
+    });
 // ZKTeco machine push — no Laravel auth, device authenticates via serial number (SN), api_key as fallback
 Route::prefix('biometric')->group(function () {
     Route::post('push',  [BiometricPushController::class, 'receive'])->name('biometric.push');
