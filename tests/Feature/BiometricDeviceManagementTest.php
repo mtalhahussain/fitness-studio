@@ -105,6 +105,18 @@ class BiometricDeviceManagementTest extends TestCase
             ->assertJsonStructure(['steps', 'webhook_url', 'last_payload', 'last_payload_at']);
     }
 
+    public function test_page_renders_brand_dropdown_and_badges(): void
+    {
+        $this->actingAs($this->owner)->postJson('/biometric/devices', ['brand' => 'hikvision', 'name' => 'Face Terminal']);
+
+        $this->actingAs($this->owner)->get('/biometric/devices')
+            ->assertOk()
+            ->assertSee('ZKTeco / eSSL / Realtime')
+            ->assertSee('Suprema BioStar 2 (unverified)')
+            ->assertSee('Face Terminal')
+            ->assertSee('Setup / Test');
+    }
+
     public function test_index_renders_with_serialless_device(): void
     {
         $this->actingAs($this->owner)->postJson('/biometric/devices', ['brand' => 'hikvision', 'name' => 'Face'])->assertOk();
