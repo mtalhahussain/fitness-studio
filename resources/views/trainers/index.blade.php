@@ -2,6 +2,7 @@
 @section('title', 'Trainers')
 
 @section('content')
+@php $biometricOn = auth()->user()->isAdmin() || \App\Models\Gym::find(auth()->user()->gym_id)?->hasModule('biometric'); @endphp
 <div x-data="trainersPage()" x-init="init()">
 
     <div class="page-header">
@@ -68,6 +69,13 @@
                             <span style="color:var(--text-muted)">Compensation:</span>
                         <span class="badge" :class="compBadgeClass(t.trainer_profile)" x-text="compLabel(t.trainer_profile)"></span>
                         </div>
+                    @if($biometricOn)
+                    <div style="margin-top:8px;font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:4px">
+                        <span style="color:var(--text-muted)">Machine PIN:</span> <code x-text="t.biometric_code || '—'"></code>
+                        <button class="btn btn-outline btn-sm" style="padding:1px 6px" title="Send to machines" @click="machinePin.push(t)">📲</button>
+                        <button class="btn btn-outline btn-sm" style="padding:1px 6px" title="New PIN" x-show="t.biometric_code" @click="machinePin.regenerate(t)">↺</button>
+                    </div>
+                    @endif
                     <template x-if="t.trainer_profile?.hourly_rate">
                         <div style="margin-top:8px;font-size:12px;color:var(--text-dim)">
                             <span style="color:var(--text-muted)">Rate:</span> <span x-text="currency(t.trainer_profile.hourly_rate)"></span>/hr
@@ -296,6 +304,7 @@
 @endsection
 
 @push('scripts')
+@if($biometricOn) @include('biometric._pin-script') @endif
 <script>
 function trainersPage() {
     return {

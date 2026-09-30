@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Biometric\DeviceCommandQueue;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\TrainerService;
@@ -65,7 +66,12 @@ class TrainerWebController extends Controller
         $gymId = auth()->user()->gym_id;
         abort_if($gymId && $trainer->gym_id !== $gymId, 403);
 
+        $oldName = $trainer->name;
         $updated = $this->service->updateTrainer($trainer, $data);
+
+        if ($updated->name !== $oldName) {
+            app(DeviceCommandQueue::class)->pushUser($updated); // machines show the new name
+        }
 
         return response()->json(['message' => 'Trainer updated successfully.', 'trainer' => $updated]);
     }
@@ -74,6 +80,9 @@ class TrainerWebController extends Controller
     {
         $gymId = auth()->user()->gym_id;
         abort_if($gymId && $trainer->gym_id !== $gymId, 403);
+        if ($trainer->biometric_code) {
+            app(DeviceCommandQueue::class)->removePin($trainer->gym_id, $trainer->biometric_code, $trainer->id);
+        }
         $trainer->delete();
 
         return response()->json(['message' => 'Trainer deleted successfully.']);

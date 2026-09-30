@@ -79,7 +79,7 @@
                             <span style="font-size:12px;font-weight:600;color:var(--text-primary)">Set Push Server on Device</span>
                         </div>
                         <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin:0">
-                            On the ZKTeco device go to <strong style="color:var(--text-secondary)">Menu → Comm → Cloud Server</strong> and set the server address to your app URL. The device will push punch logs automatically.
+                            On the ZKTeco device go to <strong style="color:var(--text-secondary)">Menu → Comm → Cloud Server</strong> and set the server address to your app's domain (no http://) and its port; leave the URL path empty. The device will push punch logs automatically.
                         </p>
                     </div>
 
@@ -96,10 +96,10 @@
                     <div style="background:var(--surface);border-radius:10px;padding:14px;border:1px solid var(--border)">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                             <span style="width:20px;height:20px;background:var(--primary);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">3</span>
-                            <span style="font-size:12px;font-weight:600;color:var(--text-primary)">Map Enrollment Numbers</span>
+                            <span style="font-size:12px;font-weight:600;color:var(--text-primary)">Enroll Fingers</span>
                         </div>
                         <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin:0">
-                            The enrollment number programmed on the device must match the member's <strong style="color:var(--text-secondary)">User ID</strong> in this system. First sync auto-links via the attendance record; subsequent punches resolve automatically.
+                            Every member and trainer gets a <strong style="color:var(--text-secondary)">Machine PIN</strong> (Members list) and is sent to the device automatically. On the device, enroll the finger under that PIN — punches then link to the member on their own.
                         </p>
                     </div>
 

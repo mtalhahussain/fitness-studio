@@ -72,6 +72,15 @@
                                 Waiting for first contact
                             @endif
                         </div>
+                        @php $q = $commandCounts[$device->serial_number] ?? []; @endphp
+                        @if(($q['pending'] ?? 0) + ($q['sent'] ?? 0) + ($q['failed'] ?? 0) > 0)
+                        <div class="cell-sub" style="margin-top:3px" title="Users queued from the portal to this machine">
+                            📲 {{ ($q['pending'] ?? 0) + ($q['sent'] ?? 0) }} waiting
+                            @if($q['failed'] ?? 0)
+                                · <span style="color:var(--danger)">{{ $q['failed'] }} failed</span>
+                            @endif
+                        </div>
+                        @endif
                     </td>
                     <td style="text-align:center">
                         <span id="status-{{ $device->id }}" class="badge {{ $device->is_active ? 'badge-green' : 'badge-red' }}">
@@ -80,6 +89,9 @@
                     </td>
                     <td style="text-align:right">
                         <button class="btn btn-primary btn-sm" onclick="openSetup({{ $device->id }})">Setup / Test</button>
+                        @if($device->brand === 'zkteco')
+                        <button class="btn btn-outline btn-sm" title="Send all members and trainers to this machine" onclick="pushUsers({{ $device->id }})">Sync users</button>
+                        @endif
                         <button class="btn btn-outline btn-sm" onclick="openEdit({{ \Illuminate\Support\Js::from($device->only(['id', 'name', 'model', 'location', 'brand', 'settings'])) }})">Edit</button>
                         <button class="btn btn-outline btn-sm" onclick="toggleDevice({{ $device->id }})">Toggle</button>
                         <button class="btn btn-outline btn-sm" style="color:var(--danger)" onclick="deleteDevice({{ $device->id }})">Delete</button>
@@ -133,23 +145,27 @@
         <table style="border-collapse:collapse;width:100%;max-width:500px;margin-top:8px">
             <tr>
                 <td style="padding:4px 12px 4px 0;font-weight:600;color:var(--text)">Server Address</td>
-                <td><code style="background:var(--bg-alt);padding:2px 8px;border-radius:4px">{{ request()->getSchemeAndHttpHost() }}</code></td>
-            </tr>
-            <tr>
-                <td style="padding:4px 12px 4px 0;font-weight:600;color:var(--text)">URL Path</td>
-                <td><code style="background:var(--bg-alt);padding:2px 8px;border-radius:4px">/api/biometric/push</code></td>
+                <td><code style="background:var(--bg-alt);padding:2px 8px;border-radius:4px">{{ request()->getHost() }}</code> <span class="cell-sub">(no http://)</span></td>
             </tr>
             <tr>
                 <td style="padding:4px 12px 4px 0;font-weight:600;color:var(--text)">Port</td>
                 <td><code style="background:var(--bg-alt);padding:2px 8px;border-radius:4px">{{ request()->getPort() }}</code></td>
             </tr>
             <tr>
-                <td style="padding:4px 12px 4px 0;font-weight:600;color:var(--text)">API Key</td>
-                <td>Copy from device row above and paste into machine's <em>Password</em> / <em>API Key</em> field</td>
+                <td style="padding:4px 12px 4px 0;font-weight:600;color:var(--text)">URL Path</td>
+                <td>Leave empty — the machine calls <code style="background:var(--bg-alt);padding:2px 8px;border-radius:4px">/iclock/cdata</code> by itself. Only if the firmware insists on a path: <code style="background:var(--bg-alt);padding:2px 8px;border-radius:4px">/api/biometric/push</code></td>
             </tr>
             <tr>
-                <td style="padding:4px 12px 4px 0;font-weight:600;color:var(--text)">Employee Number</td>
-                <td>Enroll each member with their <strong>User ID</strong> from this system as Employee Number</td>
+                <td style="padding:4px 12px 4px 0;font-weight:600;color:var(--text)">Serial Number</td>
+                <td>The machine is identified by its SN — it must match the serial number added above (System Info → Device Info)</td>
+            </tr>
+            <tr>
+                <td style="padding:4px 12px 4px 0;font-weight:600;color:var(--text)">Users / Fingerprints</td>
+                <td>Don't type users on the machine. Add the member/trainer in the portal — they are sent to the machine with their <strong>Machine PIN</strong> (shown in the Members list). Then on the machine: User Mgt → that PIN → enroll finger. For a new machine press <em>Sync users</em>.</td>
+            </tr>
+            <tr>
+                <td style="padding:4px 12px 4px 0;font-weight:600;color:var(--text)">Punch Mode</td>
+                <td>If check-outs never appear (every punch arrives as check-in), edit the device and choose <em>Alternate in/out</em></td>
             </tr>
         </table>
     </div>
@@ -417,6 +433,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(err) { toast(err.message, 'error'); }
     };
 });
+
+async function pushUsers(id) {
+    if (!confirm('Send all members and trainers of this gym to the machine? It picks them up within a minute; then enroll fingers on the machine.')) return;
+    try {
+        const res = await post(`/biometric/devices/${id}/push-users`);
+        toast(`${res.queued} user(s) queued to the machine`);
+    } catch(err) { toast(err.message, 'error'); }
+}
 
 async function toggleDevice(id) {
     try {

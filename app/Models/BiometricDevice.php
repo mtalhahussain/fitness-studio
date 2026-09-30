@@ -11,7 +11,12 @@ class BiometricDevice extends Model
         'gym_id', 'brand', 'serial_number', 'name', 'model',
         'location', 'api_key', 'settings',
         'is_active', 'last_seen_at',
+        'attlog_stamp', 'operlog_stamp',
     ];
+
+    /** ZKTeco punch modes: trust the machine's in/out status, or alternate in/out per punch. */
+    public const PUNCH_MODE_STATUS = 'status';
+    public const PUNCH_MODE_TOGGLE = 'toggle';
 
     protected $hidden = ['last_payload'];
 
@@ -53,6 +58,34 @@ class BiometricDevice extends Model
         return $tz && in_array($tz, timezone_identifiers_list(), true)
             ? $tz
             : (config('biometric.timezone') ?: 'Asia/Karachi');
+    }
+
+    public function punchMode(): string
+    {
+        return ($this->settings['punch_mode'] ?? null) === self::PUNCH_MODE_TOGGLE
+            ? self::PUNCH_MODE_TOGGLE
+            : self::PUNCH_MODE_STATUS;
+    }
+
+    /** ADMS handshake reply for GET /iclock/cdata. Both stamp spellings: old firmware reads Stamp/OpStamp. */
+    public function admsOptions(): string
+    {
+        $attStamp = $this->attlog_stamp ?: '9999';
+        $opStamp  = $this->operlog_stamp ?: '9999';
+
+        return implode("\n", [
+            "GET OPTION FROM: {$this->serial_number}",
+            "ATTLOGStamp={$attStamp}",
+            "OPERLOGStamp={$opStamp}",
+            "Stamp={$attStamp}",
+            "OpStamp={$opStamp}",
+            'ErrorDelay=30',
+            'Delay=10',
+            'TransInterval=1',
+            'TransFlag=1111000000',
+            'Realtime=1',
+            'Encrypt=0',
+        ]) . "\n";
     }
 
     /** Keep a copy of the last raw request (capped at 10 KB) for the Setup / Test panel. */

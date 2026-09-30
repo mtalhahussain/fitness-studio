@@ -5,6 +5,14 @@ return [
     // offset-carrying times into the wall-clock time we store (see WallClock).
     'timezone' => env('BIOMETRIC_TIMEZONE', 'Asia/Karachi'),
 
+    // ZKTeco ADMS command queue (device_commands).
+    'adms' => [
+        // Commands handed out per GET /iclock/getrequest poll (the machine polls every few seconds).
+        'commands_per_poll'    => (int) env('BIOMETRIC_ADMS_COMMANDS_PER_POLL', 10),
+        // A command sent but never answered (machine rebooted, network drop) is sent again after this.
+        'resend_after_minutes' => (int) env('BIOMETRIC_ADMS_RESEND_AFTER_MINUTES', 10),
+    ],
+
     // Brand dropdown, in display order. To add a brand: write a driver class and add a line.
     'drivers' => [
         'zkteco'    => App\Biometric\Drivers\ZKTecoDriver::class,

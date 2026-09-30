@@ -2,6 +2,7 @@
 @section('title', 'Members')
 
 @section('content')
+@php $biometricOn = auth()->user()->isAdmin() || \App\Models\Gym::find(auth()->user()->gym_id)?->hasModule('biometric'); @endphp
 <div x-data="membersPage()" x-init="init()" style="height:100%">
 
     {{-- Header --}}
@@ -38,6 +39,7 @@
                     <tr>
                         <th>Member</th>
                         <th>Phone</th>
+                        @if($biometricOn)<th title="Employee number on the fingerprint machine">Machine PIN</th>@endif
                         <th>Status</th>
                         <th>Membership</th>
                         <th>Joined</th>
@@ -46,10 +48,10 @@
                 </thead>
                 <tbody>
                     <template x-if="loading">
-                        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)"><span class="spinner"></span> Loading...</td></tr>
+                        <tr><td colspan="{{ $biometricOn ? 7 : 6 }}" style="text-align:center;padding:40px;color:var(--text-muted)"><span class="spinner"></span> Loading...</td></tr>
                     </template>
                     <template x-if="!loading && members.length === 0">
-                        <tr><td colspan="6"><div class="empty-state"><div class="icon">👥</div><p>No members found</p></div></td></tr>
+                        <tr><td colspan="{{ $biometricOn ? 7 : 6 }}"><div class="empty-state"><div class="icon">👥</div><p>No members found</p></div></td></tr>
                     </template>
                     <template x-for="m in members" :key="m.id">
                         <tr>
@@ -63,6 +65,15 @@
                                 </div>
                             </td>
                             <td x-text="m.phone || '—'"></td>
+                            @if($biometricOn)
+                            <td>
+                                <div style="display:flex;align-items:center;gap:4px">
+                                    <code style="font-size:12px" x-text="m.biometric_code || '—'"></code>
+                                    <button class="btn btn-outline btn-sm" style="padding:1px 6px" title="Send to machines" @click="machinePin.push(m)">📲</button>
+                                    <button class="btn btn-outline btn-sm" style="padding:1px 6px" title="New PIN" x-show="m.biometric_code" @click="machinePin.regenerate(m)">↺</button>
+                                </div>
+                            </td>
+                            @endif
                             <td>
                                 <span class="badge" :class="m.status==='active'?'badge-green':m.status==='suspended'?'badge-red':'badge-gray'" x-text="m.status"></span>
                             </td>
@@ -381,6 +392,7 @@
 @endsection
 
 @push('scripts')
+@if($biometricOn) @include('biometric._pin-script') @endif
 <script>
 function membersPage() {
     return {

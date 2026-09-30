@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Biometric\DeviceCommandQueue;
 use App\Http\Controllers\Controller;
 use App\Models\Membership;
 use App\Models\MembershipPlan;
@@ -67,6 +68,10 @@ class MemberWebController extends Controller
 
         $member->update($data);
 
+        if ($member->wasChanged('name')) {
+            app(DeviceCommandQueue::class)->pushUser($member); // machines show the new name
+        }
+
         return response()->json(['message' => 'Member updated successfully.', 'member' => $member->fresh()]);
     }
 
@@ -74,6 +79,9 @@ class MemberWebController extends Controller
     {
         $gymId = auth()->user()->gym_id;
         abort_if($gymId && $member->gym_id !== $gymId, 403);
+        if ($member->biometric_code) {
+            app(DeviceCommandQueue::class)->removePin($member->gym_id, $member->biometric_code, $member->id);
+        }
         $member->delete();
 
         return response()->json(['message' => 'Member deleted successfully.']);

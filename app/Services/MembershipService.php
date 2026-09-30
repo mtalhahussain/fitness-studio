@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Biometric\DeviceCommandQueue;
 use App\Events\MembershipExpired;
 use App\Events\PaymentReceived;
 use App\Models\Invoice;
@@ -30,6 +31,9 @@ class MembershipService extends BaseService
             ]);
 
             $member->assignRole('member');
+
+            // Machine PIN + queue the user to the gym's ZKTeco machines (portal-first enrollment).
+            app(DeviceCommandQueue::class)->enroll($member);
 
             if (! empty($data['plan_id'])) {
                 $this->assignMembership($member, $data['plan_id'], $gymId, $data);

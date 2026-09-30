@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Log;
 /**
  * Fixed-URL endpoint for ZKTeco ADMS / iClock push (also eSSL, ZK-based Realtime).
  *
- * Machine setup: Server Address = our host, Port = 80/443, URL path = /api/biometric/push.
+ * Legacy path, kept for firmware that insists on a custom URL path (/api/biometric/push).
+ * Real ADMS machines use the root /iclock/* routes — see IclockController.
  * Devices identify themselves via the iClock `SN` query param (matched against
  * biometric_devices.serial_number). `api_key` is still accepted as a fallback for
  * manual testing (Postman/curl).

@@ -8,11 +8,14 @@ use App\Biometric\WallClock;
 use App\Models\BiometricDevice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 
 /** ZKTeco ADMS / iClock push. Also eSSL and ZK-based Realtime machines. */
 class ZKTecoDriver implements BiometricDriver
 {
+    private const ATTLOG_TIME = '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/';
+
     public function key(): string        { return 'zkteco'; }
     public function label(): string      { return 'ZKTeco / eSSL / Realtime'; }
     public function identifiesBy(): string { return 'serial'; }
@@ -24,7 +27,9 @@ class ZKTecoDriver implements BiometricDriver
 
     public function settingsRules(): array
     {
-        return [];
+        return [
+            'settings.punch_mode' => ['nullable', Rule::in([BiometricDevice::PUNCH_MODE_STATUS, BiometricDevice::PUNCH_MODE_TOGGLE])],
+        ];
     }
 
     public function setupSteps(BiometricDevice $device, string $baseUrl): array
@@ -40,9 +45,12 @@ class ZKTecoDriver implements BiometricDriver
             'On the machine open COMM → Cloud Server Setting (ADMS).',
             "Server address: {$host}",
             $portLine,
-            'Set the URL path to exactly /api/biometric/push (do not leave it empty).',
+            'Leave the URL path / server path empty if the machine shows one — it calls /iclock/cdata on its own. (Only firmware that insists on a path: use /api/biometric/push.)',
             "The machine's serial number must be exactly: " . ($device->serial_number ?: '—'),
-            "Enroll each member on the machine with their Biometric Code (or User ID) as the Employee Number.",
+            'Members and trainers are sent to the machine automatically when added in the portal (or with "Sync users"). On the machine open User Mgt → find the user by their Machine PIN → enroll the finger.',
+            $device->punchMode() === BiometricDevice::PUNCH_MODE_STATUS
+                ? 'Punch mode is "Use machine in/out status": members must press the Check-In / Check-Out key (or set the machine to auto-switch status by time). If every punch arrives as check-in, switch this device to "Alternate in/out".'
+                : 'Punch mode is "Alternate in/out": each punch flips the member between checked in and checked out.',
         ];
     }
 
@@ -50,24 +58,88 @@ class ZKTecoDriver implements BiometricDriver
     {
         $contentType = $request->header('Content-Type', '');
         $raw         = $request->getContent();
+        $table       = is_string($request->query('table')) ? $request->query('table') : null;
+
+        if ($table !== null && strtoupper($table) !== 'ATTLOG') {
+            return []; // OPERLOG, USERINFO etc. carry no punches
+        }
+
+        if ($table !== null || $this->looksLikeAttlog($raw)) {
+            return $this->parseAttlog($raw, $device);
+        }
 
         if (str_contains($contentType, 'json') || str_starts_with(trim($raw), '{') || str_starts_with(trim($raw), '[')) {
             $rows = $this->parseJson($request);
         } elseif (str_contains($contentType, 'xml') || str_starts_with(trim($raw), '<')) {
             $rows = $this->parseXml($raw);
-        } elseif ($request->has('table') || $request->has('Stamp')) {
-            $rows = $this->parseFormPost($request);
         } else {
             $rows = [];
         }
 
-        $tz = $device->timezone();
+        return $this->toPunchLogs($rows, $device);
+    }
 
+    /**
+     * ADMS ATTLOG body: POST /iclock/cdata?SN=..&table=ATTLOG&Stamp=..
+     * One punch per line, tab-separated: PIN, "YYYY-MM-DD HH:MM:SS", status, verify, workcode, ...
+     * Status: 0 check-in, 1 check-out, 2 break-out, 3 break-in, 4 OT-in, 5 OT-out.
+     *
+     * @return PunchLog[]
+     */
+    public function parseAttlog(string $raw, BiometricDevice $device): array
+    {
+        $useStatus = $device->punchMode() === BiometricDevice::PUNCH_MODE_STATUS;
+        $rows      = [];
+
+        foreach (preg_split('/\r\n|\r|\n/', $raw) as $line) {
+            $fields = explode("\t", trim($line, "\r\n"));
+            $pin    = trim($fields[0] ?? '');
+            $time   = trim($fields[1] ?? '');
+
+            if ($pin === '' || ! preg_match(self::ATTLOG_TIME, $time)) {
+                if (trim($line) !== '') {
+                    Log::warning('ZKTeco: unparseable ATTLOG line skipped', ['line' => mb_substr($line, 0, 200), 'device_id' => $device->id]);
+                }
+                continue;
+            }
+
+            $rows[] = [
+                'employee_id' => $pin,
+                'time'        => $time,
+                'type'        => $useStatus ? $this->statusToType(trim($fields[2] ?? '')) : null,
+            ];
+        }
+
+        return $this->toPunchLogs($rows, $device);
+    }
+
+    /** An ATTLOG body without the table param (e.g. replayed from last_payload in the Setup panel). */
+    private function looksLikeAttlog(string $raw): bool
+    {
+        $first  = strtok(ltrim($raw), "\r\n");
+        $fields = $first === false ? [] : explode("\t", $first);
+
+        return count($fields) >= 2 && preg_match(self::ATTLOG_TIME, trim($fields[1])) === 1;
+    }
+
+    private function statusToType(string $status): ?string
+    {
+        return match ($status) {
+            '0', '3', '4' => PunchLog::IN,
+            '1', '2', '5' => PunchLog::OUT,
+            default       => null,
+        };
+    }
+
+    /** @return PunchLog[] */
+    private function toPunchLogs(array $rows, BiometricDevice $device): array
+    {
+        $tz   = $device->timezone();
         $logs = [];
 
         foreach ($rows as $r) {
             try {
-                $logs[] = new PunchLog((string) $r['employee_id'], WallClock::parse((string) $r['time'], $tz));
+                $logs[] = new PunchLog((string) $r['employee_id'], WallClock::parse((string) $r['time'], $tz), $r['type'] ?? null);
             } catch (\Throwable $e) {
                 Log::warning('ZKTeco: unparseable punch time skipped', [
                     'employee_id' => $r['employee_id'] ?? null,
@@ -128,31 +200,6 @@ class ZKTecoDriver implements BiometricDriver
             }
         } catch (\Throwable $e) {
             Log::warning('ZKTeco XML parse error: ' . $e->getMessage());
-        }
-
-        return array_filter($logs, fn ($l) => $l['employee_id'] && $l['time']);
-    }
-
-    /**
-     * Form-POST format — iClock legacy (table=ATTLOG&Stamp=...)
-     * "5\t2026-05-12 09:00:00\t0\t1\t\t0\n..."
-     */
-    private function parseFormPost(Request $request): array
-    {
-        $logs  = [];
-        $stamp = $request->input('Stamp', '');
-
-        foreach (explode("\n", trim($stamp)) as $line) {
-            $line = trim($line);
-            if (! $line) continue;
-
-            $parts = preg_split('/\t+/', $line);
-            if (count($parts) < 2) continue;
-
-            $logs[] = [
-                'employee_id' => $parts[0] ?? null,
-                'time'        => $parts[1] ?? null,
-            ];
         }
 
         return array_filter($logs, fn ($l) => $l['employee_id'] && $l['time']);

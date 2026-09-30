@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Trainer\TrainerPortalController;
 use App\Http\Controllers\Web\AttendanceWebController;
 use App\Http\Controllers\Web\BiometricDeviceWebController;
+use App\Http\Controllers\Web\BiometricUserWebController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\GymWebController;
 use App\Http\Controllers\Web\MemberWebController;
@@ -104,6 +105,12 @@ Route::middleware(['auth', 'gym.tenant'])->group(function () {
                 Route::post('/biometric/devices/{device}/regenerate-key', [BiometricDeviceWebController::class, 'regenerateKey'])->name('biometric.devices.regenerate-key');
                 Route::post('/biometric/devices/{device}/regenerate-token', [BiometricDeviceWebController::class, 'regenerateToken'])->name('biometric.devices.regenerate-token');
                 Route::get('/biometric/devices/{device}/setup',             [BiometricDeviceWebController::class, 'setup'])->name('biometric.devices.setup');
+                Route::post('/biometric/devices/{device}/push-users',       [BiometricDeviceWebController::class, 'pushUsers'])->name('biometric.devices.push-users');
+
+                // Machine PIN of a member/trainer
+                Route::get('/biometric/users/{user}',                       [BiometricUserWebController::class, 'show'])->name('biometric.users.show');
+                Route::post('/biometric/users/{user}/push',                 [BiometricUserWebController::class, 'push'])->name('biometric.users.push');
+                Route::post('/biometric/users/{user}/regenerate',           [BiometricUserWebController::class, 'regenerate'])->name('biometric.users.regenerate');
             });
 
             // POS

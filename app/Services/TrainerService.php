@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Biometric\DeviceCommandQueue;
 use App\Models\MemberTrainingPeriod;
 use App\Models\TrainerProfile;
 use App\Models\TrainingSession;
@@ -27,6 +28,9 @@ class TrainerService extends BaseService
             ]);
 
             $trainer->assignRole('trainer');
+
+            // Machine PIN + queue the user to the gym's ZKTeco machines (portal-first enrollment).
+            app(DeviceCommandQueue::class)->enroll($trainer);
 
             TrainerProfile::create([
                 'user_id'          => $trainer->id,

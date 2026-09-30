@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Web;
 
 use App\Biometric\Contracts\BiometricDriver;
+use App\Biometric\DeviceCommandQueue;
 use App\Biometric\DriverRegistry;
 use App\Http\Controllers\Controller;
 use App\Models\BiometricDevice;
+use App\Models\DeviceCommand;
 use App\Services\UnknownBiometricDevices;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -31,7 +33,17 @@ class BiometricDeviceWebController extends Controller
         $brands  = app(DriverRegistry::class)->options();
         $presets = config('biometric.generic_presets');
 
-        return view('biometric.devices', compact('devices', 'unknownDevices', 'brands', 'presets'));
+        // Portal → machine queue per SN: ['SN' => ['pending' => n, 'sent' => n, 'failed' => n]]
+        $commandCounts = DeviceCommand::whereIn('device_serial_number', $devices->pluck('serial_number')->filter())
+            ->whereIn('status', [DeviceCommand::PENDING, DeviceCommand::SENT, DeviceCommand::FAILED])
+            ->selectRaw('device_serial_number, status, count(*) as n')
+            ->groupBy('device_serial_number', 'status')
+            ->get()
+            ->groupBy('device_serial_number')
+            ->map(fn ($rows) => $rows->pluck('n', 'status')->all())
+            ->all();
+
+        return view('biometric.devices', compact('devices', 'unknownDevices', 'brands', 'presets', 'commandCounts'));
     }
 
     public function store(Request $request)
@@ -147,6 +159,16 @@ class BiometricDeviceWebController extends Controller
         $device->update(['is_active' => ! $device->is_active]);
 
         return response()->json(['ok' => true, 'is_active' => $device->is_active]);
+    }
+
+    /** Queue every member and trainer of the gym to this machine (new machine, or after a reset). */
+    public function pushUsers(BiometricDevice $device)
+    {
+        abort_if($device->gym_id !== $this->gymId(), 403);
+        abort_if($device->brand !== 'zkteco' || ! $device->serial_number, 422, 'Only ZKTeco machines take users from the portal.');
+        abort_if(! $device->is_active, 422, 'Activate the device first.');
+
+        return response()->json(['ok' => true, 'queued' => app(DeviceCommandQueue::class)->pushAllUsers($device)]);
     }
 
     public function regenerateKey(BiometricDevice $device)

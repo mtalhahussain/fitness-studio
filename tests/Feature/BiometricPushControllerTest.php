@@ -152,7 +152,7 @@ class BiometricPushControllerTest extends TestCase
         $this->assertDatabaseHas('attendances', ['user_id' => $user->id, 'source' => 'biometric']);
     }
 
-    public function test_form_post_stamp_payload_records_attendance(): void
+    public function test_raw_attlog_body_on_legacy_push_path_records_attendance(): void
     {
         $gym    = $this->makeGym();
         $device = $this->makeDevice($gym, ['serial_number' => 'SN-FORM']);
@@ -164,10 +164,13 @@ class BiometricPushControllerTest extends TestCase
             'status'   => 'active',
         ]);
 
-        $response = $this->post('/api/biometric/push?SN=' . $device->serial_number, [
-            'table' => 'ATTLOG',
-            'Stamp' => "{$user->id}\t2026-07-13 09:00:00\t0\n",
-        ]);
+        // Real ADMS shape: table/Stamp in the query, tab-separated rows in a text/plain body.
+        $response = $this->call(
+            'POST',
+            '/api/biometric/push?SN=' . $device->serial_number . '&table=ATTLOG&Stamp=9999',
+            [], [], [], ['CONTENT_TYPE' => 'text/plain'],
+            "{$user->id}\t2026-07-13 09:00:00\t0\t1\t0\t0\t0\n"
+        );
 
         $response->assertOk();
         $this->assertDatabaseHas('attendances', ['user_id' => $user->id, 'source' => 'biometric']);

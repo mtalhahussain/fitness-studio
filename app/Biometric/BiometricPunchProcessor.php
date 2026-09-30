@@ -96,18 +96,7 @@ class BiometricPunchProcessor
             return $byId;
         }
 
-        $byPhone = User::where('gym_id', $gymId)
-            ->where('phone', $employeeId)
-            ->first();
-
-        if ($byPhone) {
-            if (empty($byPhone->biometric_code)) {
-                $byPhone->update(['biometric_code' => $employeeId]);
-            }
-
-            return $byPhone;
-        }
-
+        // Phone numbers are not matched: 11 digits don't fit a machine PIN.
         return $this->autoCreateMemberFromDevice($employeeId, $device);
     }
 
