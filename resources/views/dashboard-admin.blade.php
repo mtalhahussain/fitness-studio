@@ -77,7 +77,7 @@
                     <tr>
                         <td>
                             <div style="display:flex;align-items:center;gap:10px">
-                                <div class="avatar" style="background:linear-gradient(135deg,var(--primary),var(--accent));font-size:11px;font-weight:700">
+                                <div class="avatar" style="background:var(--primary-fill);color:var(--on-primary);font-size:11px;font-weight:800">
                                     {{ strtoupper(substr($gym->name, 0, 2)) }}
                                 </div>
                                 <div>

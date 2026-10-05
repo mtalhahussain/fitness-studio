@@ -70,10 +70,10 @@
 
 {{-- Membership Info Banner --}}
 @if($membership)
-<div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,var(--primary-dim),rgba(108,99,255,0.06));border-color:rgba(108,99,255,0.2)">
+<div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,var(--primary-dim),rgba(var(--primary-rgb),0.06));border-color:rgba(var(--primary-rgb),0.2)">
     <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-        <div style="width:48px;height:48px;border-radius:12px;background:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+        <div style="width:48px;height:48px;border-radius:12px;background:var(--primary-fill);color:var(--on-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
         </div>
         <div style="flex:1;min-width:0">
             <div style="font-size:15px;font-weight:700;color:var(--text)">{{ $membership->plan->name ?? 'Membership' }}</div>

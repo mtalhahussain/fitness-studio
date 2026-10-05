@@ -74,7 +74,7 @@
                     <tr>
                         <td>
                             <a href="{{ route('my.members.show', $member) }}" style="display:flex;align-items:center;gap:10px;text-decoration:none">
-                                <div class="avatar" style="background:{{ collect(['#6C63FF','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'])[abs(crc32($member->name)) % 7] }};font-size:11px;font-weight:700">{{ strtoupper(substr($member->name,0,2)) }}</div>
+                                <div class="avatar" style="background:{{ collect(['#65a30d','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'])[abs(crc32($member->name)) % 7] }};font-size:11px;font-weight:700">{{ strtoupper(substr($member->name,0,2)) }}</div>
                                 <div>
                                     <div class="cell-main">{{ $member->name }}</div>
                                     <div class="cell-sub">{{ $member->phone ?: $member->email }}</div>

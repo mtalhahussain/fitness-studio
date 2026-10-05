@@ -4,7 +4,7 @@
 @section('content')
 <div class="page-header">
     <div style="display:flex;align-items:center;gap:14px">
-        <div class="avatar" style="width:48px;height:48px;background:{{ collect(['#6C63FF','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'])[abs(crc32($member->name)) % 7] }};font-size:15px;font-weight:700">{{ strtoupper(substr($member->name,0,2)) }}</div>
+        <div class="avatar" style="width:48px;height:48px;background:{{ collect(['#65a30d','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'])[abs(crc32($member->name)) % 7] }};font-size:15px;font-weight:700">{{ strtoupper(substr($member->name,0,2)) }}</div>
         <div>
             <a href="{{ route('my.members') }}" style="font-size:12px;color:var(--text-muted);text-decoration:none">← My Members</a>
             <div class="page-title">{{ $member->name }}</div>

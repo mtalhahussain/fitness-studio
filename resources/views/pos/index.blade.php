@@ -51,13 +51,13 @@
     </div>
 
     {{-- Tabs --}}
-    <div style="display:flex;gap:4px;margin-bottom:16px;background:rgba(255,255,255,0.03);border-radius:10px;padding:4px;width:fit-content">
+    <div style="display:flex;gap:4px;margin-bottom:16px;background:var(--tint-1);border-radius:10px;padding:4px;width:fit-content">
         <button type="button" class="btn btn-sm" @click="tab='invoices'"
-            :style="tab==='invoices' ? 'background:var(--primary);color:#fff' : 'background:transparent;color:var(--text-muted)'">
+            :style="tab==='invoices' ? 'background:var(--primary-fill);color:var(--on-primary)' : 'background:transparent;color:var(--text-muted)'">
             🧾 Invoices
         </button>
         <button type="button" class="btn btn-sm" @click="tab='products'; loadProducts()"
-            :style="tab==='products' ? 'background:var(--primary);color:#fff' : 'background:transparent;color:var(--text-muted)'">
+            :style="tab==='products' ? 'background:var(--primary-fill);color:var(--on-primary)' : 'background:transparent;color:var(--text-muted)'">
             📦 Products
         </button>
     </div>
@@ -253,7 +253,7 @@
                 </div>
 
                 <template x-if="invoiceForm.items.length === 0">
-                    <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px dashed var(--border)">
+                    <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;background:var(--tint-1);border-radius:8px;border:1px dashed var(--border)">
                         Use catalog dropdown above or click "Add Row" to add items
                     </div>
                 </template>
@@ -295,7 +295,7 @@
                     </div>
                 </div>
 
-                <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:14px;border:1px solid var(--border)">
+                <div style="background:var(--tint-1);border-radius:10px;padding:14px;border:1px solid var(--border)">
                     <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px">
                         <span style="color:var(--text-muted)">Subtotal</span>
                         <span x-text="currency(invoiceSubtotal)" style="color:var(--text-dim)"></span>
@@ -358,7 +358,7 @@
                     </div>
 
                     {{-- Customer row --}}
-                    <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+                    <div style="background:var(--tint-1);border-radius:8px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
                         <div class="avatar" :style="`background:${avatarBg(activeInvoice.user?.name||'?')}`" x-text="initials(activeInvoice.user?.name||'?')"></div>
                         <div>
                             <div style="font-size:13px;font-weight:600" x-text="activeInvoice.user?.name"></div>
@@ -439,7 +439,7 @@
 
                     {{-- Notes --}}
                     <template x-if="activeInvoice.notes">
-                        <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:var(--text-muted)">
+                        <div style="background:var(--tint-1);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:var(--text-muted)">
                             <span style="font-weight:600;color:var(--text-dim)">Note: </span>
                             <span x-text="activeInvoice.notes"></span>
                         </div>

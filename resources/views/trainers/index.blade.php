@@ -222,7 +222,7 @@
             </template>
             <div style="display:flex;flex-direction:column;gap:10px" x-show="!scheduleModal.loading">
                 <template x-for="s in scheduleModal.sessions" :key="s.id">
-                    <div style="display:flex;align-items:center;gap:14px;padding:14px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px">
+                    <div style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--tint-1);border:1px solid var(--border);border-radius:10px">
                         <div style="width:48px;text-align:center;flex-shrink:0">
                             <div style="font-size:18px;font-weight:700;color:var(--text)" x-text="new Date(s.scheduled_at).getDate()"></div>
                             <div style="font-size:10px;color:var(--text-muted)" x-text="new Date(s.scheduled_at).toLocaleDateString([],{month:'short'})"></div>

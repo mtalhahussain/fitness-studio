@@ -247,7 +247,7 @@
 
             {{-- Action form --}}
             <template x-if="trainingModal.action">
-                <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+                <div style="background:var(--tint-1);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
                     <div style="font-size:13px;font-weight:600;margin-bottom:12px;text-transform:capitalize" x-text="trainingModal.action + ' Training'"></div>
 
                     <template x-if="trainingModal.action === 'start' || trainingModal.action === 'resume'">

@@ -82,7 +82,7 @@
                 <template x-for="row in monthly" :key="row.period_month">
                     <div style="display:flex;align-items:center;gap:12px">
                         <div style="width:60px;font-size:11px;color:var(--text-muted);flex-shrink:0" x-text="fmtMonth(row.period_month)"></div>
-                        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:4px;height:20px;overflow:hidden">
+                        <div style="flex:1;background:var(--tint-3);border-radius:4px;height:20px;overflow:hidden">
                             <div style="height:100%;background:var(--primary);border-radius:4px;transition:.3s"
                                  :style="`width:${maxTotal > 0 ? (row.total/maxTotal*100) : 0}%`"></div>
                         </div>

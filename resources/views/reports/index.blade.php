@@ -14,7 +14,7 @@
     .chart-controls{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
     .summary-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-bottom: 16px; }
-    .sum-item      { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+    .sum-item      { background: var(--tint-1); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
     .sum-label     { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-bottom: 4px; }
     .sum-value     { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.1; }
     .sum-value.accent { color: var(--primary); }
@@ -22,7 +22,7 @@
 
     .chart-wrap    { position: relative; }
     .chart-loader  {
-        position: absolute; inset: 0; background: rgba(8,8,19,0.7); backdrop-filter: blur(2px);
+        position: absolute; inset: 0; background: color-mix(in srgb, var(--card) 75%, transparent); backdrop-filter: blur(2px);
         border-radius: 8px; display: flex; align-items: center; justify-content: center;
         z-index: 5; opacity: 0; pointer-events: none; transition: opacity .2s;
     }
@@ -39,13 +39,13 @@
     }
     .loader-dots { display: flex; gap: 6px; }
 
-    .seg-control { display: flex; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 3px; gap: 2px; }
-    .seg-btn     { padding: 4px 12px; border-radius: 4px; border: none; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 500; cursor: pointer; transition: .15s; font-family: 'Inter', sans-serif; }
-    .seg-btn.active { background: var(--primary); color: #fff; }
+    .seg-control { display: flex; background: var(--tint-2); border: 1px solid var(--border); border-radius: 6px; padding: 3px; gap: 2px; }
+    .seg-btn     { padding: 4px 12px; border-radius: 4px; border: none; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 500; cursor: pointer; transition: .15s; font-family: var(--font-body); }
+    .seg-btn.active { background: var(--primary-fill); color: var(--on-primary); }
     .seg-btn:hover:not(.active) { color: var(--text); }
 
-    .export-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 11px; font-weight: 500; cursor: pointer; transition: .15s; font-family: 'Inter', sans-serif; }
-    .export-btn:hover { border-color: var(--border-hover); color: var(--text); background: rgba(255,255,255,0.04); }
+    .export-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 11px; font-weight: 500; cursor: pointer; transition: .15s; font-family: var(--font-body); }
+    .export-btn:hover { border-color: var(--border-hover); color: var(--text); background: var(--tint-2); }
 
     @media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } }
 </style>
@@ -283,20 +283,52 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script>
-// ── Chart.js global defaults ──────────────────────────────────────────────
-Chart.defaults.color           = '#64748b';
-Chart.defaults.font.family     = 'Inter, sans-serif';
+// ── Chart.js global defaults (colours resolved from the active theme) ─────
+const _css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const CT = {};
+function readChartTheme() {
+    Object.assign(CT, {
+        grid:    _css('--tint-2'),
+        border:  _css('--border'),
+        tick:    _css('--text-muted'),
+        legend:  _css('--text-dim'),
+        text:    _css('--text'),
+        surface: _css('--card'),
+    });
+}
+readChartTheme();
+
+// Re-colour live charts when the user toggles light/dark
+window.addEventListener('theme-changed', () => {
+    readChartTheme();
+    Chart.defaults.color = CT.tick;
+    Chart.defaults.borderColor = CT.border;
+    Object.values(Chart.instances).forEach(chart => {
+        const o = chart.options;
+        Object.values(o.scales || {}).forEach(sc => {
+            if (sc.grid)  sc.grid.color  = CT.grid;
+            if (sc.ticks) sc.ticks.color = CT.tick;
+        });
+        if (o.plugins?.legend?.labels) o.plugins.legend.labels.color = CT.legend;
+        if (o.plugins?.tooltip) Object.assign(o.plugins.tooltip, {
+            backgroundColor: CT.surface, borderColor: CT.border, titleColor: CT.text, bodyColor: CT.legend,
+        });
+        chart.update('none');
+    });
+});
+Chart.defaults.color           = CT.tick;
+Chart.defaults.font.family     = 'Manrope, sans-serif';
 Chart.defaults.font.size       = 12;
-Chart.defaults.borderColor     = 'rgba(255,255,255,0.06)';
+Chart.defaults.borderColor     = CT.border;
 
 const PALETTE = {
-    primary:  '#6C63FF',
-    accent:   '#f472b6',
+    primary:  '#84cc16',
+    accent:   '#ff5a1f',
     success:  '#22c55e',
     info:     '#3b82f6',
     warning:  '#eab308',
-    primaryDim: 'rgba(108,99,255,0.15)',
-    accentDim:  'rgba(244,114,182,0.15)',
+    primaryDim: 'rgba(var(--primary-rgb),0.15)',
+    accentDim:  'rgba(255,90,31,0.15)',
     successDim: 'rgba(34,197,94,0.15)',
     infoDim:    'rgba(59,130,246,0.15)',
 };
@@ -317,21 +349,21 @@ function chartDefaults(canvas) {
             legend: {
                 position: 'top',
                 align: 'end',
-                labels: { boxWidth: 10, boxHeight: 10, padding: 16, color: '#94a3b8', font: { size: 11 } }
+                labels: { boxWidth: 10, boxHeight: 10, padding: 16, color: CT.legend, font: { size: 11 } }
             },
             tooltip: {
-                backgroundColor: '#10101f',
-                borderColor: 'rgba(255,255,255,0.1)',
+                backgroundColor: CT.surface,
+                borderColor: CT.border,
                 borderWidth: 1,
-                titleColor: '#e2e8f0',
-                bodyColor: '#94a3b8',
+                titleColor: CT.text,
+                bodyColor: CT.legend,
                 padding: 12,
                 cornerRadius: 8,
             }
         },
         scales: {
-            x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b' } },
-            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b' } },
+            x: { grid: { color: CT.grid }, ticks: { color: CT.tick } },
+            y: { grid: { color: CT.grid }, ticks: { color: CT.tick } },
         }
     };
 }
@@ -425,10 +457,10 @@ function reports() {
                         }
                     },
                     scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b' } },
+                        x: { grid: { color: CT.grid }, ticks: { color: CT.tick } },
                         y: {
-                            grid: { color: 'rgba(255,255,255,0.04)' },
-                            ticks: { color: '#64748b', callback: v => 'PKR ' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) }
+                            grid: { color: CT.grid },
+                            ticks: { color: CT.tick, callback: v => 'PKR ' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) }
                         }
                     }
                 }
@@ -491,10 +523,10 @@ function reports() {
                         }
                     },
                     scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b' } },
+                        x: { grid: { color: CT.grid }, ticks: { color: CT.tick } },
                         y: {
-                            grid: { color: 'rgba(255,255,255,0.04)' },
-                            ticks: { color: '#64748b', callback: v => 'PKR ' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) }
+                            grid: { color: CT.grid },
+                            ticks: { color: CT.tick, callback: v => 'PKR ' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) }
                         }
                     }
                 }
@@ -549,8 +581,8 @@ function reports() {
                 options: {
                     ...chartDefaults(ctx),
                     scales: {
-                        x:  { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b' } },
-                        y:  { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b' }, title: { display: true, text: 'New', color: '#64748b', font: { size: 11 } } },
+                        x:  { grid: { color: CT.grid }, ticks: { color: CT.tick } },
+                        y:  { grid: { color: CT.grid }, ticks: { color: CT.tick }, title: { display: true, text: 'New', color: CT.tick, font: { size: 11 } } },
                         y2: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: PALETTE.info }, title: { display: true, text: 'Total', color: PALETTE.info, font: { size: 11 } } },
                     }
                 }

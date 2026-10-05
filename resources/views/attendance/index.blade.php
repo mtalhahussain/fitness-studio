@@ -75,7 +75,7 @@
                     {{-- Step cards --}}
                     <div style="background:var(--surface);border-radius:10px;padding:14px;border:1px solid var(--border)">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                            <span style="width:20px;height:20px;background:var(--primary);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">1</span>
+                            <span style="width:20px;height:20px;background:var(--primary-fill);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--on-primary);flex-shrink:0">1</span>
                             <span style="font-size:12px;font-weight:600;color:var(--text-primary)">Set Push Server on Device</span>
                         </div>
                         <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin:0">
@@ -85,7 +85,7 @@
 
                     <div style="background:var(--surface);border-radius:10px;padding:14px;border:1px solid var(--border)">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                            <span style="width:20px;height:20px;background:var(--primary);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">2</span>
+                            <span style="width:20px;height:20px;background:var(--primary-fill);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--on-primary);flex-shrink:0">2</span>
                             <span style="font-size:12px;font-weight:600;color:var(--text-primary)">Generate an API Token</span>
                         </div>
                         <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin:0">
@@ -95,7 +95,7 @@
 
                     <div style="background:var(--surface);border-radius:10px;padding:14px;border:1px solid var(--border)">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                            <span style="width:20px;height:20px;background:var(--primary);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">3</span>
+                            <span style="width:20px;height:20px;background:var(--primary-fill);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--on-primary);flex-shrink:0">3</span>
                             <span style="font-size:12px;font-weight:600;color:var(--text-primary)">Enroll Fingers</span>
                         </div>
                         <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin:0">
@@ -105,7 +105,7 @@
 
                     <div style="background:var(--surface);border-radius:10px;padding:14px;border:1px solid var(--border)">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                            <span style="width:20px;height:20px;background:var(--primary);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">4</span>
+                            <span style="width:20px;height:20px;background:var(--primary-fill);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--on-primary);flex-shrink:0">4</span>
                             <span style="font-size:12px;font-weight:600;color:var(--text-primary)">Toggle vs Typed Punches</span>
                         </div>
                         <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin:0">

@@ -14,7 +14,7 @@
 </div>
 
 <div style="max-width:720px">
-    <div class="card" style="margin-bottom:16px;background:var(--primary-dim);border-color:rgba(108,99,255,0.2)">
+    <div class="card" style="margin-bottom:16px;background:var(--primary-dim);border-color:rgba(var(--primary-rgb),0.2)">
         <div style="display:flex;align-items:center;gap:10px;color:var(--primary)">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span style="font-size:13px;font-weight:500">Changes take effect immediately — the gym owner will see the updated navigation on next page load.</span>

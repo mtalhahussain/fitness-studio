@@ -267,18 +267,11 @@
             background: var(--volt); color: var(--btn-ink);
             font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: .06em; text-transform: uppercase;
             box-shadow: 0 14px 34px -14px var(--volt-glow);
-            transition: box-shadow .25s var(--ease), background .2s;
+            transition: background .2s;
         }
-        .btn-submit::before {
-            content: ''; position: absolute; inset: 0; background: var(--iron);
-            transform: translateY(101%); transition: transform .45s var(--ease);
-        }
-        .btn-submit > * { position: relative; z-index: 1; transition: color .3s; }
-        .btn-submit:hover::before { transform: translateY(0); }
-        .btn-submit:hover > * { color: var(--volt); }
+        .btn-submit:hover { background: var(--volt-deep); }
         .btn-submit:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
-        .btn-arrow { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--iron); color: var(--volt); transition: transform .35s var(--ease), background .3s; }
-        .btn-submit:hover .btn-arrow { transform: translateX(4px); background: var(--volt); color: var(--iron); }
+        .btn-arrow { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--iron); color: var(--volt); }
         .btn-submit[disabled] { cursor: progress; }
         .btn-submit .spinner { display: none; width: 18px; height: 18px; border: 2.5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
         .btn-submit.loading .spinner { display: block; }
@@ -669,16 +662,6 @@
                     py(((e.clientY - r.top) / r.height - .5) * -40);
                 });
 
-                // Magnetic submit button
-                var btn = document.getElementById('submit-btn');
-                var bx = gsap.quickTo(btn, 'x', { duration: .5, ease: 'power3.out' });
-                var by = gsap.quickTo(btn, 'y', { duration: .5, ease: 'power3.out' });
-                btn.addEventListener('pointermove', function (e) {
-                    var r = btn.getBoundingClientRect();
-                    bx((e.clientX - r.left - r.width / 2) * .08);
-                    by((e.clientY - r.top - r.height / 2) * .25);
-                });
-                btn.addEventListener('pointerleave', function () { bx(0); by(0); });
             }
 
             // Shake on server-side validation error

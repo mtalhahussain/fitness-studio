@@ -148,7 +148,7 @@
             <div class="card-title">Commission Rate Configuration</div>
             <button class="btn btn-primary btn-sm" @click="configModal.show=true">+ Set Rate</button>
         </div>
-        <div style="margin-bottom:16px;padding:14px;background:var(--primary-dim);border-radius:10px;border:1px solid rgba(108,99,255,0.2)">
+        <div style="margin-bottom:16px;padding:14px;background:var(--primary-dim);border-radius:10px;border:1px solid rgba(var(--primary-rgb),0.2)">
             <div style="font-size:12px;color:var(--text-muted)">Gym Default Rate</div>
             <div style="font-size:20px;font-weight:700;color:var(--primary)">{{ $configs['default_rate'] }}%</div>
             <div style="font-size:11px;color:var(--text-muted)">trainer share · applies when no trainer-specific rate is set</div>

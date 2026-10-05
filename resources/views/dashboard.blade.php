@@ -72,7 +72,7 @@
                         <tr>
                             <td>
                                 <div style="display:flex;align-items:center;gap:10px">
-                                    <div class="avatar" style="background:{{ collect(['#6C63FF','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'])[abs(crc32($member->name)) % 7] }};font-size:11px;font-weight:700">{{ strtoupper(substr($member->name,0,2)) }}</div>
+                                    <div class="avatar" style="background:{{ collect(['#65a30d','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'])[abs(crc32($member->name)) % 7] }};font-size:11px;font-weight:700">{{ strtoupper(substr($member->name,0,2)) }}</div>
                                     <div>
                                         <div class="cell-main">{{ $member->name }}</div>
                                         <div class="cell-sub">{{ $member->email }}</div>
@@ -121,7 +121,7 @@
                         <tr>
                             <td>
                                 <div style="display:flex;align-items:center;gap:8px">
-                                    <div class="avatar" style="background:{{ collect(['#6C63FF','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'])[abs(crc32($rec->user?->name ?? '')) % 7] }};font-size:10px;width:28px;height:28px;font-weight:700">{{ strtoupper(substr($rec->user?->name ?? '?', 0, 2)) }}</div>
+                                    <div class="avatar" style="background:{{ collect(['#65a30d','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'])[abs(crc32($rec->user?->name ?? '')) % 7] }};font-size:10px;width:28px;height:28px;font-weight:700">{{ strtoupper(substr($rec->user?->name ?? '?', 0, 2)) }}</div>
                                     <div>
                                         <div class="cell-main" style="font-size:13px">{{ $rec->user?->name ?? 'Unknown' }}</div>
                                         <div class="cell-sub">{{ $rec->user?->email ?? '' }}</div>
@@ -187,7 +187,7 @@
                     <tr>
                         <td>
                             <div style="display:flex;align-items:center;gap:10px">
-                                <div class="avatar" style="background:{{ collect(['#6C63FF','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'])[abs(crc32($ms->user?->name ?? '')) % 7] }};font-size:11px;font-weight:700">{{ strtoupper(substr($ms->user?->name ?? '?', 0, 2)) }}</div>
+                                <div class="avatar" style="background:{{ collect(['#65a30d','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'])[abs(crc32($ms->user?->name ?? '')) % 7] }};font-size:11px;font-weight:700">{{ strtoupper(substr($ms->user?->name ?? '?', 0, 2)) }}</div>
                                 <div>
                                     <div class="cell-main">{{ $ms->user?->name ?? '—' }}</div>
                                     <div class="cell-sub">{{ $ms->user?->phone ?? $ms->user?->email ?? '' }}</div>
@@ -230,7 +230,7 @@
 @push('scripts')
 <script>
 function avatarBg(name) {
-    const colors = ['#6C63FF','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'];
+    const colors = ['#65a30d','#f472b6','#22c55e','#3b82f6','#eab308','#ef4444','#14b8a6'];
     let h = 0; for (let c of (name||'')) h = c.charCodeAt(0) + ((h << 5) - h);
     return colors[Math.abs(h) % colors.length];
 }

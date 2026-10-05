@@ -17,7 +17,7 @@
     </div>
 
     {{-- Context Banner --}}
-    <div x-show="activeGymId" style="margin-bottom:16px;padding:10px 16px;background:rgba(108,99,255,0.12);border:1px solid rgba(108,99,255,0.3);border-radius:10px;display:flex;align-items:center;justify-content:space-between">
+    <div x-show="activeGymId" style="margin-bottom:16px;padding:10px 16px;background:rgba(var(--primary-rgb),0.12);border:1px solid rgba(var(--primary-rgb),0.3);border-radius:10px;display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:13px;color:var(--primary);font-weight:500">
             👁 Viewing as: <strong x-text="activeGymName"></strong>
         </span>
@@ -42,7 +42,7 @@
             </div>
 
             {{-- Owner --}}
-            <div style="padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-bottom:12px">
+            <div style="padding:10px 12px;background:var(--tint-1);border:1px solid var(--border);border-radius:8px;margin-bottom:12px">
                 <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Owner</div>
                 @if($gym->owner)
                 <div style="font-size:13px;font-weight:500;color:var(--text)">{{ $gym->owner->name }}</div>
@@ -54,11 +54,11 @@
 
             {{-- Stats --}}
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-                <div style="text-align:center;padding:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px">
+                <div style="text-align:center;padding:8px;background:var(--tint-1);border:1px solid var(--border);border-radius:8px">
                     <div style="font-size:20px;font-weight:700;color:var(--text)">{{ $gym->members_count }}</div>
                     <div style="font-size:11px;color:var(--text-muted)">Members</div>
                 </div>
-                <div style="text-align:center;padding:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px">
+                <div style="text-align:center;padding:8px;background:var(--tint-1);border:1px solid var(--border);border-radius:8px">
                     <div style="font-size:20px;font-weight:700;color:var(--text)">{{ $gym->trainers_count }}</div>
                     <div style="font-size:11px;color:var(--text-muted)">Trainers</div>
                 </div>
