@@ -118,6 +118,18 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Demo Access Key
+    |--------------------------------------------------------------------------
+    |
+    | Demo login credentials are shown on the sign-in page only when it is
+    | opened with ?demo=<this key>. Leave empty to never show them.
+    |
+    */
+
+    'demo_access_key' => env('DEMO_ACCESS_KEY'),
+
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),

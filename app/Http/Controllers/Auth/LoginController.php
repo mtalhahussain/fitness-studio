@@ -11,13 +11,38 @@ class LoginController extends Controller
 {
     public function __construct(private GymDomainResolver $domainResolver) {}
 
-    public function showLogin()
+    public function showLogin(Request $request)
     {
         if (Auth::check()) {
             return redirect()->route('dashboard');
         }
 
-        return view('auth.login');
+        return view('auth.login', [
+            'showDemo' => $this->demoAccessGranted($request),
+            'hostGym'  => $this->domainResolver->resolveByHost($request->getHost()),
+        ]);
+    }
+
+    /**
+     * Demo credentials are only revealed to visitors who arrive via
+     * /login?demo=<DEMO_ACCESS_KEY>. The grant is kept in session so it
+     * survives the redirect back after a failed sign-in attempt.
+     */
+    private function demoAccessGranted(Request $request): bool
+    {
+        $key = (string) config('app.demo_access_key');
+
+        if ($key === '') {
+            return false;
+        }
+
+        $given = $request->query('demo');
+
+        if (is_string($given) && hash_equals($key, $given)) {
+            $request->session()->put('demo_access', true);
+        }
+
+        return (bool) $request->session()->get('demo_access', false);
     }
 
     public function login(Request $request)

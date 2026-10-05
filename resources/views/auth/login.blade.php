@@ -1,633 +1,698 @@
+@php
+    $brandName = $hostGym->name ?? config('app.name', 'Fitness Studio');
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In — Fitness Studio</title>
-    <script>(function(){const t=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);})();</script>
+    <meta name="robots" content="noindex">
+    <title>Sign in — {{ $brandName }}</title>
+    <script>(function(){try{var t=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+        :root {
+            --volt:       #d4ff3a;
+            --volt-deep:  #b8e61a;
+            --volt-glow:  rgba(212,255,58,.35);
+            --iron:       #0a0a0b;
+            --iron-2:     #121214;
+            --iron-3:     #1a1a1d;
+            --ember:      #ff5a1f;
+            --display:    'Big Shoulders Display', 'Arial Narrow', sans-serif;
+            --body:       'Manrope', system-ui, sans-serif;
+            --mono:       'JetBrains Mono', ui-monospace, monospace;
+            --ease:       cubic-bezier(.2,.8,.2,1);
+        }
+
         :root, [data-theme="dark"] {
-            --bg:             #080912;
-            --left-bg:        #0c0d1c;
-            --right-bg:       #101122;
-            --border:         rgba(255,255,255,0.06);
-            --input-bg:       rgba(255,255,255,0.04);
-            --input-border:   rgba(255,255,255,0.09);
-            --input-focus:    rgba(108,99,255,0.07);
-            --primary:        #6C63FF;
-            --primary-hover:  #5a52e0;
-            --primary-glow:   rgba(108,99,255,0.35);
-            --text:           #f1f5f9;
-            --text-sub:       #94a3b8;
-            --text-muted:     #475569;
-            --error:          #f87171;
-            --surface:        rgba(255,255,255,0.03);
-            --surface-border: rgba(255,255,255,0.06);
+            --panel:        #0f0f11;
+            --panel-line:   rgba(255,255,255,.07);
+            --field:        #17171a;
+            --field-line:   rgba(255,255,255,.10);
+            --field-focus:  #1c1c20;
+            --ink:          #f4f4f1;
+            --ink-sub:      #a3a3a0;
+            --ink-mute:     #64645f;
+            --error:        #ff6b5b;
+            --btn-ink:      #0a0a0b;
+            --chip:         rgba(255,255,255,.04);
         }
 
         [data-theme="light"] {
-            --bg:             #eef0f8;
-            --left-bg:        #16184a;
-            --right-bg:       #ffffff;
-            --border:         rgba(0,0,0,0.07);
-            --input-bg:       #f8fafc;
-            --input-border:   rgba(0,0,0,0.10);
-            --input-focus:    rgba(108,99,255,0.04);
-            --primary:        #6C63FF;
-            --primary-hover:  #5a52e0;
-            --primary-glow:   rgba(108,99,255,0.20);
-            --text:           #0f172a;
-            --text-sub:       #475569;
-            --text-muted:     #94a3b8;
-            --error:          #ef4444;
-            --surface:        rgba(0,0,0,0.02);
-            --surface-border: rgba(0,0,0,0.06);
+            --panel:        #f6f6f2;
+            --panel-line:   rgba(10,10,11,.09);
+            --field:        #ffffff;
+            --field-line:   rgba(10,10,11,.14);
+            --field-focus:  #ffffff;
+            --ink:          #0a0a0b;
+            --ink-sub:      #4a4a46;
+            --ink-mute:     #8a8a84;
+            --error:        #d6331f;
+            --btn-ink:      #0a0a0b;
+            --chip:         rgba(10,10,11,.035);
         }
 
-        html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); }
-        .wrap { display: flex; min-height: 100vh; }
+        html, body { min-height: 100%; }
+        body {
+            font-family: var(--body);
+            background: var(--iron);
+            color: var(--ink);
+            -webkit-font-smoothing: antialiased;
+        }
 
-        /* ────────── Left panel ────────── */
-        .left {
-            flex: 1; background: var(--left-bg);
+        .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 520px; min-height: 100vh; }
+
+        /* ═════════════ Stage (left) ═════════════ */
+        .stage {
+            position: relative; overflow: hidden;
+            background: var(--iron);
+            color: #f4f4f1;
             display: flex; flex-direction: column;
-            padding: 40px 52px; position: relative; overflow: hidden;
+            padding: 36px 56px 0;
+            isolation: isolate;
         }
 
-        /* Mesh gradient */
-        .left::before {
-            content: ''; position: absolute; inset: 0; pointer-events: none;
-            background:
-                radial-gradient(ellipse 65% 50% at 5% 5%,   rgba(108,99,255,.24) 0%, transparent 65%),
-                radial-gradient(ellipse 55% 60% at 90% 90%, rgba(147,51,234,.18) 0%, transparent 65%),
-                radial-gradient(ellipse 40% 35% at 50% 50%, rgba(59,130,246,.06) 0%, transparent 70%);
+        /* Grain */
+        .stage::after {
+            content: ''; position: absolute; inset: -50%; z-index: 5; pointer-events: none; opacity: .07;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
         }
 
-        /* Fine grid */
-        .left::after {
-            content: ''; position: absolute; inset: 0; pointer-events: none;
-            background-image:
-                linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
-            background-size: 52px 52px;
+        /* Diagonal hazard band + glow */
+        .stage-glow {
+            position: absolute; z-index: -1; pointer-events: none;
+            width: 900px; height: 900px; right: -320px; top: 50%; transform: translateY(-50%);
+            background: radial-gradient(circle, rgba(212,255,58,.12) 0%, rgba(212,255,58,0) 60%);
+        }
+        .stage-lines {
+            position: absolute; inset: 0; z-index: -1; pointer-events: none;
+            background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 120px);
+            mask-image: linear-gradient(180deg, transparent, #000 25%, #000 70%, transparent);
         }
 
-        .left-inner { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; }
+        /* Weight plate */
+        .plate {
+            position: absolute; z-index: -1; pointer-events: none;
+            width: 640px; height: 640px; right: -190px; top: 50%; margin-top: -360px;
+            opacity: .9;
+        }
+        .plate svg { width: 100%; height: 100%; }
 
-        /* Brand */
-        .brand { display: flex; align-items: center; gap: 11px; }
+        /* Top bar */
+        .topbar { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2; }
+        .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
         .brand-mark {
-            width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
-            background: linear-gradient(145deg, #6C63FF 0%, #9333ea 100%);
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 4px 20px rgba(108,99,255,.45);
+            width: 40px; height: 40px; border-radius: 10px;
+            background: var(--volt); color: var(--iron);
+            display: grid; place-items: center;
+            box-shadow: 0 0 0 1px rgba(212,255,58,.4), 0 8px 30px -6px var(--volt-glow);
         }
-        .brand-text { line-height: 1.2; }
-        .brand-name    { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: -.1px; }
-        .brand-tagline { font-size: 11px; color: rgba(255,255,255,.32); margin-top: 1px; }
+        .brand-name {
+            font-family: var(--display); font-weight: 800; font-size: 22px;
+            letter-spacing: .02em; text-transform: uppercase; line-height: 1;
+        }
+        .brand-sub { font-size: 11px; color: rgba(244,244,241,.45); margin-top: 3px; letter-spacing: .04em; }
+
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+            color: rgba(244,244,241,.6);
+            border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 7px 12px;
+            background: rgba(255,255,255,.02);
+        }
+        .status-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--volt); box-shadow: 0 0 10px var(--volt); animation: blink 2.4s infinite; }
+        @keyframes blink { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
 
         /* Hero */
-        .hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 56px 0 44px; max-width: 400px; }
+        .hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 48px 0 40px; position: relative; z-index: 2; max-width: 640px; }
 
-        .kicker {
-            display: inline-flex; align-items: center; gap: 7px;
-            font-size: 10.5px; font-weight: 600; letter-spacing: 1.2px;
-            text-transform: uppercase; color: rgba(167,139,250,.75);
-            margin-bottom: 20px;
+        .eyebrow {
+            display: inline-flex; align-items: center; gap: 10px; margin-bottom: 22px;
+            font-family: var(--mono); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--volt);
         }
-        .kicker-bar { width: 18px; height: 1.5px; background: rgba(167,139,250,.45); border-radius: 2px; }
+        .eyebrow::before { content: ''; width: 28px; height: 2px; background: var(--volt); }
 
-        .hero h1 {
-            font-family: 'Bricolage Grotesque', 'Inter', sans-serif;
-            font-size: 42px; font-weight: 800; color: #fff;
-            line-height: 1.1; letter-spacing: -1.6px; margin-bottom: 18px;
+        .headline {
+            font-family: var(--display); font-weight: 900; text-transform: uppercase;
+            font-size: clamp(56px, 7.4vw, 112px); line-height: .86; letter-spacing: -.01em;
         }
-        .hero h1 em {
-            font-style: normal;
-            background: linear-gradient(115deg, #a78bfa 0%, #f472b6 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-        }
-        .hero-desc {
-            font-size: 14px; color: rgba(255,255,255,.38);
-            line-height: 1.78; margin-bottom: 26px; max-width: 340px;
-        }
+        .headline .line { display: block; overflow: hidden; padding-bottom: .04em; }
+        .headline .line > span { display: inline-block; will-change: transform; }
+        .headline .stroke { color: transparent; -webkit-text-stroke: 2px rgba(244,244,241,.85); }
+        .headline .hl { color: var(--volt); position: relative; }
 
-        /* Trust strip */
-        .trust-row { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
-        .trust-avatars { display: flex; }
-        .trust-avatar {
-            width: 26px; height: 26px; border-radius: 50%; margin-left: -8px;
-            border: 2px solid var(--left-bg); display: flex; align-items: center; justify-content: center;
-            font-size: 9.5px; font-weight: 700; color: #fff; font-family: 'Bricolage Grotesque', sans-serif;
+        .lede {
+            margin-top: 26px; max-width: 460px;
+            font-size: 15.5px; line-height: 1.7; color: rgba(244,244,241,.58);
         }
-        .trust-avatar:first-child { margin-left: 0; }
-        .trust-copy { font-size: 12px; color: rgba(255,255,255,.42); line-height: 1.4; }
-        .trust-copy strong { color: rgba(255,255,255,.75); }
-        .trust-stars { color: #facc15; letter-spacing: 1px; font-size: 11px; }
+        .lede strong { color: #f4f4f1; font-weight: 600; }
 
-        /* Feature list */
-        .features { display: flex; flex-direction: column; gap: 18px; }
-        .feat { display: flex; align-items: flex-start; gap: 13px; }
-        .feat-dot {
-            width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px;
-            background: rgba(108,99,255,.13); border: 1px solid rgba(108,99,255,.22);
-            display: flex; align-items: center; justify-content: center; margin-top: 1px;
-        }
-        .feat-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.82); }
-        .feat-desc  { font-size: 12px; color: rgba(255,255,255,.30); margin-top: 3px; line-height: 1.55; }
+        /* Stat rail */
+        .stats { display: flex; gap: 0; margin-top: 40px; border-top: 1px solid rgba(255,255,255,.08); max-width: 560px; }
+        .stat { flex: 1; padding: 18px 20px 0 0; }
+        .stat + .stat { padding-left: 20px; border-left: 1px solid rgba(255,255,255,.08); }
+        .stat-num { font-family: var(--display); font-weight: 800; font-size: 40px; line-height: 1; color: #f4f4f1; }
+        .stat-num small { font-size: 20px; color: var(--volt); margin-left: 2px; }
+        .stat-label { margin-top: 8px; font-size: 12px; color: rgba(244,244,241,.45); line-height: 1.45; }
 
-        /* ────────── Product mockup ────────── */
-        @keyframes float-y {
-            0%, 100% { transform: translateY(-50%) rotate(-4deg); }
-            50%      { transform: translateY(-54%) rotate(-2.5deg); }
+        /* Ticker */
+        .ticker {
+            position: relative; z-index: 2;
+            margin: 0 -56px; border-top: 1px solid rgba(255,255,255,.08);
+            background: var(--volt); color: var(--iron);
+            overflow: hidden; white-space: nowrap;
         }
-        @keyframes float-badge {
-            0%, 100% { transform: translateY(0); }
-            50%      { transform: translateY(-6px); }
+        .ticker-track { display: inline-flex; padding: 14px 0; will-change: transform; }
+        .ticker-item {
+            display: inline-flex; align-items: center; gap: 14px; padding: 0 22px;
+            font-family: var(--display); font-weight: 800; font-size: 19px; letter-spacing: .04em; text-transform: uppercase;
         }
-        .mockup-wrap {
-            position: absolute; top: 50%; right: 54px; z-index: 2;
-            width: 322px; animation: float-y 7s ease-in-out infinite;
-        }
-        .mockup-card {
-            background: #12132a; border-radius: 16px;
-            border: 1px solid rgba(255,255,255,.09);
-            box-shadow: 0 30px 70px -20px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.02),
-                        0 0 90px -30px rgba(108,99,255,.5);
-            overflow: hidden;
-        }
-        .mockup-bar {
-            display: flex; align-items: center; gap: 6px; padding: 10px 12px;
-            background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.06);
-        }
-        .mockup-dot { width: 7px; height: 7px; border-radius: 50%; }
-        .mockup-dot.r { background: #f87171; } .mockup-dot.y { background: #facc15; } .mockup-dot.g { background: #4ade80; }
-        .mockup-url {
-            margin-left: 8px; font-size: 9.5px; color: rgba(255,255,255,.28);
-            font-family: 'Inter', sans-serif; letter-spacing: .2px;
-        }
-        .mockup-body { padding: 16px; }
-        .mockup-stats { display: flex; gap: 10px; margin-bottom: 14px; }
-        .mockup-stat {
-            flex: 1; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.06);
-            border-radius: 10px; padding: 10px 11px;
-        }
-        .mockup-stat-label { font-size: 9px; color: rgba(255,255,255,.32); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
-        .mockup-stat-value { font-family: 'Bricolage Grotesque', sans-serif; font-size: 16px; font-weight: 700; color: #fff; }
-        .mockup-stat-trend { font-size: 10px; color: #4ade80; font-weight: 600; margin-top: 3px; }
-        .mockup-chart {
-            display: flex; align-items: flex-end; gap: 5px; height: 56px;
-            padding: 10px 4px 0; margin-bottom: 14px;
-            border-bottom: 1px dashed rgba(255,255,255,.08);
-        }
-        .mockup-chart .bar { flex: 1; border-radius: 3px 3px 0 0; background: rgba(108,99,255,.28); }
-        .mockup-chart .bar.peak { background: linear-gradient(180deg, #a78bfa 0%, #6C63FF 100%); box-shadow: 0 0 12px rgba(108,99,255,.5); }
-        .mockup-members-row { display: flex; align-items: center; justify-content: space-between; }
-        .mockup-avatars { display: flex; }
-        .mockup-avatars span {
-            width: 22px; height: 22px; border-radius: 50%; margin-left: -7px;
-            border: 2px solid #12132a; font-size: 8.5px; font-weight: 700; color: #fff;
-            display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif;
-        }
-        .mockup-avatars span:first-child { margin-left: 0; }
-        .mockup-members-count { font-size: 10.5px; color: rgba(255,255,255,.4); font-weight: 500; }
+        .ticker-item::after { content: ''; width: 8px; height: 8px; background: var(--iron); transform: rotate(45deg); margin-left: 22px; }
 
-        .badge-float {
-            position: absolute; display: flex; align-items: center; gap: 6px;
-            background: #171833; border: 1px solid rgba(255,255,255,.1); border-radius: 30px;
-            padding: 7px 12px 7px 8px; font-size: 11px; font-weight: 600; color: #fff;
-            box-shadow: 0 12px 30px -8px rgba(0,0,0,.6); white-space: nowrap; z-index: 3;
+        /* ═════════════ Form panel (right) ═════════════ */
+        .panel {
+            position: relative; background: var(--panel);
+            border-left: 1px solid var(--panel-line);
+            display: flex; flex-direction: column;
+            padding: 36px 64px;
+            transition: background .3s var(--ease);
         }
-        .badge-float .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 6px #4ade80; }
-        .badge-sync { top: -16px; left: -26px; animation: float-badge 5s ease-in-out infinite; }
-        .badge-checkin { bottom: 8px; right: -34px; animation: float-badge 6s ease-in-out infinite .7s; }
-        .badge-float .dot.blue { background: #60a5fa; box-shadow: 0 0 6px #60a5fa; }
+        .panel-top { display: flex; justify-content: flex-end; }
 
-        @media (max-width: 1180px) {
-            .mockup-wrap { display: none; }
-        }
-
-        /* Footer strip */
-        .left-footer {
-            display: flex; align-items: center; justify-content: space-between;
-            border-top: 1px solid rgba(255,255,255,.06); padding-top: 22px; margin-top: 40px;
-        }
-        .left-footer-copy { font-size: 11px; color: rgba(255,255,255,.22); }
-
-        /* Theme toggle */
         .theme-btn {
-            width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0;
-            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
-            color: rgba(255,255,255,.45); cursor: pointer; transition: .15s;
-            display: flex; align-items: center; justify-content: center;
+            width: 38px; height: 38px; border-radius: 10px;
+            background: var(--chip); border: 1px solid var(--panel-line);
+            color: var(--ink-sub); cursor: pointer;
+            display: grid; place-items: center; transition: color .2s, border-color .2s, transform .2s var(--ease);
         }
-        .theme-btn:hover { background: rgba(255,255,255,.10); color: #fff; }
+        .theme-btn:hover { color: var(--ink); border-color: var(--ink-mute); }
+        .theme-btn:active { transform: scale(.94); }
+        .theme-btn:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
 
-        /* ────────── Right panel ────────── */
-        .right {
-            width: 480px; flex-shrink: 0;
-            background: var(--right-bg);
-            border-left: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: center;
-            padding: 48px 52px; position: relative; overflow: hidden;
+        .form-zone { flex: 1; display: flex; flex-direction: column; justify-content: center; max-width: 380px; width: 100%; margin: 0 auto; padding: 24px 0; }
+
+        .form-kicker {
+            font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+            color: var(--ink-mute); margin-bottom: 14px;
         }
-
-        /* Subtle dot texture */
-        .right::before {
-            content: ''; position: absolute; inset: 0; pointer-events: none;
-            background-image: radial-gradient(rgba(108,99,255,.05) 1px, transparent 1px);
-            background-size: 22px 22px;
+        .form-title {
+            font-family: var(--display); font-weight: 900; text-transform: uppercase;
+            font-size: 52px; line-height: .9; letter-spacing: -.005em; color: var(--ink);
         }
+        .form-title span { display: inline-block; background: var(--volt); color: var(--iron); padding: 0 .12em; margin-left: -.04em; }
+        .form-sub { margin-top: 14px; font-size: 14px; line-height: 1.6; color: var(--ink-sub); }
 
-        .form-box { width: 100%; max-width: 348px; position: relative; }
+        form { margin-top: 34px; }
 
-        /* Form header */
-        .form-head { margin-bottom: 30px; }
-        .form-head-label {
-            display: inline-block; font-size: 10.5px; font-weight: 600;
-            letter-spacing: 1px; text-transform: uppercase;
-            color: var(--primary); margin-bottom: 10px;
+        .field { margin-bottom: 18px; }
+        .field label {
+            display: block; margin-bottom: 8px;
+            font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-sub);
         }
-        .form-head h2 {
-            font-size: 23px; font-weight: 700; color: var(--text);
-            letter-spacing: -.5px; line-height: 1.2;
+        .input {
+            position: relative; display: flex; align-items: center;
+            background: var(--field); border: 1.5px solid var(--field-line); border-radius: 12px;
+            transition: border-color .2s, background .2s, box-shadow .25s var(--ease);
         }
-        .form-head p { font-size: 13px; color: var(--text-muted); margin-top: 6px; line-height: 1.5; }
-
-        /* Fields */
-        .field { margin-bottom: 13px; }
-        .field-top {
-            display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px;
+        .input:focus-within { border-color: var(--volt); background: var(--field-focus); box-shadow: 0 0 0 4px rgba(212,255,58,.14); }
+        [data-theme="light"] .input:focus-within { border-color: var(--iron); box-shadow: 0 0 0 4px rgba(10,10,11,.08); }
+        .input.is-invalid { border-color: var(--error); }
+        .input-icon { padding-left: 15px; color: var(--ink-mute); display: flex; transition: color .2s; }
+        .input:focus-within .input-icon { color: var(--ink); }
+        .input input {
+            flex: 1; min-width: 0; border: 0; outline: 0; background: transparent;
+            padding: 15px 14px 15px 12px;
+            font: 500 15px/1.2 var(--body); color: var(--ink);
         }
-        .field-top label { font-size: 12.5px; font-weight: 500; color: var(--text-sub); }
-        .forgot { font-size: 12px; font-weight: 500; color: var(--primary); text-decoration: none; opacity: .75; transition: opacity .15s; }
-        .forgot:hover { opacity: 1; }
+        .input input::placeholder { color: var(--ink-mute); font-weight: 400; }
+        .input input:-webkit-autofill { -webkit-text-fill-color: var(--ink); -webkit-box-shadow: 0 0 0 100px var(--field) inset; transition: background-color 9999s; }
 
-        .input-wrap { position: relative; }
-        .input-icon {
-            position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
-            color: var(--text-muted); display: flex; align-items: center;
-            pointer-events: none; transition: color .15s;
+        .reveal-btn {
+            border: 0; background: none; cursor: pointer; color: var(--ink-mute);
+            padding: 0 15px; height: 100%; display: flex; align-items: center; transition: color .2s;
         }
+        .reveal-btn:hover { color: var(--ink); }
+        .reveal-btn:focus-visible { outline: 2px solid var(--volt); outline-offset: -4px; border-radius: 8px; }
 
-        input[type="email"],
-        input[type="password"] {
-            width: 100%; padding: 11px 13px 11px 40px;
-            background: var(--input-bg); border: 1px solid var(--input-border);
-            border-radius: 9px; color: var(--text); font-size: 13.5px;
-            font-family: 'Inter', sans-serif; outline: none;
-            transition: border-color .18s, background .18s, box-shadow .18s;
+        .field-error, .caps-warn { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12.5px; font-weight: 600; }
+        .field-error { color: var(--error); }
+        .caps-warn { color: var(--ember); }
+        .caps-warn[hidden] { display: none; }
+
+        .row-between { display: flex; align-items: center; justify-content: space-between; margin: 6px 0 26px; gap: 12px; }
+
+        .check { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; font-size: 13.5px; color: var(--ink-sub); }
+        .check input { position: absolute; opacity: 0; pointer-events: none; }
+        .check-box {
+            width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+            border: 1.5px solid var(--field-line); background: var(--field);
+            display: grid; place-items: center; transition: background .2s, border-color .2s;
         }
-        input[type="email"]:focus,
-        input[type="password"]:focus {
-            border-color: var(--primary);
-            background: var(--input-focus);
-            box-shadow: 0 0 0 3px rgba(108,99,255,.12);
-        }
-        input::placeholder { color: var(--text-muted); }
-        input.is-invalid   { border-color: var(--error); box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
-        .field-error { font-size: 12px; color: var(--error); margin-top: 5px; }
+        .check-box svg { opacity: 0; transform: scale(.5); transition: opacity .2s, transform .25s var(--ease); }
+        .check input:checked + .check-box { background: var(--volt); border-color: var(--volt); }
+        .check input:checked + .check-box svg { opacity: 1; transform: scale(1); }
+        .check input:focus-visible + .check-box { outline: 2px solid var(--volt); outline-offset: 2px; }
 
-        /* Remember me */
-        .remember { display: flex; align-items: center; gap: 8px; margin: 18px 0 20px; }
-        .remember input[type="checkbox"] { accent-color: var(--primary); width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
-        .remember label { font-size: 13px; color: var(--text-sub); cursor: pointer; user-select: none; }
+        .help-text { font-size: 12.5px; color: var(--ink-mute); text-align: right; }
 
-        /* Submit */
         .btn-submit {
-            width: 100%; padding: 12px 16px;
-            background: var(--primary); color: #fff;
-            font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif;
-            border: none; border-radius: 9px; cursor: pointer;
-            letter-spacing: .1px; position: relative; overflow: hidden;
-            transition: background .18s, box-shadow .18s, transform .1s;
+            position: relative; width: 100%; overflow: hidden;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 22px; border: 0; border-radius: 12px; cursor: pointer;
+            background: var(--volt); color: var(--btn-ink);
+            font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: .06em; text-transform: uppercase;
+            box-shadow: 0 14px 34px -14px var(--volt-glow);
+            transition: box-shadow .25s var(--ease), background .2s;
         }
-        .btn-submit::after {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(180deg, rgba(255,255,255,.10) 0%, transparent 100%);
-            pointer-events: none;
+        .btn-submit::before {
+            content: ''; position: absolute; inset: 0; background: var(--iron);
+            transform: translateY(101%); transition: transform .45s var(--ease);
         }
-        .btn-submit:hover { background: var(--primary-hover); box-shadow: 0 6px 24px var(--primary-glow); transform: translateY(-1px); }
-        .btn-submit:active { transform: translateY(0); box-shadow: none; }
+        .btn-submit > * { position: relative; z-index: 1; transition: color .3s; }
+        .btn-submit:hover::before { transform: translateY(0); }
+        .btn-submit:hover > * { color: var(--volt); }
+        .btn-submit:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+        .btn-arrow { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--iron); color: var(--volt); transition: transform .35s var(--ease), background .3s; }
+        .btn-submit:hover .btn-arrow { transform: translateX(4px); background: var(--volt); color: var(--iron); }
+        .btn-submit[disabled] { cursor: progress; }
+        .btn-submit .spinner { display: none; width: 18px; height: 18px; border: 2.5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+        .btn-submit.loading .spinner { display: block; }
+        .btn-submit.loading .btn-arrow svg { display: none; }
+        @keyframes spin { to { transform: rotate(360deg) } }
 
-        /* Divider */
-        .sep { display: flex; align-items: center; gap: 12px; margin: 22px 0; }
-        .sep-line { flex: 1; height: 1px; background: var(--border); }
-        .sep span { font-size: 11px; color: var(--text-muted); white-space: nowrap; letter-spacing: .3px; }
-
-        /* Demo accounts */
-        .demo { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-        .demo-header {
-            padding: 8px 14px; background: var(--surface);
-            border-bottom: 1px solid var(--surface-border);
-            font-size: 10.5px; font-weight: 600; color: var(--text-muted);
-            text-transform: uppercase; letter-spacing: .9px;
+        .alert {
+            display: flex; gap: 10px; align-items: flex-start;
+            padding: 12px 14px; border-radius: 10px; margin-top: 24px;
+            font-size: 13.5px; line-height: 1.5;
+            background: rgba(212,255,58,.08); border: 1px solid rgba(212,255,58,.25); color: var(--ink);
         }
-        .demo-row {
-            display: flex; align-items: center; padding: 9px 14px; gap: 10px;
-            border-bottom: 1px solid var(--surface-border);
-            cursor: pointer; transition: background .12s;
+
+        /* Demo vault — only rendered for ?demo=<key> */
+        .demo { margin-top: 30px; border: 1.5px dashed var(--field-line); border-radius: 14px; padding: 16px; }
+        .demo-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .demo-title { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-mute); }
+        .demo-pass { font-family: var(--mono); font-size: 11px; color: var(--ink-sub); }
+        .demo-pass code { background: var(--chip); border: 1px solid var(--panel-line); padding: 2px 6px; border-radius: 5px; color: var(--ink); }
+        .demo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .demo-btn {
+            display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+            padding: 12px; border-radius: 10px; cursor: pointer; text-align: left;
+            background: var(--chip); border: 1px solid var(--panel-line); color: var(--ink);
+            font-family: var(--body); transition: border-color .2s, transform .25s var(--ease), background .2s;
         }
-        .demo-row:last-child { border-bottom: none; }
-        .demo-row:hover { background: var(--surface); }
+        .demo-btn:hover { border-color: var(--volt); transform: translateY(-2px); }
+        .demo-btn:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
+        .demo-btn.active { border-color: var(--volt); background: rgba(212,255,58,.1); }
+        .demo-role { font-family: var(--display); font-weight: 800; font-size: 17px; letter-spacing: .04em; text-transform: uppercase; }
+        .demo-email { font-size: 10.5px; color: var(--ink-mute); word-break: break-all; line-height: 1.3; }
+        .demo-tag { width: 8px; height: 8px; border-radius: 2px; }
 
-        .role-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-        .dot-admin   { background: #a78bfa; box-shadow: 0 0 5px rgba(167,139,250,.7); }
-        .dot-owner   { background: #4ade80; box-shadow: 0 0 5px rgba(74,222,128,.6); }
-        .dot-trainer { background: #facc15; box-shadow: 0 0 5px rgba(250,204,21,.6); }
-        .dot-member  { background: #60a5fa; box-shadow: 0 0 5px rgba(96,165,250,.6); }
+        .panel-foot {
+            display: flex; justify-content: space-between; align-items: center; gap: 12px;
+            font-size: 12px; color: var(--ink-mute);
+            padding-top: 20px; border-top: 1px solid var(--panel-line);
+        }
+        .panel-foot .secure { display: inline-flex; align-items: center; gap: 6px; }
 
-        .demo-role  { font-size: 12px; font-weight: 600; color: var(--text-sub); width: 52px; }
-        .demo-email { font-size: 11.5px; color: var(--text-muted); flex: 1; font-variant-numeric: tabular-nums; }
-        .demo-use   { font-size: 11px; font-weight: 600; color: var(--primary); background: none; border: none; cursor: pointer; font-family: 'Inter', sans-serif; opacity: .75; padding: 0; }
-        .demo-use:hover { opacity: 1; }
+        /* Pre-animation state (only when JS + motion allowed) */
+        .js-anim [data-reveal] { opacity: 0; }
 
-        /* Alert */
-        .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; }
-        .alert-success { background: rgba(74,222,128,.07); border: 1px solid rgba(74,222,128,.18); color: #4ade80; }
-
-        @media (max-width: 860px) {
-            .left  { display: none; }
-            .right { width: 100%; border-left: none; padding: 40px 24px; }
+        /* ═════════════ Responsive ═════════════ */
+        @media (max-width: 1180px) {
+            .wrap { grid-template-columns: minmax(0, 1fr) 460px; }
+            .panel { padding: 32px 44px; }
+            .stage { padding: 32px 40px 0; }
+            .ticker { margin: 0 -40px; }
+            .plate { width: 520px; height: 520px; right: -220px; margin-top: -300px; }
+        }
+        @media (max-width: 920px) {
+            .wrap { grid-template-columns: 1fr; }
+            .stage { padding: 24px 20px 0; min-height: auto; }
+            .hero { padding: 40px 0 32px; }
+            .headline { font-size: clamp(48px, 13vw, 80px); }
+            .stats, .lede { display: none; }
+            .ticker { margin: 0 -20px; }
+            .plate { width: 360px; height: 360px; right: -140px; top: 40px; margin-top: 0; opacity: .6; }
+            .status-pill { display: none; }
+            .panel { border-left: 0; border-top: 1px solid var(--panel-line); padding: 24px 20px; }
+            .form-zone { padding: 16px 0 32px; }
+            .form-title { font-size: 44px; }
+        }
+        @media (max-width: 420px) {
+            .demo-grid { grid-template-columns: 1fr; }
+            .demo-btn { flex-direction: row; align-items: center; }
+            .demo-email { margin-left: auto; }
+            .row-between { flex-direction: column; align-items: flex-start; }
+            .help-text { text-align: left; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
         }
     </style>
 </head>
 <body>
 <div class="wrap">
 
-    {{-- ── Left panel ────────────────────────────────────── --}}
-    <div class="left">
-        <div class="left-inner">
+    {{-- ═════════════ Stage ═════════════ --}}
+    <section class="stage" aria-hidden="false">
+        <div class="stage-lines"></div>
+        <div class="stage-glow"></div>
 
+        {{-- Weight plate motif --}}
+        <div class="plate" aria-hidden="true">
+            <svg viewBox="0 0 400 400" id="plate">
+                <defs>
+                    <path id="plate-text" d="M200,200 m-150,0 a150,150 0 1,1 300,0 a150,150 0 1,1 -300,0"/>
+                </defs>
+                <circle cx="200" cy="200" r="196" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+                <circle cx="200" cy="200" r="180" fill="#111113" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+                <circle cx="200" cy="200" r="170" fill="none" stroke="rgba(212,255,58,.55)" stroke-width="1.5" stroke-dasharray="2 8"/>
+                <text font-family="Big Shoulders Display, sans-serif" font-weight="800" font-size="19" letter-spacing="6" fill="rgba(244,244,241,.35)">
+                    <textPath href="#plate-text">TRAIN · TRACK · RETAIN · GROW · TRAIN · TRACK · RETAIN · GROW ·</textPath>
+                </text>
+                <circle cx="200" cy="200" r="118" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="22"/>
+                <circle cx="200" cy="200" r="90" fill="#0c0c0d" stroke="rgba(255,255,255,.08)"/>
+                <text x="200" y="196" text-anchor="middle" font-family="Big Shoulders Display, sans-serif" font-weight="900" font-size="64" fill="#d4ff3a">20</text>
+                <text x="200" y="224" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" letter-spacing="4" fill="rgba(244,244,241,.4)">KG</text>
+                <circle cx="200" cy="200" r="26" fill="#050505" stroke="rgba(255,255,255,.12)" stroke-width="2"/>
+            </svg>
+        </div>
+
+        <div class="topbar" data-reveal>
             <div class="brand">
                 <div class="brand-mark">
-                    {{-- Dumbbell icon --}}
-                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6.5 6.5h1v11h-1z" fill="#fff" stroke="none"/>
-                        <path d="M16.5 6.5h1v11h-1z" fill="#fff" stroke="none"/>
-                        <rect x="3" y="9" width="4" height="6" rx="1.5"/>
-                        <rect x="17" y="9" width="4" height="6" rx="1.5"/>
-                        <line x1="7.5" y1="12" x2="16.5" y2="12" stroke-width="2"/>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>
                     </svg>
                 </div>
-                <div class="brand-text">
-                    <div class="brand-name">Fitness Studio</div>
-                    <div class="brand-tagline">Gym Management Platform</div>
+                <div>
+                    <div class="brand-name">{{ $brandName }}</div>
+                    <div class="brand-sub">Gym Management Platform</div>
                 </div>
             </div>
-
-            <div class="hero">
-                <div class="kicker">
-                    <span class="kicker-bar"></span>
-                    Gym Management
-                </div>
-
-                <h1>Run your gym like<br>a real <em>business.</em></h1>
-
-                <p class="hero-desc">
-                    Everything a gym owner needs — memberships, trainers,
-                    biometric attendance, and revenue — in one platform
-                    that actually makes sense to use.
-                </p>
-
-                <div class="trust-row">
-                    <div class="trust-avatars">
-                        <div class="trust-avatar" style="background:linear-gradient(145deg,#6C63FF,#9333ea)">RA</div>
-                        <div class="trust-avatar" style="background:linear-gradient(145deg,#f472b6,#fb7185)">SK</div>
-                        <div class="trust-avatar" style="background:linear-gradient(145deg,#4ade80,#22c55e)">HN</div>
-                        <div class="trust-avatar" style="background:linear-gradient(145deg,#facc15,#f59e0b)">+</div>
-                    </div>
-                    <div class="trust-copy">
-                        <span class="trust-stars">★★★★★</span><br>
-                        Trusted by <strong>120+ gyms</strong> across Pakistan
-                    </div>
-                </div>
-
-                <div class="features">
-                    <div class="feat">
-                        <div class="feat-dot">
-                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-                        </div>
-                        <div>
-                            <div class="feat-title">Members & Trainers</div>
-                            <div class="feat-desc">Memberships, sessions, commissions — all tracked automatically</div>
-                        </div>
-                    </div>
-                    <div class="feat">
-                        <div class="feat-dot">
-                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"/><path d="M9 7h6M9 11h4"/></svg>
-                        </div>
-                        <div>
-                            <div class="feat-title">Biometric Check-in</div>
-                            <div class="feat-desc">ZKTeco devices push attendance in real time, zero manual entry</div>
-                        </div>
-                    </div>
-                    <div class="feat">
-                        <div class="feat-dot">
-                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                        </div>
-                        <div>
-                            <div class="feat-title">Revenue & Reports</div>
-                            <div class="feat-desc">Daily revenue, membership trends, attendance heatmaps</div>
-                        </div>
-                    </div>
-                    <div class="feat">
-                        <div class="feat-dot">
-                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-                        </div>
-                        <div>
-                            <div class="feat-title">WhatsApp Reminders</div>
-                            <div class="feat-desc">Automatic payment due alerts sent straight to members</div>
-                        </div>
-                    </div>
-                    <div class="feat">
-                        <div class="feat-dot">
-                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#a78bfa" stroke-width="1.8"><path d="M6 2l1.5 4M18 2l-1.5 4M3.5 6h17l-1.7 12a2 2 0 01-2 1.8H7.2a2 2 0 01-2-1.8L3.5 6z"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="12" y1="10" x2="12" y2="14"/><line x1="16" y1="10" x2="16" y2="14"/></svg>
-                        </div>
-                        <div>
-                            <div class="feat-title">Point of Sale</div>
-                            <div class="feat-desc">Sell products & supplements with live stock tracking, billed to invoices</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- ── Product mockup (floating) ─────────────────── --}}
-            <div class="mockup-wrap">
-                <div class="badge-float badge-sync"><span class="dot"></span> Live sync active</div>
-                <div class="badge-float badge-checkin"><span class="dot blue"></span> 312 check-ins today</div>
-                <div class="mockup-card">
-                    <div class="mockup-bar">
-                        <span class="mockup-dot r"></span><span class="mockup-dot y"></span><span class="mockup-dot g"></span>
-                        <span class="mockup-url">app.fitnessstudio.io/dashboard</span>
-                    </div>
-                    <div class="mockup-body">
-                        <div class="mockup-stats">
-                            <div class="mockup-stat">
-                                <div class="mockup-stat-label">Today's Revenue</div>
-                                <div class="mockup-stat-value">PKR 84,200</div>
-                                <div class="mockup-stat-trend">&uarr; 12.4%</div>
-                            </div>
-                            <div class="mockup-stat">
-                                <div class="mockup-stat-label">Active Members</div>
-                                <div class="mockup-stat-value">1,284</div>
-                                <div class="mockup-stat-trend">&uarr; 8 new</div>
-                            </div>
-                        </div>
-                        <div class="mockup-chart">
-                            <div class="bar" style="height:35%"></div>
-                            <div class="bar" style="height:55%"></div>
-                            <div class="bar" style="height:42%"></div>
-                            <div class="bar peak" style="height:88%"></div>
-                            <div class="bar" style="height:60%"></div>
-                            <div class="bar" style="height:70%"></div>
-                            <div class="bar" style="height:48%"></div>
-                        </div>
-                        <div class="mockup-members-row">
-                            <div class="mockup-avatars">
-                                <span style="background:#6C63FF">A</span>
-                                <span style="background:#f472b6">B</span>
-                                <span style="background:#4ade80">C</span>
-                            </div>
-                            <span class="mockup-members-count">+1,281 members active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="left-footer">
-                <span class="left-footer-copy">&copy; {{ date('Y') }} Fitness Studio</span>
-                <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
-                    <svg id="icon-sun" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:none">
-                        <circle cx="12" cy="12" r="5"/>
-                        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                    </svg>
-                    <svg id="icon-moon" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-                    </svg>
-                </button>
-            </div>
-
+            <span class="status-pill"><i></i> All systems operational</span>
         </div>
-    </div>
 
-    {{-- ── Right panel ────────────────────────────────────── --}}
-    <div class="right">
-        <div class="form-box">
+        <div class="hero">
+            <div class="eyebrow" data-reveal>Owner's command center</div>
 
-            <div class="form-head">
-                <span class="form-head-label">Welcome back</span>
-                <h2>Sign in to your account</h2>
-                <p>Enter your credentials to access the dashboard</p>
+            <h1 class="headline">
+                <span class="line"><span>Run your gym</span></span>
+                <span class="line"><span class="stroke">like a</span> <span class="hl">machine.</span></span>
+            </h1>
+
+            <p class="lede" data-reveal>
+                Memberships, renewals, biometric check-ins, trainers, POS and
+                WhatsApp reminders — <strong>one dashboard, zero spreadsheets.</strong>
+            </p>
+
+            <div class="stats" data-reveal>
+                <div class="stat">
+                    <div class="stat-num"><span data-count="24">24</span><small>/7</small></div>
+                    <div class="stat-label">Biometric check-ins, synced live</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-num"><span data-count="100">100</span><small>%</small></div>
+                    <div class="stat-label">Of renewals tracked automatically</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-num"><span data-count="0">0</span><small>min</small></div>
+                    <div class="stat-label">Manual attendance entry</div>
+                </div>
             </div>
+        </div>
 
-            @if(session('status'))
-                <div class="alert alert-success">{{ session('status') }}</div>
+        <div class="ticker" aria-hidden="true">
+            <div class="ticker-track" id="ticker">
+                @foreach (['Memberships', 'Biometric Check-in', 'Trainer Commissions', 'Point of Sale', 'WhatsApp Reminders', 'Revenue Reports', 'Multi-Branch'] as $item)
+                    <span class="ticker-item">{{ $item }}</span>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
+    {{-- ═════════════ Form panel ═════════════ --}}
+    <main class="panel">
+        <div class="panel-top">
+            <button type="button" class="theme-btn" onclick="toggleTheme()" aria-label="Toggle colour theme">
+                <svg id="icon-sun" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+                </svg>
+                <svg id="icon-moon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="form-zone">
+            <div class="form-kicker" data-reveal>Secure sign in</div>
+            <h2 class="form-title" data-reveal>Back to<br><span>work.</span></h2>
+            <p class="form-sub" data-reveal>Sign in to manage {{ $hostGym ? $hostGym->name : 'your gym' }}.</p>
+
+            @if (session('status'))
+                <div class="alert" role="status">{{ session('status') }}</div>
             @endif
 
-            <form method="POST" action="{{ route('login.post') }}">
+            <form method="POST" action="{{ route('login.post') }}" id="login-form" novalidate>
                 @csrf
 
-                <div class="field">
-                    <div class="field-top">
-                        <label for="email">Email address</label>
-                    </div>
-                    <div class="input-wrap">
-                        <span class="input-icon">
-                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <div class="field" data-reveal>
+                    <label for="email">Email</label>
+                    <div class="input @error('email') is-invalid @enderror">
+                        <span class="input-icon" aria-hidden="true">
+                            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="M3 7l9 6 9-6"/></svg>
                         </span>
-                        <input type="email" id="email" name="email"
-                            class="@error('email') is-invalid @enderror"
-                            placeholder="you@example.com"
-                            value="{{ old('email') }}"
-                            autocomplete="email" autofocus>
+                        <input type="email" id="email" name="email" value="{{ old('email') }}"
+                               placeholder="you@yourgym.com" autocomplete="username" required autofocus
+                               @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
                     </div>
-                    @error('email')<p class="field-error">{{ $message }}</p>@enderror
+                    @error('email')
+                        <p class="field-error" id="email-error" role="alert">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                            {{ $message }}
+                        </p>
+                    @enderror
                 </div>
 
-                <div class="field">
-                    <div class="field-top">
-                        <label for="password">Password</label>
-                        <a href="#" class="forgot">Forgot password?</a>
-                    </div>
-                    <div class="input-wrap">
-                        <span class="input-icon">
-                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                <div class="field" data-reveal>
+                    <label for="password">Password</label>
+                    <div class="input @error('password') is-invalid @enderror">
+                        <span class="input-icon" aria-hidden="true">
+                            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7a4 4 0 018 0v3.5"/></svg>
                         </span>
-                        <input type="password" id="password" name="password"
-                            class="@error('password') is-invalid @enderror"
-                            placeholder="••••••••"
-                            autocomplete="current-password">
+                        <input type="password" id="password" name="password" placeholder="Enter your password"
+                               autocomplete="current-password" required
+                               @error('password') aria-invalid="true" aria-describedby="password-error" @enderror>
+                        <button type="button" class="reveal-btn" id="reveal-btn" aria-label="Show password" aria-pressed="false">
+                            <svg id="eye-open" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg id="eye-shut" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none" aria-hidden="true"><path d="M17.94 17.94A10.1 10.1 0 0112 19.5C5 19.5 1 12 1 12a18.5 18.5 0 015.06-5.94M9.9 4.74A9.1 9.1 0 0112 4.5c7 0 11 7.5 11 7.5a18.6 18.6 0 01-2.16 3.19M1 1l22 22"/><path d="M14.12 14.12a3 3 0 11-4.24-4.24"/></svg>
+                        </button>
                     </div>
-                    @error('password')<p class="field-error">{{ $message }}</p>@enderror
+                    <p class="caps-warn" id="caps-warn" hidden>
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 3l9 9h-5v6H8v-6H3z"/></svg>
+                        Caps Lock is on
+                    </p>
+                    @error('password')
+                        <p class="field-error" id="password-error" role="alert">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                <div class="remember">
-                    <input type="checkbox" id="remember" name="remember">
-                    <label for="remember">Keep me signed in</label>
+                <div class="row-between" data-reveal>
+                    <label class="check">
+                        <input type="checkbox" name="remember" value="1" @checked(old('remember'))>
+                        <span class="check-box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0a0a0b" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+                        Keep me signed in
+                    </label>
+                    <span class="help-text">Forgot password? Ask your admin.</span>
                 </div>
 
-                <button type="submit" class="btn-submit">Sign in</button>
+                <div data-reveal>
+                    <button type="submit" class="btn-submit" id="submit-btn">
+                        <span class="btn-label">Sign in</span>
+                        <span class="btn-arrow">
+                            <span class="spinner" aria-hidden="true"></span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </span>
+                    </button>
+                </div>
             </form>
 
-            <div class="sep">
-                <div class="sep-line"></div>
-                <span>Demo accounts &middot; password: <strong>password</strong></span>
-                <div class="sep-line"></div>
-            </div>
-
-            <div class="demo">
-                <div class="demo-header">Quick access</div>
-<div class="demo-row" onclick="fillLogin('owner@demogym.com')">
-                    <span class="role-dot dot-owner"></span>
-                    <span class="demo-role">Owner</span>
-                    <span class="demo-email">owner@demogym.com</span>
-                    <button class="demo-use">Use &rarr;</button>
+            @if ($showDemo)
+                <div class="demo" data-reveal>
+                    <div class="demo-head">
+                        <span class="demo-title">Demo accounts</span>
+                        <span class="demo-pass">pass <code>password</code></span>
+                    </div>
+                    <div class="demo-grid">
+                        @foreach ([
+                            ['Owner',   'owner@demogym.com',   '#d4ff3a'],
+                            ['Trainer', 'trainer@demogym.com', '#ff5a1f'],
+                            ['Member',  'member@demogym.com',  '#5ab8ff'],
+                        ] as [$role, $email, $color])
+                            <button type="button" class="demo-btn" data-email="{{ $email }}">
+                                <span class="demo-tag" style="background: {{ $color }}"></span>
+                                <span class="demo-role">{{ $role }}</span>
+                                <span class="demo-email">{{ $email }}</span>
+                            </button>
+                        @endforeach
+                    </div>
                 </div>
-                <div class="demo-row" onclick="fillLogin('trainer@demogym.com')">
-                    <span class="role-dot dot-trainer"></span>
-                    <span class="demo-role">Trainer</span>
-                    <span class="demo-email">trainer@demogym.com</span>
-                    <button class="demo-use">Use &rarr;</button>
-                </div>
-                <div class="demo-row" onclick="fillLogin('member@demogym.com')">
-                    <span class="role-dot dot-member"></span>
-                    <span class="demo-role">Member</span>
-                    <span class="demo-email">member@demogym.com</span>
-                    <button class="demo-use">Use &rarr;</button>
-                </div>
-            </div>
-
+            @endif
         </div>
-    </div>
 
+        <div class="panel-foot">
+            <span>&copy; {{ date('Y') }} {{ config('app.name', 'Fitness Studio') }}</span>
+            <span class="secure">
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Encrypted connection
+            </span>
+        </div>
+    </main>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
 <script>
-    function fillLogin(email) {
-        document.getElementById('email').value    = email;
-        document.getElementById('password').value = 'password';
-    }
-
-    function toggleTheme() {
-        const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('theme', next);
-        syncIcons(next);
-    }
-
+    /* ── Theme ── */
     function syncIcons(t) {
         document.getElementById('icon-sun').style.display  = t === 'light' ? 'block' : 'none';
         document.getElementById('icon-moon').style.display = t === 'dark'  ? 'block' : 'none';
     }
-
+    function toggleTheme() {
+        var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch (e) {}
+        syncIcons(next);
+    }
     syncIcons(document.documentElement.getAttribute('data-theme') || 'dark');
+
+    /* ── Form behaviour ── */
+    (function () {
+        var form = document.getElementById('login-form');
+        var pwd  = document.getElementById('password');
+        var btn  = document.getElementById('submit-btn');
+        var rev  = document.getElementById('reveal-btn');
+        var caps = document.getElementById('caps-warn');
+
+        rev.addEventListener('click', function () {
+            var show = pwd.type === 'password';
+            pwd.type = show ? 'text' : 'password';
+            rev.setAttribute('aria-pressed', show);
+            rev.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            document.getElementById('eye-open').style.display = show ? 'none' : 'block';
+            document.getElementById('eye-shut').style.display = show ? 'block' : 'none';
+            pwd.focus();
+        });
+
+        function capsCheck(e) {
+            if (e.getModifierState) caps.hidden = !e.getModifierState('CapsLock');
+        }
+        pwd.addEventListener('keyup', capsCheck);
+        pwd.addEventListener('keydown', capsCheck);
+        pwd.addEventListener('blur', function () { caps.hidden = true; });
+
+        form.addEventListener('submit', function (e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                var bad = form.querySelector(':invalid');
+                bad.focus();
+                if (window.gsap) gsap.fromTo(bad.closest('.input'), { x: -8 }, { x: 0, duration: .5, ease: 'elastic.out(1, .3)' });
+                return;
+            }
+            btn.disabled = true;
+            btn.classList.add('loading');
+            btn.querySelector('.btn-label').textContent = 'Signing in';
+        });
+
+        // bfcache: re-enable the button if the user navigates back
+        window.addEventListener('pageshow', function () {
+            btn.disabled = false;
+            btn.classList.remove('loading');
+            btn.querySelector('.btn-label').textContent = 'Sign in';
+        });
+
+        document.querySelectorAll('.demo-btn').forEach(function (b) {
+            b.addEventListener('click', function () {
+                document.querySelectorAll('.demo-btn').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+                document.getElementById('email').value = b.dataset.email;
+                pwd.value = 'password';
+                if (window.gsap) gsap.fromTo('.input', { boxShadow: '0 0 0 4px rgba(212,255,58,.35)' }, { boxShadow: '0 0 0 0px rgba(212,255,58,0)', duration: .8, ease: 'power2.out', stagger: .08 });
+                btn.focus();
+            });
+        });
+    })();
+
+    /* ── Motion (GSAP) ── */
+    (function () {
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduce) return;
+        document.documentElement.classList.add('js-anim');
+
+        function run() {
+            if (!window.gsap) { document.documentElement.classList.remove('js-anim'); return; }
+
+            var tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+
+            tl.from('.headline .line > span', { yPercent: 110, duration: 1.1, stagger: .12 })
+              .fromTo('.stage [data-reveal]', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .8, stagger: .08 }, '-=.8')
+              .fromTo('.panel [data-reveal]', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: .7, stagger: .06 }, '-=.9')
+              .from('.plate', { rotate: -120, scale: .85, opacity: 0, duration: 1.6, ease: 'expo.out' }, 0)
+              .from('.ticker', { yPercent: 100, duration: .8 }, .4);
+
+            // Stat counters
+            document.querySelectorAll('[data-count]').forEach(function (el) {
+                var end = +el.dataset.count, o = { v: 0 };
+                tl.to(o, { v: end, duration: 1.4, ease: 'power2.out', onUpdate: function () { el.textContent = Math.round(o.v); } }, .6);
+            });
+
+            // Weight plate: slow perpetual spin
+            gsap.to('#plate', { rotate: 360, duration: 90, repeat: -1, ease: 'none', transformOrigin: '50% 50%' });
+
+            // Infinite ticker — duplicate content once for a seamless loop
+            var track = document.getElementById('ticker');
+            track.innerHTML += track.innerHTML;
+            gsap.to(track, { xPercent: -50, duration: 28, repeat: -1, ease: 'none' });
+
+            // Parallax plate on pointer move (desktop only)
+            if (window.matchMedia('(pointer: fine)').matches) {
+                var stage = document.querySelector('.stage');
+                var px = gsap.quickTo('.plate', 'x', { duration: 1.2, ease: 'power3.out' });
+                var py = gsap.quickTo('.plate', 'y', { duration: 1.2, ease: 'power3.out' });
+                stage.addEventListener('pointermove', function (e) {
+                    var r = stage.getBoundingClientRect();
+                    px(((e.clientX - r.left) / r.width - .5) * -40);
+                    py(((e.clientY - r.top) / r.height - .5) * -40);
+                });
+
+                // Magnetic submit button
+                var btn = document.getElementById('submit-btn');
+                var bx = gsap.quickTo(btn, 'x', { duration: .5, ease: 'power3.out' });
+                var by = gsap.quickTo(btn, 'y', { duration: .5, ease: 'power3.out' });
+                btn.addEventListener('pointermove', function (e) {
+                    var r = btn.getBoundingClientRect();
+                    bx((e.clientX - r.left - r.width / 2) * .08);
+                    by((e.clientY - r.top - r.height / 2) * .25);
+                });
+                btn.addEventListener('pointerleave', function () { bx(0); by(0); });
+            }
+
+            // Shake on server-side validation error
+            var err = document.querySelector('.input.is-invalid');
+            if (err) tl.fromTo(err, { x: -10 }, { x: 0, duration: .6, ease: 'elastic.out(1, .3)' }, '-=.3');
+        }
+
+        // If CDN fails / is slow, never leave content hidden
+        var fallback = setTimeout(function () { document.documentElement.classList.remove('js-anim'); }, 2500);
+        window.addEventListener('DOMContentLoaded', function () {
+            if (window.gsap) { clearTimeout(fallback); run(); }
+            else document.querySelector('script[src*="gsap"]').addEventListener('load', function () { clearTimeout(fallback); run(); });
+        });
+    })();
 </script>
 </body>
 </html>
