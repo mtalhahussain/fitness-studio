@@ -156,12 +156,25 @@ class IclockController extends Controller
     {
         $sn = $request->query('SN');
 
+        // Only protocol metadata: never log arbitrary query values or credentials.
+        $protocol = [];
+        foreach (['options', 'pushver', 'PushVersion', 'Language', 'DeviceType', 'AuthType'] as $field) {
+            $value = $request->query($field);
+            if (is_string($value)) {
+                $protocol[$field] = mb_substr($value, 0, 100);
+            }
+        }
+
         Log::info('Biometric diagnostics: request', [
             'endpoint' => $endpoint,
             'method' => $request->method(),
             'path' => $request->path(),
             'serial_number' => is_string($sn) ? mb_substr($sn, 0, 100) : null,
             'ip' => $request->ip(),
+            'user_agent' => mb_substr((string) $request->userAgent(), 0, 250),
+            'protocol' => $protocol,
+            'host' => $request->getHost(),
+            'scheme' => $request->getScheme(),
             'table' => is_string($request->query('table')) ? mb_substr($request->query('table'), 0, 50) : null,
         ]);
 
