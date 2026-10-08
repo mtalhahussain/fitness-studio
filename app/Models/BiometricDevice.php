@@ -18,13 +18,14 @@ class BiometricDevice extends Model
     public const PUNCH_MODE_STATUS = 'status';
     public const PUNCH_MODE_TOGGLE = 'toggle';
 
-    protected $hidden = ['last_payload'];
+    protected $hidden = ['last_payload', 'acc_push_state'];
 
     protected $casts = [
         'is_active'       => 'boolean',
         'last_seen_at'    => 'datetime',
         'last_payload_at' => 'datetime',
         'settings'        => 'array',
+        'acc_push_state'  => 'array',
     ];
 
     protected static function booted(): void

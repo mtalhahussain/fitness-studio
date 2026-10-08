@@ -4,6 +4,7 @@ namespace App\Biometric\Drivers;
 
 use App\Biometric\Contracts\BiometricDriver;
 use App\Biometric\PunchLog;
+use App\Biometric\AccPush;
 use App\Biometric\WallClock;
 use App\Models\BiometricDevice;
 use Illuminate\Http\Request;
@@ -58,6 +59,10 @@ class ZKTecoDriver implements BiometricDriver
     {
         $contentType = $request->header('Content-Type', '');
         $raw         = $request->getContent();
+
+        if ($device->acc_push_state && preg_match('/\bevent(?:type)?=/i', $raw)) {
+            return app(AccPush::class)->parse($raw, $device);
+        }
         $table       = is_string($request->query('table')) ? $request->query('table') : null;
 
         if ($table !== null && strtoupper($table) !== 'ATTLOG') {

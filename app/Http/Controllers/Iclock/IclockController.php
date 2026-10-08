@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Iclock;
 
 use App\Biometric\BiometricPunchProcessor;
+use App\Biometric\AccPush;
 use App\Biometric\DeviceCommandQueue;
 use App\Biometric\Drivers\ZKTecoDriver;
 use App\Http\Controllers\Controller;
@@ -28,6 +29,7 @@ class IclockController extends Controller
         private BiometricPunchProcessor $processor,
         private UnknownBiometricDevices $unknownDevices,
         private DeviceCommandQueue $commands,
+        private AccPush $acc,
     ) {}
 
     public function handshake(Request $request): Response
@@ -39,7 +41,44 @@ class IclockController extends Controller
             return $this->text('OK');
         }
 
-        return $this->text($device->admsOptions());
+        if (strtolower((string) $request->query('DeviceType')) === 'acc') {
+            $this->acc->register($device);
+        }
+
+        return $device->acc_push_state
+            ? $this->pushText($this->acc->options($device, true))
+            : $this->text($device->admsOptions());
+    }
+
+    public function registry(Request $request): Response
+    {
+        $device = $this->device($request, 'registry');
+        if (! $device?->is_active) {
+            return $this->text('Device not registered or inactive', 401);
+        }
+        $this->acc->register($device);
+        return $this->pushText('RegistryCode=' . $device->acc_push_state['registry_code'] . "\n");
+    }
+
+    public function push(Request $request): Response
+    {
+        $device = $this->device($request, 'push');
+        if (! $device?->is_active || ! $device->acc_push_state) {
+            return $this->text('Device not registered or inactive', 401);
+        }
+        return $this->pushText($this->acc->options($device));
+    }
+
+    public function ping(Request $request): Response
+    {
+        return $this->device($request, 'ping')?->is_active
+            ? $this->text('OK') : $this->text('Device not registered or inactive', 401);
+    }
+
+    private function pushText(string $body): Response
+    {
+        return response($body)->header('Content-Type', 'application/push; charset=UTF-8')
+            ->header('Content-Length', (string) strlen($body));
     }
 
     public function upload(Request $request): Response
@@ -58,6 +97,26 @@ class IclockController extends Controller
         }
 
         $table = strtoupper((string) $request->query('table', ''));
+
+        if ($device->acc_push_state) {
+            if ($table === 'RTLOG' || ($table === 'TABLEDATA'
+                && strtolower((string) $request->query('tablename')) === 'transaction')) {
+                $logs = $this->acc->parse($raw, $device);
+                Log::info('Biometric diagnostics: ACC attendance upload', [
+                    'serial_number' => $device->serial_number,
+                    'table' => $table,
+                    'punches_parsed' => count($logs),
+                ]);
+                // Let a processing failure return 500 so the device retries the upload.
+                foreach ($logs as $log) {
+                    $this->processor->process($log, $device);
+                }
+                return $this->text('OK');
+            }
+            if ($table !== 'ATTLOG') {
+                return $this->text('OK');
+            }
+        }
 
         return $table === 'ATTLOG'
             ? $this->storeAttlog($request, $device, $raw)
@@ -83,7 +142,9 @@ class IclockController extends Controller
 
         return $this->text($commands->isEmpty()
             ? 'OK'
-            : $commands->map->toAdmsLine()->implode("\n") . "\n");
+            : $commands->map(fn ($command) => $device->acc_push_state
+                ? "C:{$command->cmd_id}:" . $this->acc->command($command->command)
+                : $command->toAdmsLine())->implode("\n") . "\n");
     }
 
     /** Machine reports command results: "ID=<cmd_id>&Return=<code>&CMD=<type>" per line. */
@@ -203,6 +264,7 @@ class IclockController extends Controller
 
     private function text(string $body, int $status = 200): Response
     {
-        return response($body, $status)->header('Content-Type', 'text/plain');
+        return response($body, $status)->header('Content-Type', 'text/plain')
+            ->header('Content-Length', (string) strlen($body));
     }
 }

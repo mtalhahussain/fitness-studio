@@ -5,6 +5,9 @@ return [
     // offset-carrying times into the wall-clock time we store (see WallClock).
     'timezone' => env('BIOMETRIC_TIMEZONE', 'Asia/Karachi'),
 
+    // Successful individual card/fingerprint/password access events only.
+    'acc' => ['pass_events' => [0, 1, 2, 14, 16, 17, 18, 19]],
+
     // ZKTeco ADMS command queue (device_commands).
     'adms' => [
         // Commands handed out per GET /iclock/getrequest poll (the machine polls every few seconds).
