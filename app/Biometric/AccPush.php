@@ -10,6 +10,31 @@ use Illuminate\Support\Str;
 /** Security PUSH in legacy 3.0.1 mode over HTTPS (no SDK message encryption). */
 class AccPush
 {
+    /** Dedicated all-day schedule for portal members; never set the door to stay open. */
+    public function timezoneCommand(): string
+    {
+        $fields = ['DATA UPDATE timezone TimezoneId=' . config('biometric.acc.timezone_id', 1)];
+        foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Hol1', 'Hol2', 'Hol3'] as $day) {
+            // PUSH uses HHMM(start) << 16 | HHMM(end); 00:00–23:59 is 2359.
+            $fields[] = $day . 'Time1=2359';
+            $fields[] = $day . 'Time2=0';
+            $fields[] = $day . 'Time3=0';
+        }
+        return implode("\t", $fields);
+    }
+
+    public function authorizationCommand(string $pin, bool $active = true): string
+    {
+        if (! $active) {
+            return 'DATA DELETE userauthorize Pin=' . $pin;
+        }
+        return implode("\t", [
+            'DATA UPDATE userauthorize Pin=' . $pin,
+            'AuthorizeTimezoneId=' . config('biometric.acc.timezone_id', 1),
+            'AuthorizeDoorId=1',
+        ]);
+    }
+
     public function register(BiometricDevice $device): void
     {
         DB::transaction(function () use ($device) {

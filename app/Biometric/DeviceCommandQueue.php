@@ -32,7 +32,7 @@ class DeviceCommandQueue
 
         $queued = 0;
         foreach ($this->machinesOf($user->gym_id) as $device) {
-            $queued += (int) $this->queue($device, self::userInfoCommand($user), $user->id);
+            $queued += (int) $this->queueEnrollment($device, $user);
         }
 
         return $queued;
@@ -43,6 +43,9 @@ class DeviceCommandQueue
     {
         $queued = 0;
         foreach ($this->machinesOf($gymId) as $device) {
+            if ($device->acc_push_state) {
+                $this->queue($device, app(AccPush::class)->authorizationCommand($pin, false), $userId);
+            }
             $queued += (int) $this->queue($device, 'DATA DELETE USERINFO PIN=' . $pin, $userId);
         }
 
@@ -59,7 +62,7 @@ class DeviceCommandQueue
             ->orderBy('id')
             ->each(function (User $user) use ($device, &$queued) {
                 if ($this->codes->ensure($user) !== null) {
-                    $queued += (int) $this->queue($device, self::userInfoCommand($user), $user->id);
+                    $queued += (int) $this->queueEnrollment($device, $user);
                 }
             });
 
@@ -140,6 +143,23 @@ class DeviceCommandQueue
         ]);
     }
 
+    /** Counts users/machines as before, while authorization commands have separate results. */
+    private function queueEnrollment(BiometricDevice $device, User $user): bool
+    {
+        return DB::transaction(function () use ($device, $user) {
+            if ($device->acc_push_state) {
+                $this->queue($device, app(AccPush::class)->timezoneCommand(), null);
+            }
+            $queued = $this->queue($device, self::userInfoCommand($user), $user->id);
+            if ($device->acc_push_state) {
+                $authorization = app(AccPush::class)->authorizationCommand(
+                    $user->biometric_code, $user->status === 'active');
+                $queued = $this->queue($device, $authorization, $user->id) || $queued;
+            }
+            return $queued;
+        });
+    }
+
     /** @return Collection<int, BiometricDevice> active ZKTeco machines of a gym */
     private function machinesOf(?int $gymId): Collection
     {
@@ -158,7 +178,7 @@ class DeviceCommandQueue
     private function queue(BiometricDevice $device, string $command, ?int $userId): bool
     {
         $exists = DeviceCommand::where('device_serial_number', $device->serial_number)
-            ->where('status', DeviceCommand::PENDING)
+            ->whereIn('status', [DeviceCommand::PENDING, DeviceCommand::SENT])
             ->where('command', $command)
             ->exists();
 

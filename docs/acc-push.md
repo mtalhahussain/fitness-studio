@@ -3,7 +3,12 @@
 F22 terminals reporting `DeviceType=acc` receive a Security PUSH handshake instead
 of the attendance `GET OPTION FROM` reply. The server negotiates legacy protocol
 3.0.1, with HTTPS providing transport encryption. SDK 3.1.x message encryption and
-door access policy management are outside this implementation.
+general door policy management is outside this implementation. Portal user sync
+does provision individual authorization for door 1 with an all-day weekly and
+holiday schedule (time rule 1 by default). This overwrites that time rule on sync;
+choose a different `biometric.acc.timezone_id` if rule 1 is used by another policy.
+The door is not placed in normally-open mode. Inactive users receive authorization
+deletion instead of a grant. PIN removal deletes authorization before the user.
 
 Protocol reference: ZKTeco Security PUSH Communication Protocol, March 2020,
 sections 7, 10, 12.1.1.1, and appendices 2, 5, 6, 13, 14:
@@ -46,3 +51,16 @@ Devices remain identified by registered serial number, as in the existing ADMS
 flow. Registration/session metadata is stored separately from editable settings
 and excluded from JSON model output. It is not a new authentication boundary.
 Real F22 hardware behavior still requires verification on the live terminal.
+
+## Authorization update
+
+Deploy `app/Biometric/AccPush.php`, `app/Biometric/DeviceCommandQueue.php`, and
+`config/biometric.php`, then run `php artisan optimize:clear`. No new migration is
+required for this update. Press **Sync users** once on the connected ACC device.
+The queue sends the schedule, user records, and individual authorizations with
+separate command IDs and results. The displayed queued count remains a user count;
+the waiting badge also includes schedule and authorization commands.
+
+Wait until results show `done`, then verify the enrolled finger again. Event 23
+is unauthorized access and remains excluded from attendance. For failures inspect
+`device_commands.result`, especially the timezone and userauthorize rows.

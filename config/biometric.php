@@ -6,7 +6,11 @@ return [
     'timezone' => env('BIOMETRIC_TIMEZONE', 'Asia/Karachi'),
 
     // Successful individual card/fingerprint/password access events only.
-    'acc' => ['pass_events' => [0, 1, 2, 14, 16, 17, 18, 19]],
+    'acc' => [
+        'pass_events' => [0, 1, 2, 14, 16, 17, 18, 19],
+        // Schedule managed by portal sync: all day, every day, door 1 only.
+        'timezone_id' => 1,
+    ],
 
     // ZKTeco ADMS command queue (device_commands).
     'adms' => [
