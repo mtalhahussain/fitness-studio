@@ -2,10 +2,10 @@
 <div data-brand-show="zkteco" class="form-group">
     <label class="form-label">Punch mode</label>
     <select class="form-select" name="settings[punch_mode]">
-        <option value="status">Use machine in/out status</option>
         <option value="toggle">Alternate in/out on each punch</option>
+        <option value="status">Use machine in/out status</option>
     </select>
-    <div class="cell-sub" style="margin-top:4px">Many machines (e.g. K70) send every punch as check-in unless members press the Check-In/Check-Out key. If check-outs never show up, choose "Alternate".</div>
+    <div class="cell-sub" style="margin-top:4px">Alternate: first successful punch checks in, next checks out. Repeated punches within 60 seconds are ignored.</div>
 </div>
 
 <div data-brand-show="hikvision,generic" class="form-group">

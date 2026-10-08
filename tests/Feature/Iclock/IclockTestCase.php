@@ -34,6 +34,7 @@ abstract class IclockTestCase extends TestCase
             'model'         => 'K70',
             'api_key'       => BiometricDevice::generateApiKey(),
             'is_active'     => true,
+            'settings'      => ['punch_mode' => 'status'],
         ], $overrides));
     }
 

@@ -66,3 +66,15 @@ the waiting badge also includes schedule and authorization commands.
 Wait until results show `done`, then verify the enrolled finger again. Event 23
 is unauthorized access and remains excluded from attendance. For failures inspect
 `device_commands.result`, especially the timezone and userauthorize rows.
+
+## Alternating attendance
+
+New devices default to alternating punches. Deploy the updated BiometricDevice
+model and biometric settings view plus migration
+`2026_10_09_000002_enable_alternating_zkteco_attendance.php`, then run
+`php artisan migrate --force` and `php artisan optimize:clear`. The migration
+sets existing ZKTeco devices to toggle mode while preserving their other settings.
+Each successful punch alternates check-in/check-out according to the user's open
+session, regardless of the terminal's in/out flag. The existing 60-second duplicate
+filter still applies. Stored open sessions are retained; an already checked-in
+user's next accepted punch checks out.

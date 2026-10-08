@@ -98,7 +98,7 @@ class IclockAccPushTest extends IclockTestCase
 
     public function test_toggle_mode_and_setup_preview_support_acc_events(): void
     {
-        $device = $this->device(['settings' => ['punch_mode' => 'toggle']]);
+        $device = $this->device(['settings' => []]);
         $this->member('1001');
         $this->connect($device);
         $body = "time=2026-10-09 09:00:00\tpin=1001\tevent=14\tinoutstatus=0\n"
@@ -109,6 +109,21 @@ class IclockAccPushTest extends IclockTestCase
         $logs = app(\App\Biometric\Drivers\ZKTecoDriver::class)->parse($request, $device->fresh());
         $this->assertCount(2, $logs);
         $this->assertNull($logs[0]->type);
+        $this->upload($device->serial_number, 'rtlog',
+            "time=2026-10-09 11:00:00\tpin=1001\tevent=3\tinoutstatus=0")->assertOk();
+        $this->assertSame(2, Attendance::count());
+        $this->assertSame(1, Attendance::whereNull('check_out_time')->count());
+    }
+
+    public function test_migration_enables_alternating_for_existing_zkteco_devices_and_preserves_settings(): void
+    {
+        $device = $this->device(['settings' => ['punch_mode' => 'status', 'timezone' => 'Asia/Karachi']]);
+        $other = $this->device(['serial_number' => 'OTHER', 'brand' => 'generic']);
+        $migration = require database_path('migrations/2026_10_09_000002_enable_alternating_zkteco_attendance.php');
+        $migration->up();
+        $this->assertSame('toggle', $device->fresh()->punchMode());
+        $this->assertSame('Asia/Karachi', $device->fresh()->settings['timezone']);
+        $this->assertSame('status', $other->fresh()->settings['punch_mode']);
     }
 
     public function test_malformed_and_non_person_events_do_not_create_attendance(): void

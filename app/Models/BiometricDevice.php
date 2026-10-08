@@ -63,9 +63,9 @@ class BiometricDevice extends Model
 
     public function punchMode(): string
     {
-        return ($this->settings['punch_mode'] ?? null) === self::PUNCH_MODE_TOGGLE
-            ? self::PUNCH_MODE_TOGGLE
-            : self::PUNCH_MODE_STATUS;
+        return ($this->settings['punch_mode'] ?? null) === self::PUNCH_MODE_STATUS
+            ? self::PUNCH_MODE_STATUS
+            : self::PUNCH_MODE_TOGGLE;
     }
 
     /** ADMS handshake reply for GET /iclock/cdata. Both stamp spellings: old firmware reads Stamp/OpStamp. */
