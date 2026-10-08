@@ -76,6 +76,13 @@ class BiometricPushController extends Controller
     {
         $serialNumber = $this->serialNumber($request);
 
+        Log::info('Biometric diagnostics: legacy request', [
+            'method' => $request->method(),
+            'path' => $request->path(),
+            'serial_number' => $serialNumber === null ? null : mb_substr($serialNumber, 0, 100),
+            'ip' => $request->ip(),
+        ]);
+
         if ($serialNumber) {
             $device = BiometricDevice::where('serial_number', $serialNumber)->first();
             if ($device) {

@@ -75,6 +75,12 @@ class IclockController extends Controller
 
         $commands = $this->commands->nextBatch($device);
 
+        Log::info('Biometric diagnostics: command poll', [
+            'serial_number' => $device->serial_number,
+            'commands_returned' => $commands->count(),
+            'command_ids' => $commands->pluck('cmd_id')->all(),
+        ]);
+
         return $this->text($commands->isEmpty()
             ? 'OK'
             : $commands->map->toAdmsLine()->implode("\n") . "\n");
@@ -89,7 +95,12 @@ class IclockController extends Controller
             return $this->text('Device not registered', 401);
         }
 
-        $this->commands->recordResults($device, $request->getContent());
+        $updated = $this->commands->recordResults($device, $request->getContent());
+
+        Log::info('Biometric diagnostics: command results', [
+            'serial_number' => $device->serial_number,
+            'commands_updated' => $updated,
+        ]);
 
         return $this->text('OK');
     }
@@ -98,6 +109,11 @@ class IclockController extends Controller
     private function storeAttlog(Request $request, BiometricDevice $device, string $raw): Response
     {
         $logs = $this->driver->parseAttlog($raw, $device);
+
+        Log::info('Biometric diagnostics: attendance upload', [
+            'serial_number' => $device->serial_number,
+            'punches_parsed' => count($logs),
+        ]);
 
         foreach ($logs as $log) {
             try {
@@ -140,18 +156,34 @@ class IclockController extends Controller
     {
         $sn = $request->query('SN');
 
+        Log::info('Biometric diagnostics: request', [
+            'endpoint' => $endpoint,
+            'method' => $request->method(),
+            'path' => $request->path(),
+            'serial_number' => is_string($sn) ? mb_substr($sn, 0, 100) : null,
+            'ip' => $request->ip(),
+            'table' => is_string($request->query('table')) ? mb_substr($request->query('table'), 0, 50) : null,
+        ]);
+
         if (! is_string($sn) || $sn === '') {
+            Log::warning('Biometric diagnostics: missing serial number');
             return null;
         }
 
         $device = BiometricDevice::where('serial_number', $sn)->first();
 
         if (! $device) {
+            Log::warning('Biometric diagnostics: unregistered serial number', ['serial_number' => mb_substr($sn, 0, 100)]);
             $this->unknownDevices->record($sn, $request->ip(), "iclock/{$endpoint}");
             return null;
         }
 
         $device->markSeen();
+
+        Log::info('Biometric diagnostics: device matched', [
+            'serial_number' => $device->serial_number,
+            'is_active' => (bool) $device->is_active,
+        ]);
 
         return $device;
     }
