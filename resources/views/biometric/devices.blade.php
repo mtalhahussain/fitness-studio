@@ -18,6 +18,7 @@
     </div>
 </div>
 @else
+@php $showWebhookColumn = $devices->contains(fn ($device) => $device->brand !== 'zkteco'); @endphp
 <div class="card" style="padding:0">
     <div class="table-wrap">
         <table>
@@ -26,7 +27,7 @@
                     <th>Device</th>
                     <th>Serial / Model</th>
                     <th>Location</th>
-                    <th>Key / URL</th>
+                    @if($showWebhookColumn)<th>Webhook URL</th>@endif
                     <th>Connection</th>
                     <th style="text-align:center">Status</th>
                     <th style="text-align:right">Actions</th>
@@ -44,17 +45,15 @@
                         <div class="cell-sub">{{ $device->model ?? '—' }}</div>
                     </td>
                     <td>{{ $device->location ?? '—' }}</td>
+                    @if($showWebhookColumn)
                     <td>
-                        @if($device->brand === 'zkteco')
-                        <div style="display:flex;align-items:center;gap:6px">
-                            <code id="key-{{ $device->id }}" style="font-size:11px;background:var(--bg-alt);padding:3px 7px;border-radius:4px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">{{ $device->api_key }}</code>
-                            <button class="btn btn-outline btn-sm" title="Copy" onclick="copyKey('{{ $device->api_key }}')">⎘</button>
-                            <button class="btn btn-outline btn-sm" title="Regenerate" onclick="regenerateKey({{ $device->id }})">↺</button>
-                        </div>
-                        @else
+                        @if($device->brand !== 'zkteco')
                         <span class="cell-sub">Uses its own URL — see Setup / Test</span>
+                        @else
+                        <span class="cell-sub">—</span>
                         @endif
                     </td>
+                    @endif
                     <td>
                         @php
                             [$connClass, $connLabel] = [
@@ -460,17 +459,5 @@ async function deleteDevice(id) {
     } catch(err) { toast(err.message, 'error'); }
 }
 
-async function regenerateKey(id) {
-    if (!confirm('Regenerate API key? You will need to update the key in the machine settings.')) return;
-    try {
-        const res = await post(`/biometric/devices/${id}/regenerate-key`);
-        document.getElementById(`key-${id}`).textContent = res.api_key;
-        toast('API key regenerated — update machine settings', 'info');
-    } catch(err) { toast(err.message, 'error'); }
-}
-
-function copyKey(key) {
-    navigator.clipboard.writeText(key.trim()).then(() => toast('Copied', 'success'));
-}
 </script>
 @endpush
