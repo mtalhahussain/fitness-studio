@@ -124,4 +124,22 @@ class IclockAccPushTest extends IclockTestCase
         ]))->assertOk();
         $this->assertSame(0, Attendance::count());
     }
+
+    public function test_completed_multi_user_events_record_attendance_but_pending_verification_does_not(): void
+    {
+        $device = $this->device();
+        $this->connect($device);
+        foreach ([3, 15, 203] as $event) {
+            $pin = (string) (1000 + $event);
+            $user = $this->member($pin);
+            $this->upload($device->serial_number, 'rtlog',
+                "time=2026-10-09 01:06:03\tpin={$pin}\tcardno=0\teventaddr=1\tevent={$event}\tinoutstatus=0\tverifytype=1")
+                ->assertOk();
+            $this->assertDatabaseHas('attendances', ['user_id' => $user->id, 'source' => 'biometric']);
+        }
+        $this->member('9999');
+        $this->upload($device->serial_number, 'rtlog',
+            "time=2026-10-09 01:06:03\tpin=9999\tevent=26\tinoutstatus=0")->assertOk();
+        $this->assertSame(3, Attendance::count());
+    }
 }

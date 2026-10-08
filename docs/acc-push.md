@@ -41,7 +41,9 @@ After the user appears on the terminal, enroll the fingerprint against the
 portal Machine PIN and make a test punch. `ACC attendance upload` should show
 parsed punches, and Setup/Test -> Refresh should show the received event.
 
-Only confirmed successful individual access events are counted as attendance;
+Only confirmed successful user access events are counted as attendance, including
+completed multi-user verification (event codes 3, 15, 203). Waiting for additional
+verification (event 26) is excluded;
 alarms, rejected access, remote openings, exit buttons, and empty/zero PINs are
 ignored. The existing device punch mode controls in/out status versus alternating.
 Realtime `rtlog` and `tabledata` transaction uploads are accepted. Numeric

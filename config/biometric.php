@@ -5,9 +5,9 @@ return [
     // offset-carrying times into the wall-clock time we store (see WallClock).
     'timezone' => env('BIOMETRIC_TIMEZONE', 'Asia/Karachi'),
 
-    // Successful individual card/fingerprint/password access events only.
+    // Successful user access events, including completed multi-user verification.
     'acc' => [
-        'pass_events' => [0, 1, 2, 14, 16, 17, 18, 19],
+        'pass_events' => [0, 1, 2, 3, 14, 15, 16, 17, 18, 19, 203],
         // Schedule managed by portal sync: all day, every day, door 1 only.
         'timezone_id' => 1,
     ],
