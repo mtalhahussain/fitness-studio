@@ -99,7 +99,7 @@
         <div class="card-header">
             <div>
                 <div class="card-title">Today's Check-ins</div>
-                <div class="card-subtitle">{{ now()->format('d-M-Y') }} &mdash; {{ $todayAttendance->count() }} total</div>
+                <div class="card-subtitle">{{ now()->format('d-M-Y') }} &mdash; {{ $stats['today_checkins'] }} total · {{ $stats['checked_in'] }} checked in · {{ $stats['checked_out'] }} checked out</div>
             </div>
             <a href="{{ route('attendance.index') }}" class="btn btn-outline btn-sm">Attendance →</a>
         </div>

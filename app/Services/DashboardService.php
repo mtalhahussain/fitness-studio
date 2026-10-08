@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Attendance;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -13,11 +14,19 @@ class DashboardService extends BaseService
      */
     public function getStats(?int $gymId): array
     {
-        return Cache::remember(
-            'dashboard_stats_' . ($gymId ?? 'all'),
+        $stats = Cache::remember(
+            'dashboard_stats_' . ($gymId ?? 'all') . '_' . today()->toDateString(),
             60,
             fn () => $this->queryStats($gymId)
         );
+        // Device punches must be reflected even while other dashboard KPIs are cached.
+        $attendance = Attendance::forGym($gymId)->today()->selectRaw(
+            'COUNT(*) as total, SUM(CASE WHEN check_out_time IS NULL THEN 1 ELSE 0 END) as inside_count, SUM(CASE WHEN check_out_time IS NOT NULL THEN 1 ELSE 0 END) as out_count'
+        )->first();
+        $stats['today_checkins'] = (int) $attendance->total;
+        $stats['checked_in'] = (int) $attendance->inside_count;
+        $stats['checked_out'] = (int) $attendance->out_count;
+        return $stats;
     }
 
     /**
@@ -46,6 +55,13 @@ class DashboardService extends BaseService
             $gymId ? array_fill(0, 5, $gymId) : []
         );
 
+        // Bind the application calendar instead of relying on the database server's timezone.
+        array_splice($bindings, $gymId ? 4 : 1, 0, [today()->toDateString()]);
+        array_splice($bindings, $gymId ? 6 : 2, 0, [
+            now()->startOfMonth()->toDateTimeString(),
+            now()->startOfMonth()->addMonth()->toDateTimeString(),
+        ]);
+
         $row = DB::selectOne("
             SELECT
               ( SELECT COUNT(*)
@@ -69,13 +85,12 @@ class DashboardService extends BaseService
 
               ( SELECT COUNT(*)
                 FROM   attendances
-                WHERE  DATE(check_in_time) = CURDATE() {$g}
+                WHERE  DATE(check_in_time) = ? {$g}
               ) AS today_checkins,
 
               ( SELECT COALESCE(SUM(amount), 0)
                 FROM   payments
-                WHERE  YEAR(paid_at)  = YEAR(CURDATE())
-                  AND  MONTH(paid_at) = MONTH(CURDATE()) {$g}
+                WHERE  paid_at >= ? AND paid_at < ? {$g}
               ) AS monthly_revenue
         ", $bindings);
 
@@ -95,5 +110,6 @@ class DashboardService extends BaseService
     public function bustCache(?int $gymId): void
     {
         Cache::forget('dashboard_stats_' . ($gymId ?? 'all'));
+        Cache::forget('dashboard_stats_' . ($gymId ?? 'all') . '_' . today()->toDateString());
     }
 }
