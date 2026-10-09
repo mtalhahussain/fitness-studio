@@ -95,9 +95,6 @@
             <option value="checked_in">Checked In</option>
             <option value="checked_out">Checked Out</option>
         </select>
-        <button class="btn btn-outline" @click="load()" title="Refresh">
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        </button>
     </div>
 
     {{-- Attendance Table --}}
