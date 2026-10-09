@@ -7,7 +7,7 @@
     <div class="page-header">
         <div>
             <div class="page-title">Attendance</div>
-            <div class="page-sub" x-text="startDate + ' to ' + endDate"></div>
+            <div class="page-sub" x-text="startDate && endDate ? rangeLabel(startDate, endDate) : 'Current month attendance'"></div>
         </div>
         <button class="btn btn-primary" @click="checkInModal = true">
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -84,13 +84,6 @@
             </div>
         </div>
         <button type="button" class="btn btn-outline" @click="resetFilters()">Reset Filters</button>
-        <div class="form-group">
-            <label class="form-label">View</label>
-            <select class="form-select" x-model="viewMode" @change="load(1)">
-                <option value="list">Session List</option>
-                <option value="monthly">Monthly Attendance</option>
-            </select>
-        </div>
     </div>
     <div class="toolbar">
         <div class="search-wrap" style="flex:1;max-width:300px">
@@ -108,6 +101,14 @@
     </div>
 
     {{-- Attendance Table --}}
+    <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:10px" role="group" aria-label="Attendance view">
+        <button type="button" class="btn btn-sm" :class="viewMode === 'list' ? 'btn-primary' : 'btn-outline'" :aria-pressed="viewMode === 'list'" title="Session List" aria-label="Session List" @click="viewMode = 'list'; load(1)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h1M3 12h1M3 18h1"/></svg>
+        </button>
+        <button type="button" class="btn btn-sm" :class="viewMode === 'monthly' ? 'btn-primary' : 'btn-outline'" :aria-pressed="viewMode === 'monthly'" title="Monthly Attendance" aria-label="Monthly Attendance" @click="viewMode = 'monthly'; load(1)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h1M15 15h1M8 18h1M15 18h1"/></svg>
+        </button>
+    </div>
     <div class="card" style="padding:0" x-show="viewMode === 'list'">
         <div class="table-wrap">
             <table>
@@ -282,6 +283,7 @@ function attendancePage() {
         },
 
         rangeLabel(start, end) {
+            if (!start || !end) return 'Select date range';
             const format = value => new Date(value + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
             return start === end ? format(start) : `${format(start)} – ${format(end)}`;
         },
@@ -290,7 +292,7 @@ function attendancePage() {
             if (this.calendarOpen) { this.calendarOpen = false; return; }
             this.draftStart = this.startDate;
             this.draftEnd = this.endDate;
-            this.calendarMonth = this.startDate.slice(0, 7);
+            this.calendarMonth = (this.startDate || this.today).slice(0, 7);
             this.calendarOpen = true;
         },
 
@@ -349,11 +351,18 @@ function attendancePage() {
             this.sourceFilter = '';
             this.perPage = 20;
             this.viewMode = 'list';
-            this.usePreset('this_month');
+            this.month = '';
+            this.startDate = '';
+            this.endDate = '';
+            this.draftStart = '';
+            this.draftEnd = '';
+            this.calendarMonth = '';
+            this.calendarOpen = false;
+            this.load(1);
         },
 
         async load(page = this.pagination.current_page) {
-            if (!this.startDate || !this.endDate || this.endDate < this.startDate) {
+            if (!!this.startDate !== !!this.endDate || (this.startDate && this.endDate < this.startDate)) {
                 toast('Choose a valid start and end date', 'error');
                 return;
             }
@@ -366,9 +375,13 @@ function attendancePage() {
                 if (this.sourceFilter) params.set('source', this.sourceFilter);
                 params.set('per_page', this.perPage);
                 if (this.memberFilter) params.set('member_id', this.memberFilter);
-                params.set('month', this.month);
-                params.set('start_date', this.startDate);
-                params.set('end_date', this.endDate);
+                if (this.month) params.set('month', this.month);
+                if (this.startDate && this.endDate) {
+                    params.set('start_date', this.startDate);
+                    params.set('end_date', this.endDate);
+                } else {
+                    params.set('clear_dates', '1');
+                }
                 params.set('view', this.viewMode);
                 params.set('page', page);
                 const res = await get(`/attendance?${params}`);

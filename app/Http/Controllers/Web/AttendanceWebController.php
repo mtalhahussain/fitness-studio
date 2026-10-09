@@ -34,6 +34,7 @@ class AttendanceWebController extends Controller
             'status' => ['nullable', Rule::in(['checked_in', 'checked_out'])],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'page' => ['nullable', 'integer', 'min:1'],
+            'clear_dates' => ['nullable', 'boolean'],
         ]);
         $month = Carbon::createFromFormat('!Y-m', $filters['month'] ?? now()->format('Y-m'));
         $start = isset($filters['start_date']) ? Carbon::parse($filters['start_date'])->startOfDay() : $month->copy()->startOfMonth();
@@ -90,6 +91,9 @@ class AttendanceWebController extends Controller
         $filterMembers = User::members()->forGym($gymId)->orderBy('name')->get(['id', 'name', 'email']);
         $pagination = $filters['view'] === 'monthly' ? $monthly : $records;
         $paginationData = ['current_page' => $pagination->currentPage(), 'last_page' => $pagination->lastPage(), 'total' => $pagination->total()];
+        if ($request->boolean('clear_dates') && ! $request->filled('start_date') && ! $request->filled('end_date') && ! $request->filled('month')) {
+            $filters['month'] = $filters['start_date'] = $filters['end_date'] = '';
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['records' => $records->items(), 'summary' => $summary, 'monthly' => $monthly->items(), 'dates' => $dates, 'pagination' => $paginationData]);
