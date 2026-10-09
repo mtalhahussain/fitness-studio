@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
-use App\Models\MembershipPlan;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\POSService;
@@ -22,7 +21,6 @@ class POSWebController extends Controller
         $summary  = $this->service->getRevenueSummary($gymId);
         $invoices = $this->service->getInvoices($gymId, $filters);
         $products = Product::forGym($gymId)->active()->orderBy('name')->get(['id', 'name', 'price']);
-        $plans    = MembershipPlan::active()->forGym($gymId)->get(['id', 'name', 'price', 'type']);
         $members  = User::members()->forGym($gymId)->where('status', 'active')->get(['id', 'name', 'email']);
 
         if ($request->wantsJson()) {
@@ -32,7 +30,7 @@ class POSWebController extends Controller
             ]);
         }
 
-        return view('pos.index', compact('summary', 'invoices', 'products', 'plans', 'members'));
+        return view('pos.index', compact('summary', 'invoices', 'products', 'members'));
     }
 
     public function createInvoice(Request $request)
@@ -43,7 +41,7 @@ class POSWebController extends Controller
             'items.*.name'       => ['required', 'string', 'max:255'],
             'items.*.quantity'   => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'items.*.item_type'  => ['nullable', 'in:product,plan,custom'],
+            'items.*.item_type'  => ['nullable', 'in:product,custom'],
             'items.*.item_id'    => ['nullable', 'integer'],
             'discount_amount'    => ['nullable', 'numeric', 'min:0'],
             'tax_amount'         => ['nullable', 'numeric', 'min:0'],

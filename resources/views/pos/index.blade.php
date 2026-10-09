@@ -8,11 +8,11 @@
     <div class="page-header">
         <div>
             <div class="page-title">Point of Sale</div>
-            <div class="page-sub">Invoices, payments & product catalog</div>
+            <div class="page-sub">Product sales, invoices & payments</div>
         </div>
         <button class="btn btn-primary" @click="openNewInvoice()">
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            New Invoice
+            New Sale
         </button>
     </div>
 
@@ -119,6 +119,7 @@
                                 </td>
                                 <td x-text="fmtDate(inv.created_at)" style="white-space:nowrap"></td>
                                 <td>
+                                    <span class="badge" :class="inv.invoice_type === 'mixed' ? 'badge-purple' : (inv.invoice_type === 'membership' ? 'badge-blue' : 'badge-gray')" x-text="invoiceTypeLabel(inv.invoice_type)"></span>
                                     <span class="badge badge-gray" x-text="inv.items_count + (inv.items_count === 1 ? ' item' : ' items')"></span>
                                 </td>
                                 <td>
@@ -208,7 +209,7 @@
     <div class="modal-overlay" x-show="newInvoiceModal" x-transition @click.self="newInvoiceModal=false" style="display:none">
         <div class="modal modal-lg" @click.stop style="max-width:760px">
             <div class="modal-header">
-                <div class="modal-title">New Invoice</div>
+                <div class="modal-title">New Sale</div>
                 <button class="modal-close" @click="newInvoiceModal=false">×</button>
             </div>
 
@@ -223,22 +224,15 @@
                 </select>
             </div>
 
-            {{-- Quick Add from Catalog --}}
+            {{-- Add Products --}}
             <div style="margin-bottom:14px">
-                <label class="form-label" style="margin-bottom:6px;display:block">Quick Add from Catalog</label>
+                <label class="form-label" style="margin-bottom:6px;display:block">Add Products</label>
                 <select class="form-select" id="catalogSelect" @change="quickAdd($event)" x-init="$nextTick(()=>{ const $m=$(el).closest('.modal'); $(el).select2({width:'100%',dropdownParent:$m.length?$m:$('body'),minimumResultsForSearch:1}); $(el).on('select2:select',function(e){ el.dispatchEvent(new Event('change',{bubbles:true})); }); })">
-                    <option value="">+ Add product or plan...</option>
+                    <option value="">+ Add a product...</option>
                     @if($products->count())
                     <optgroup label="Products">
                         @foreach($products as $p)
                         <option value="{{ json_encode(['type'=>'product','id'=>$p->id,'name'=>$p->name,'price'=>$p->price]) }}">{{ $p->name }} — PKR {{ number_format($p->price, 2) }}</option>
-                        @endforeach
-                    </optgroup>
-                    @endif
-                    @if($plans->count())
-                    <optgroup label="Membership Plans">
-                        @foreach($plans as $p)
-                        <option value="{{ json_encode(['type'=>'plan','id'=>$p->id,'name'=>$p->name.' ('.ucfirst($p->type).')','price'=>$p->price]) }}">{{ $p->name }} ({{ ucfirst($p->type) }}) — PKR {{ number_format($p->price, 2) }}</option>
                         @endforeach
                     </optgroup>
                     @endif
@@ -248,13 +242,13 @@
             {{-- Items Table --}}
             <div style="margin-bottom:16px">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                    <label class="form-label">Line Items *</label>
-                    <button type="button" class="btn btn-outline btn-sm" @click="addItem()">+ Add Row</button>
+                    <label class="form-label">Sale Items *</label>
+                    <button type="button" class="btn btn-outline btn-sm" @click="addItem()">+ Custom Item</button>
                 </div>
 
                 <template x-if="invoiceForm.items.length === 0">
                     <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;background:var(--tint-1);border-radius:8px;border:1px dashed var(--border)">
-                        Use catalog dropdown above or click "Add Row" to add items
+                        Choose a product above or add a custom item
                     </div>
                 </template>
 
@@ -353,6 +347,7 @@
                         </div>
                         <div style="display:flex;align-items:center;gap:10px">
                             <span class="badge" :class="statusClass(activeInvoice.status)" x-text="statusLabel(activeInvoice.status)"></span>
+                            <span class="badge" :class="activeInvoice.invoice_type === 'mixed' ? 'badge-purple' : (activeInvoice.invoice_type === 'membership' ? 'badge-blue' : 'badge-gray')" x-text="invoiceTypeLabel(activeInvoice.invoice_type)"></span>
                             <button class="modal-close" @click="viewModal=false">×</button>
                         </div>
                     </div>
@@ -761,6 +756,10 @@ function posPage() {
         },
 
         // ── Helpers ───────────────────────────────────────────────────────────
+
+        invoiceTypeLabel(type) {
+            return { membership: 'Membership', pos: 'POS Sale', mixed: 'Mixed' }[type] || 'POS Sale';
+        },
 
         statusClass(s) {
             return { paid: 'badge-green', unpaid: 'badge-yellow', partially_paid: 'badge-blue', cancelled: 'badge-gray' }[s] || 'badge-gray';

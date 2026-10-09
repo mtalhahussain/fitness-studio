@@ -24,6 +24,17 @@ class Invoice extends Model
         'paid_at'         => 'datetime',
     ];
 
+    protected $appends = ['invoice_type'];
+
+    public function getInvoiceTypeAttribute(): string
+    {
+        $types = $this->items->pluck('item_type');
+        $membership = $types->contains('plan');
+        $sale = $types->contains(fn ($type) => $type !== 'plan');
+
+        return $membership ? ($sale ? 'mixed' : 'membership') : 'pos';
+    }
+
     public function user()        { return $this->belongsTo(User::class); }
     public function trainer()     { return $this->belongsTo(User::class, 'trainer_id'); }
     public function items()       { return $this->hasMany(InvoiceItem::class); }

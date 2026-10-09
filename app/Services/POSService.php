@@ -98,7 +98,7 @@ class POSService extends BaseService
     public function getInvoices(?int $gymId, array $filters = [])
     {
         $q = Invoice::forGym($gymId)
-            ->with(['user:id,name,email'])
+            ->with(['user:id,name,email', 'items'])
             ->withCount('items')
             ->withSum('payments', 'amount')
             ->latest();

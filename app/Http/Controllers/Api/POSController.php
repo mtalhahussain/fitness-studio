@@ -78,7 +78,7 @@ class POSController extends Controller
             'items.*.name'         => ['required', 'string', 'max:255'],
             'items.*.quantity'     => ['required', 'integer', 'min:1'],
             'items.*.unit_price'   => ['required', 'numeric', 'min:0'],
-            'items.*.item_type'    => ['nullable', 'in:product,plan,custom'],
+            'items.*.item_type'    => ['nullable', 'in:product,custom'],
             'items.*.item_id'      => ['nullable', 'integer'],
             'discount_amount'      => ['nullable', 'numeric', 'min:0'],
             'tax_amount'           => ['nullable', 'numeric', 'min:0'],
