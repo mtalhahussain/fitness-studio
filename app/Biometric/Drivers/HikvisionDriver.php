@@ -8,7 +8,6 @@ use App\Biometric\WallClock;
 use App\Models\BiometricDevice;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -70,10 +69,6 @@ class HikvisionDriver implements BiometricDriver
         // expired card, no permission, …). Only the sub-types below mean the door actually opened.
         $sub = (int) ($ace['subEventType'] ?? 0);
         if (! in_array($sub, config('biometric.hikvision.pass_sub_events', []), true)) {
-            Log::info('Hikvision: non-pass access event skipped', [
-                'device_id'    => $device->id,
-                'subEventType' => $sub,
-            ]);
 
             return [];
         }
@@ -98,11 +93,6 @@ class HikvisionDriver implements BiometricDriver
         try {
             $wallClock = WallClock::parse((string) $time, $device->timezone());
         } catch (\Throwable $e) {
-            Log::warning('Hikvision: unparseable event time skipped', [
-                'device_id' => $device->id,
-                'time'      => $time,
-                'error'     => $e->getMessage(),
-            ]);
 
             return [];
         }

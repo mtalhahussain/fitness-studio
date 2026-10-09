@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Remembers machines that try to connect with a serial number nobody has
@@ -19,15 +18,6 @@ class UnknownBiometricDevices
     public function record(string $serialNumber, ?string $ip, string $endpoint): void
     {
         $serialNumber = mb_substr($serialNumber, 0, 100);
-
-        // Log once per SN per 10 minutes so heartbeats don't flood the log.
-        if (Cache::add("biometric_unknown_logged:{$serialNumber}", true, now()->addMinutes(10))) {
-            Log::warning('Biometric device with unregistered serial number tried to connect', [
-                'serial_number' => $serialNumber,
-                'ip'            => $ip,
-                'endpoint'      => $endpoint,
-            ]);
-        }
 
         $all   = Cache::get(self::CACHE_KEY, []);
         $entry = $all[$serialNumber] ?? ['serial_number' => $serialNumber, 'first_seen_at' => now()->toIso8601String(), 'hits' => 0];

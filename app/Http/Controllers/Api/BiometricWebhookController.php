@@ -9,7 +9,6 @@ use App\Http\Controllers\Controller;
 use App\Models\BiometricDevice;
 use App\Services\UnknownBiometricDevices;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Per-device URL for token brands (Hikvision, Generic webhook):
@@ -77,24 +76,15 @@ class BiometricWebhookController extends Controller
             $logs = $driver->parse($request, $device);
         } catch (\Throwable $e) {
             // Never make the machine retry-loop; the payload is kept for debugging.
-            Log::warning('Biometric webhook: parse failed', ['device_id' => $device->id, 'error' => $e->getMessage()]);
 
             return $driver->acknowledge();
-        }
-
-        if ($logs === [] && $rawBody !== '' && ! $isHeartbeat) {
-            Log::warning('Biometric webhook: data received but no punches extracted', ['device_id' => $device->id, 'brand' => $device->brand]);
         }
 
         foreach ($logs as $log) {
             try {
                 $this->processor->process($log, $device);
             } catch (\Throwable $e) {
-                Log::warning('Biometric webhook: punch failed', [
-                    'device_id'   => $device->id,
-                    'employee_id' => $log->employeeId,
-                    'error'       => $e->getMessage(),
-                ]);
+                // Continue without interrupting biometric processing.
             }
         }
 

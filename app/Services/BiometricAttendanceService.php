@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Attendance;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Handles attendance sync from ZKTeco (and compatible) biometric devices.
@@ -54,11 +53,6 @@ class BiometricAttendanceService extends BaseService
                     'error' => $e->getMessage(),
                 ];
 
-                Log::warning('BiometricAttendanceService: failed to process log', [
-                    'log'   => $log,
-                    'error' => $e->getMessage(),
-                    'gym'   => $gymId,
-                ]);
             }
         }
 
@@ -88,11 +82,6 @@ class BiometricAttendanceService extends BaseService
 
         // Reject duplicate punch within the deduplication window
         if ($this->isDuplicate($user->id, $gymId, $punchTime)) {
-            Log::info('BiometricAttendanceService: duplicate punch skipped', [
-                'user_id'        => $user->id,
-                'device_user_id' => $deviceUserId,
-                'punch_time'     => $punchTime,
-            ]);
 
             return null;
         }

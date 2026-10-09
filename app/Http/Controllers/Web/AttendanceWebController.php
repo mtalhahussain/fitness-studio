@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\User;
 use App\Services\AttendanceService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AttendanceWebController extends Controller
 {
@@ -21,17 +23,79 @@ class AttendanceWebController extends Controller
         }
 
         $gymId   = $user->isAdmin() ? (int) session('admin_active_gym_id') : $user->gym_id;
-        $filters = $request->only(['search', 'source', 'status', 'per_page']);
+        $filters = $request->validate([
+            'member_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('gym_id', $gymId)],
+            'month' => ['nullable', 'date_format:Y-m'],
+            'start_date' => ['nullable', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+            'view' => ['nullable', Rule::in(['list', 'monthly'])],
+            'search' => ['nullable', 'string', 'max:100'],
+            'source' => ['nullable', Rule::in(['manual', 'biometric'])],
+            'status' => ['nullable', Rule::in(['checked_in', 'checked_out'])],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'page' => ['nullable', 'integer', 'min:1'],
+        ]);
+        $month = Carbon::createFromFormat('!Y-m', $filters['month'] ?? now()->format('Y-m'));
+        $start = isset($filters['start_date']) ? Carbon::parse($filters['start_date'])->startOfDay() : $month->copy()->startOfMonth();
+        $end = isset($filters['end_date']) ? Carbon::parse($filters['end_date'])->endOfDay() : $month->copy()->endOfMonth();
+        if ($end->lt($start) || $start->diffInDays($end) > 366) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['end_date' => 'Choose a date range of up to one year, ending on or after the start date.']);
+        }
+        $filters = array_merge($filters, ['month' => $month->format('Y-m'), 'start_date' => $start->toDateString(), 'end_date' => $end->toDateString(), 'view' => $filters['view'] ?? 'list']);
 
-        $records = $this->service->getTodayAttendance($gymId, $filters);
-        $summary = $this->service->getTodaySummary($gymId);
+        $base = Attendance::forGym($gymId)->whereBetween('check_in_time', [$start, $end]);
+        if (! empty($filters['member_id'])) {
+            $base->where('user_id', $filters['member_id']);
+        }
+        if (! empty($filters['search'])) {
+            $base->whereHas('user', fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', "%{$filters['search']}%")
+                ->orWhere('email', 'like', "%{$filters['search']}%")));
+        }
+        if (! empty($filters['source'])) {
+            $base->where('source', $filters['source']);
+        }
+        if (! empty($filters['status'])) {
+            $filters['status'] === 'checked_in' ? $base->whereNull('check_out_time') : $base->whereNotNull('check_out_time');
+        }
+        $summary = [
+            'total' => (clone $base)->count(),
+            'checked_in' => (clone $base)->whereNull('check_out_time')->count(),
+            'checked_out' => (clone $base)->whereNotNull('check_out_time')->count(),
+        ];
+        $records = (clone $base)->with('user:id,name,email')->latest('check_in_time')->paginate($filters['per_page'] ?? 20);
+        $records->through(fn ($record) => array_merge($record->toArray(), [
+            'status' => $record->isOpen() ? 'checked_in' : 'checked_out',
+            'duration_mins' => $record->duration(),
+            'is_late_checkout' => $record->isLateCheckout(),
+        ]));
+
+        $historyMembers = User::members()->forGym($gymId)->orderBy('name');
+        if (! empty($filters['member_id'])) {
+            $historyMembers->where('id', $filters['member_id']);
+        }
+        if (! empty($filters['search'])) {
+            $historyMembers->where(fn ($q) => $q->where('name', 'like', "%{$filters['search']}%")
+                ->orWhere('email', 'like', "%{$filters['search']}%"));
+        }
+        $monthly = $historyMembers->paginate($filters['per_page'] ?? 20);
+        $punches = (clone $base)->whereIn('user_id', $monthly->pluck('id'))->get()->groupBy('user_id');
+        $monthly->through(function ($member) use ($punches) {
+            $sessions = $punches->get($member->id, collect());
+            $days = $sessions->map(fn ($r) => $r->check_in_time->toDateString())->unique()->values();
+            return ['id' => $member->id, 'name' => $member->name, 'email' => $member->email, 'days' => $days, 'present_count' => $days->count(), 'sessions' => $sessions->count()];
+        });
+        $dates = collect(\Carbon\CarbonPeriod::create($start->copy()->startOfDay(), $end->copy()->startOfDay()))
+            ->map(fn ($date) => ['date' => $date->toDateString(), 'label' => $date->format('d M'), 'future' => $date->isFuture() && ! $date->isToday()]);
         $members = User::members()->forGym($gymId)->where('status', 'active')->get(['id', 'name', 'email']);
+        $filterMembers = User::members()->forGym($gymId)->orderBy('name')->get(['id', 'name', 'email']);
+        $pagination = $filters['view'] === 'monthly' ? $monthly : $records;
+        $paginationData = ['current_page' => $pagination->currentPage(), 'last_page' => $pagination->lastPage(), 'total' => $pagination->total()];
 
         if ($request->wantsJson()) {
-            return response()->json(['records' => $records->items(), 'summary' => $summary]);
+            return response()->json(['records' => $records->items(), 'summary' => $summary, 'monthly' => $monthly->items(), 'dates' => $dates, 'pagination' => $paginationData]);
         }
 
-        return view('attendance.index', compact('records', 'summary', 'members'));
+        return view('attendance.index', compact('records', 'summary', 'members', 'filterMembers', 'filters', 'monthly', 'dates', 'paginationData'));
     }
 
     private function myHistory(Request $request, $user)

@@ -11,7 +11,6 @@ use App\Models\BiometricDevice;
 use App\Services\UnknownBiometricDevices;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 
 /**
  * ZKTeco ADMS / iClock push protocol at the root paths the firmware hardcodes:
@@ -102,11 +101,6 @@ class IclockController extends Controller
             if ($table === 'RTLOG' || ($table === 'TABLEDATA'
                 && strtolower((string) $request->query('tablename')) === 'transaction')) {
                 $logs = $this->acc->parse($raw, $device);
-                Log::info('Biometric diagnostics: ACC attendance upload', [
-                    'serial_number' => $device->serial_number,
-                    'table' => $table,
-                    'punches_parsed' => count($logs),
-                ]);
                 // Let a processing failure return 500 so the device retries the upload.
                 foreach ($logs as $log) {
                     $this->processor->process($log, $device);
@@ -134,12 +128,6 @@ class IclockController extends Controller
 
         $commands = $this->commands->nextBatch($device);
 
-        Log::info('Biometric diagnostics: command poll', [
-            'serial_number' => $device->serial_number,
-            'commands_returned' => $commands->count(),
-            'command_ids' => $commands->pluck('cmd_id')->all(),
-        ]);
-
         return $this->text($commands->isEmpty()
             ? 'OK'
             : $commands->map(fn ($command) => $device->acc_push_state
@@ -156,12 +144,7 @@ class IclockController extends Controller
             return $this->text('Device not registered', 401);
         }
 
-        $updated = $this->commands->recordResults($device, $request->getContent());
-
-        Log::info('Biometric diagnostics: command results', [
-            'serial_number' => $device->serial_number,
-            'commands_updated' => $updated,
-        ]);
+        $this->commands->recordResults($device, $request->getContent());
 
         return $this->text('OK');
     }
@@ -171,20 +154,11 @@ class IclockController extends Controller
     {
         $logs = $this->driver->parseAttlog($raw, $device);
 
-        Log::info('Biometric diagnostics: attendance upload', [
-            'serial_number' => $device->serial_number,
-            'punches_parsed' => count($logs),
-        ]);
-
         foreach ($logs as $log) {
             try {
                 $this->processor->process($log, $device);
             } catch (\Throwable $e) {
-                Log::warning('Biometric log error', [
-                    'device' => $device->serial_number,
-                    'log'    => ['employee_id' => $log->employeeId, 'time' => (string) $log->time],
-                    'error'  => $e->getMessage(),
-                ]);
+                // Continue without interrupting biometric processing.
             }
         }
 
@@ -217,47 +191,18 @@ class IclockController extends Controller
     {
         $sn = $request->query('SN');
 
-        // Only protocol metadata: never log arbitrary query values or credentials.
-        $protocol = [];
-        foreach (['options', 'pushver', 'PushVersion', 'Language', 'DeviceType', 'AuthType'] as $field) {
-            $value = $request->query($field);
-            if (is_string($value)) {
-                $protocol[$field] = mb_substr($value, 0, 100);
-            }
-        }
-
-        Log::info('Biometric diagnostics: request', [
-            'endpoint' => $endpoint,
-            'method' => $request->method(),
-            'path' => $request->path(),
-            'serial_number' => is_string($sn) ? mb_substr($sn, 0, 100) : null,
-            'ip' => $request->ip(),
-            'user_agent' => mb_substr((string) $request->userAgent(), 0, 250),
-            'protocol' => $protocol,
-            'host' => $request->getHost(),
-            'scheme' => $request->getScheme(),
-            'table' => is_string($request->query('table')) ? mb_substr($request->query('table'), 0, 50) : null,
-        ]);
-
         if (! is_string($sn) || $sn === '') {
-            Log::warning('Biometric diagnostics: missing serial number');
             return null;
         }
 
         $device = BiometricDevice::where('serial_number', $sn)->first();
 
         if (! $device) {
-            Log::warning('Biometric diagnostics: unregistered serial number', ['serial_number' => mb_substr($sn, 0, 100)]);
             $this->unknownDevices->record($sn, $request->ip(), "iclock/{$endpoint}");
             return null;
         }
 
         $device->markSeen();
-
-        Log::info('Biometric diagnostics: device matched', [
-            'serial_number' => $device->serial_number,
-            'is_active' => (bool) $device->is_active,
-        ]);
 
         return $device;
     }

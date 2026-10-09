@@ -8,7 +8,6 @@ use App\Biometric\AccPush;
 use App\Biometric\WallClock;
 use App\Models\BiometricDevice;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -102,9 +101,7 @@ class ZKTecoDriver implements BiometricDriver
             $time   = trim($fields[1] ?? '');
 
             if ($pin === '' || ! preg_match(self::ATTLOG_TIME, $time)) {
-                if (trim($line) !== '') {
-                    Log::warning('ZKTeco: unparseable ATTLOG line skipped', ['line' => mb_substr($line, 0, 200), 'device_id' => $device->id]);
-                }
+
                 continue;
             }
 
@@ -146,12 +143,7 @@ class ZKTecoDriver implements BiometricDriver
             try {
                 $logs[] = new PunchLog((string) $r['employee_id'], WallClock::parse((string) $r['time'], $tz), $r['type'] ?? null);
             } catch (\Throwable $e) {
-                Log::warning('ZKTeco: unparseable punch time skipped', [
-                    'employee_id' => $r['employee_id'] ?? null,
-                    'time'        => $r['time'] ?? null,
-                    'device_id'   => $device->id,
-                    'error'       => $e->getMessage(),
-                ]);
+                // Continue without interrupting biometric processing.
             }
         }
 
@@ -204,7 +196,7 @@ class ZKTecoDriver implements BiometricDriver
                 ];
             }
         } catch (\Throwable $e) {
-            Log::warning('ZKTeco XML parse error: ' . $e->getMessage());
+            // Continue without interrupting biometric processing.
         }
 
         return array_filter($logs, fn ($l) => $l['employee_id'] && $l['time']);

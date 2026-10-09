@@ -6,7 +6,6 @@ use App\Models\BiometricDevice;
 use App\Models\User;
 use App\Services\AttendanceService;
 use App\Services\BiometricAttendanceService;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /** Turns a PunchLog from any brand into attendance for the device's gym. */
@@ -27,23 +26,12 @@ class BiometricPunchProcessor
         $user = $this->resolveOrCreateUser($employeeId, $device);
 
         if (! $user) {
-            Log::info('Biometric: unknown employee', [
-                'employee_id' => $employeeId,
-                'gym_id'      => $device->gym_id,
-                'device_id'   => $device->id,
-            ]);
             return false;
         }
 
         $time = $log->time;
 
         if ($this->biometricAttendance->isDuplicate($user->id, $device->gym_id, $time)) {
-            Log::info('Biometric push: duplicate punch skipped', [
-                'user_id'     => $user->id,
-                'employee_id' => $employeeId,
-                'time'        => $time,
-                'device_id'   => $device->id,
-            ]);
             return true;
         }
 
@@ -51,12 +39,6 @@ class BiometricPunchProcessor
 
         // Machine said "in" but member is already inside, or "out" with nothing open: ignore.
         if (($log->type === PunchLog::IN && $open) || ($log->type === PunchLog::OUT && ! $open)) {
-            Log::info('Biometric: redundant in/out punch ignored', [
-                'user_id'   => $user->id,
-                'type'      => $log->type,
-                'time'      => $time,
-                'device_id' => $device->id,
-            ]);
             return true;
         }
 
@@ -123,20 +105,8 @@ class BiometricPunchProcessor
                 $user->assignRole('member');
             }
         } catch (\Throwable $e) {
-            Log::warning('Biometric auto-create role assign failed', [
-                'user_id'     => $user->id,
-                'gym_id'      => $gymId,
-                'employee_id' => $employeeId,
-                'error'       => $e->getMessage(),
-            ]);
+            // Continue without interrupting biometric processing.
         }
-
-        Log::info('Biometric auto-created member from device', [
-            'user_id'     => $user->id,
-            'gym_id'      => $gymId,
-            'employee_id' => $employeeId,
-            'device_id'   => $device->id,
-        ]);
 
         return $user;
     }

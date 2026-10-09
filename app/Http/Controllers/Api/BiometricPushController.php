@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Models\BiometricDevice;
 use App\Services\UnknownBiometricDevices;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Fixed-URL endpoint for ZKTeco ADMS / iClock push (also eSSL, ZK-based Realtime).
@@ -50,11 +49,7 @@ class BiometricPushController extends Controller
             try {
                 $this->processor->process($log, $device);
             } catch (\Throwable $e) {
-                Log::warning('Biometric log error', [
-                    'device' => $device->serial_number,
-                    'log'    => ['employee_id' => $log->employeeId, 'time' => (string) $log->time],
-                    'error'  => $e->getMessage(),
-                ]);
+                // Continue without interrupting biometric processing.
             }
         }
 
@@ -75,13 +70,6 @@ class BiometricPushController extends Controller
     private function findDevice(Request $request): ?BiometricDevice
     {
         $serialNumber = $this->serialNumber($request);
-
-        Log::info('Biometric diagnostics: legacy request', [
-            'method' => $request->method(),
-            'path' => $request->path(),
-            'serial_number' => $serialNumber === null ? null : mb_substr($serialNumber, 0, 100),
-            'ip' => $request->ip(),
-        ]);
 
         if ($serialNumber) {
             $device = BiometricDevice::where('serial_number', $serialNumber)->first();

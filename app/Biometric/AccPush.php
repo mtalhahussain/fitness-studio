@@ -3,7 +3,6 @@
 namespace App\Biometric;
 
 use App\Models\BiometricDevice;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -101,9 +100,7 @@ class AccPush
             $event = $fields['event'] ?? $fields['eventtype'] ?? null;
             if ($event === null || ! ctype_digit($event)
                 || ! in_array((int) $event, config('biometric.acc.pass_events'), true)) {
-                if (trim($line) !== '') {
-                    Log::info('Biometric diagnostics: ACC event skipped', ['serial_number' => $device->serial_number, 'event' => $event]);
-                }
+
                 continue;
             }
             $pin = $fields['pin'] ?? '';
@@ -130,7 +127,7 @@ class AccPush
                 }
                 $logs[] = new PunchLog($pin, WallClock::parse($time, $device->timezone()), $type);
             } catch (\Throwable $e) {
-                Log::warning('Biometric diagnostics: invalid ACC event time', ['serial_number' => $device->serial_number, 'error' => $e->getMessage()]);
+                // Continue without interrupting biometric processing.
             }
         }
         return $logs;
