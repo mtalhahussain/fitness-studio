@@ -140,9 +140,9 @@
                     </div>
                     <template x-if="!modal.editing">
                         <div class="form-group">
-                            <label class="form-label">Password *</label>
-                            <input class="form-input" type="password" placeholder="Min 6 characters" x-model="modal.form.password" required>
-                            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Member will use this to login.</div>
+                            <label class="form-label">Password (optional)</label>
+                            <input class="form-input" type="password" placeholder="Leave blank or enter at least 6 characters" x-model="modal.form.password" minlength="6" autocomplete="new-password">
+                            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Set a password if the member needs to log in.</div>
                         </div>
                     </template>
                     <template x-if="modal.editing">

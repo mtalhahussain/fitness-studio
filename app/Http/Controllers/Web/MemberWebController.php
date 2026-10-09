@@ -48,7 +48,7 @@ class MemberWebController extends Controller
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'unique:users,email'],
             'phone'    => ['nullable', 'string', 'max:20'],
-            'password' => ['required', 'string', 'min:6'],
+            'password' => ['nullable', 'string', 'min:6'],
             'plan_id'     => ['nullable', 'integer', 'exists:membership_plans,id'],
             'amount_paid' => ['nullable', 'numeric', 'min:0'],
         ]);
