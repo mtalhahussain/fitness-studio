@@ -41,10 +41,17 @@
     </div>
 
     {{-- Toolbar --}}
-    <div class="toolbar" style="flex-wrap:wrap;align-items:end">
-        <div class="form-group">
-            <label class="form-label">Member</label>
-            <select class="form-select" x-model="memberFilter" @change="load(1)" x-select2>
+    <div class="attendance-filters">
+        <div class="form-group attendance-search">
+            <label class="form-label" for="attendance-search">Search</label>
+            <div class="search-wrap">
+                <svg class="search-icon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="attendance-search" type="search" class="form-input search-input" placeholder="Name or email..." x-model="search" @input.debounce.400ms="load(1)">
+            </div>
+        </div>
+        <div class="form-group attendance-member">
+            <label class="form-label" for="attendance-member">Member</label>
+            <select id="attendance-member" class="form-select" x-model="memberFilter" @change="load(1)" x-select2>
                 <option value="">All Members</option>
                 @foreach($filterMembers as $member)
                     <option value="{{ $member->id }}">{{ $member->name }} ({{ $member->email }})</option>
@@ -83,18 +90,18 @@
                 </div>
             </div>
         </div>
-        <button type="button" class="btn btn-outline" @click="resetFilters()">Reset Filters</button>
-    </div>
-    <div class="toolbar">
-        <div class="search-wrap" style="flex:1;max-width:300px">
-            <svg class="search-icon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="form-input search-input" placeholder="Search member..." x-model="search" @input.debounce.400ms="load(1)">
+        <div class="form-group attendance-status">
+            <label class="form-label" for="attendance-status">Status</label>
+            <select id="attendance-status" class="form-select" x-model="statusFilter" @change="load(1)">
+                <option value="">All Statuses</option>
+                <option value="checked_in">Checked In</option>
+                <option value="checked_out">Checked Out</option>
+            </select>
         </div>
-        <select class="form-select" style="width:150px" x-model="statusFilter" @change="load(1)" x-select2>
-            <option value="">All</option>
-            <option value="checked_in">Checked In</option>
-            <option value="checked_out">Checked Out</option>
-        </select>
+        <button type="button" class="btn btn-outline attendance-reset" @click="resetFilters()" title="Clear all filters">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/></svg>
+            Reset
+        </button>
     </div>
 
     {{-- Attendance Table --}}
@@ -228,6 +235,15 @@
 
 @push('styles')
 <style>
+    .attendance-filters { display:grid;grid-template-columns:minmax(150px,1fr) minmax(180px,1.1fr) minmax(245px,1.2fr) minmax(140px,.7fr) auto;gap:12px;align-items:end;padding:16px;border:1px solid var(--border);border-radius:12px;margin-bottom:16px; }
+    .attendance-filters .form-group { min-width:0; }
+    .attendance-filters .form-label { margin-bottom:0; }
+    .attendance-filters .search-wrap { width:100%; }
+    .attendance-filters .form-input, .attendance-filters .form-select, .attendance-reset { min-height:40px; }
+    .attendance-member .select2-container { max-width:100%; }
+    .attendance-reset { justify-content:center; }
+    @media (max-width:1200px) { .attendance-filters { grid-template-columns:repeat(2,minmax(0,1fr)); } .attendance-reset { justify-self:end;grid-column:2; } }
+    @media (max-width:600px) { .attendance-filters { grid-template-columns:minmax(0,1fr);padding:12px; } .attendance-reset { grid-column:1;justify-self:stretch; } .attendance-filters .attendance-range-trigger { min-width:0;width:100%; } }
     .attendance-range { position:relative; }
     .attendance-range-trigger { display:flex;align-items:center;gap:9px;cursor:pointer;text-align:left;min-width:245px; }
     .attendance-calendar { position:absolute;top:100%;left:0;z-index:50;width:320px;max-width:calc(100vw - 48px);padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.2); }
