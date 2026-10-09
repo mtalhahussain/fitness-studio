@@ -2,7 +2,7 @@
 @section('title', 'Attendance')
 
 @section('content')
-<div x-data="attendancePage()" x-init="init()">
+<div x-data="attendancePage()">
 
     <div class="page-header">
         <div>
@@ -51,18 +51,39 @@
                 @endforeach
             </select>
         </div>
-        <div class="form-group">
-            <label class="form-label">Month</label>
-            <input type="month" class="form-input" x-model="month" @change="selectMonth()">
+        <div class="form-group attendance-range" @click.outside="calendarOpen = false" @keydown.escape="calendarOpen = false">
+            <label class="form-label" id="attendance-range-label">Date Range</label>
+            <button type="button" class="form-input attendance-range-trigger" @click="openCalendar()" :aria-expanded="calendarOpen" aria-controls="attendance-calendar" aria-labelledby="attendance-range-label attendance-range-value">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
+                <span id="attendance-range-value" x-text="rangeLabel(startDate, endDate)"></span>
+            </button>
+            <div id="attendance-calendar" class="attendance-calendar" x-show="calendarOpen" style="display:none" role="dialog" aria-label="Select attendance date range">
+                <div class="attendance-presets">
+                    <button type="button" class="btn btn-outline btn-sm" @click="usePreset('today')">Today</button>
+                    <button type="button" class="btn btn-outline btn-sm" @click="usePreset('this_month')">This Month</button>
+                    <button type="button" class="btn btn-outline btn-sm" @click="usePreset('last_month')">Last Month</button>
+                </div>
+                <div class="attendance-calendar-nav">
+                    <button type="button" class="btn btn-outline btn-sm" @click="moveCalendar(-1)" aria-label="Previous month">‹</button>
+                    <input type="month" class="form-input" aria-label="Calendar month" x-model="calendarMonth">
+                    <button type="button" class="btn btn-outline btn-sm" @click="moveCalendar(1)" aria-label="Next month">›</button>
+                </div>
+                <div class="attendance-calendar-grid">
+                    @foreach(['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] as $day)
+                        <span class="attendance-weekday">{{ $day }}</span>
+                    @endforeach
+                    <template x-for="(day, index) in calendarDays()" :key="calendarMonth + '-' + index">
+                        <button type="button" class="attendance-calendar-day" :class="{ 'range-edge': day.date && (day.date === draftStart || day.date === draftEnd), 'range-between': day.date && draftEnd && day.date > draftStart && day.date < draftEnd }" :disabled="!day.date" :aria-label="day.date || 'Empty day'" :aria-pressed="!!day.date && day.date >= draftStart && day.date <= (draftEnd || draftStart)" @click="pickDate(day.date)" x-text="day.label"></button>
+                    </template>
+                </div>
+                <p class="cell-sub" aria-live="polite" x-text="draftEnd ? rangeLabel(draftStart, draftEnd) : 'Now select the end date (same date for one day).'"></p>
+                <div class="attendance-calendar-footer">
+                    <button type="button" class="btn btn-outline btn-sm" @click="calendarOpen = false">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" :disabled="!draftStart || !draftEnd" @click="applyRange()">Apply Range</button>
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label class="form-label">From</label>
-            <input type="date" class="form-input" x-model="startDate" @change="load(1)">
-        </div>
-        <div class="form-group">
-            <label class="form-label">To</label>
-            <input type="date" class="form-input" x-model="endDate" :min="startDate" @change="load(1)">
-        </div>
+        <button type="button" class="btn btn-outline" @click="resetFilters()">Reset Filters</button>
         <div class="form-group">
             <label class="form-label">View</label>
             <select class="form-select" x-model="viewMode" @change="load(1)">
@@ -207,6 +228,26 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+    .attendance-range { position:relative; }
+    .attendance-range-trigger { display:flex;align-items:center;gap:9px;cursor:pointer;text-align:left;min-width:245px; }
+    .attendance-calendar { position:absolute;top:100%;left:0;z-index:50;width:320px;max-width:calc(100vw - 48px);padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.2); }
+    .attendance-presets, .attendance-calendar-nav, .attendance-calendar-footer { display:flex;align-items:center;gap:6px; }
+    .attendance-presets { flex-wrap:wrap;margin-bottom:14px; }
+    .attendance-calendar-nav { margin-bottom:12px; }
+    .attendance-calendar-nav input { min-width:0;flex:1; }
+    .attendance-calendar-grid { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px; }
+    .attendance-weekday { text-align:center;font-size:11px;color:var(--text-muted);padding:6px 0; }
+    .attendance-calendar-day { border:0;border-radius:6px;aspect-ratio:1;background:transparent;color:var(--text);cursor:pointer;font:inherit; }
+    .attendance-calendar-day:disabled { cursor:default; }
+    .attendance-calendar-day:hover:not(:disabled), .attendance-calendar-day.range-between { background:var(--primary-dim); }
+    .attendance-calendar-day.range-edge { background:var(--primary);color:#fff; }
+    .attendance-calendar-day:focus-visible { outline:2px solid var(--primary);outline-offset:1px; }
+    .attendance-calendar-footer { justify-content:flex-end;margin-top:12px; }
+</style>
+@endpush
+
 @push('scripts')
 <script>
 function attendancePage() {
@@ -227,6 +268,11 @@ function attendancePage() {
         dates: @json($dates),
         pagination: @json($paginationData),
         requestNumber: 0,
+        today: @js(now()->toDateString()),
+        calendarOpen: false,
+        calendarMonth: '',
+        draftStart: '',
+        draftEnd: '',
         checkInModal: false,
         selectedMemberId: '',
         ciLoading: false,
@@ -235,12 +281,75 @@ function attendancePage() {
             setInterval(() => this.load(), 30000);
         },
 
-        selectMonth() {
-            if (!/^\d{4}-\d{2}$/.test(this.month)) return;
-            const [year, month] = this.month.split('-').map(Number);
-            this.startDate = this.month + '-01';
-            this.endDate = this.month + '-' + new Date(year, month, 0).getDate();
+        rangeLabel(start, end) {
+            const format = value => new Date(value + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            return start === end ? format(start) : `${format(start)} – ${format(end)}`;
+        },
+
+        openCalendar() {
+            if (this.calendarOpen) { this.calendarOpen = false; return; }
+            this.draftStart = this.startDate;
+            this.draftEnd = this.endDate;
+            this.calendarMonth = this.startDate.slice(0, 7);
+            this.calendarOpen = true;
+        },
+
+        calendarDays() {
+            if (!/^\d{4}-\d{2}$/.test(this.calendarMonth)) return [];
+            const [year, month] = this.calendarMonth.split('-').map(Number);
+            const offset = new Date(year, month - 1, 1).getDay();
+            const length = new Date(year, month, 0).getDate();
+            return Array.from({ length: offset + length }, (_, index) => {
+                const day = index - offset + 1;
+                return day < 1 ? { date: '', label: '' } : { date: `${this.calendarMonth}-${String(day).padStart(2, '0')}`, label: day };
+            });
+        },
+
+        moveCalendar(offset) {
+            const [year, month] = (this.calendarMonth || this.today.slice(0, 7)).split('-').map(Number);
+            const date = new Date(year, month - 1 + offset, 1);
+            this.calendarMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        },
+
+        pickDate(date) {
+            if (!date) return;
+            if (!this.draftStart || this.draftEnd) {
+                this.draftStart = date;
+                this.draftEnd = '';
+            } else {
+                this.draftEnd = date < this.draftStart ? this.draftStart : date;
+                if (date < this.draftStart) this.draftStart = date;
+            }
+        },
+
+        applyRange() {
+            if (!this.draftStart || !this.draftEnd) return;
+            const days = (Date.parse(this.draftEnd) - Date.parse(this.draftStart)) / 86400000;
+            if (days >= 366) { toast('Choose a date range of up to one year', 'error'); return; }
+            this.startDate = this.draftStart;
+            this.endDate = this.draftEnd;
+            this.month = this.startDate.slice(0, 7);
+            this.calendarOpen = false;
             this.load(1);
+        },
+
+        usePreset(preset) {
+            this.calendarMonth = this.today.slice(0, 7);
+            if (preset === 'last_month') this.moveCalendar(-1);
+            const [year, month] = this.calendarMonth.split('-').map(Number);
+            this.draftStart = preset === 'today' ? this.today : this.calendarMonth + '-01';
+            this.draftEnd = preset === 'today' ? this.today : this.calendarMonth + '-' + new Date(year, month, 0).getDate();
+            this.applyRange();
+        },
+
+        resetFilters() {
+            this.search = '';
+            this.memberFilter = '';
+            this.statusFilter = '';
+            this.sourceFilter = '';
+            this.perPage = 20;
+            this.viewMode = 'list';
+            this.usePreset('this_month');
         },
 
         async load(page = this.pagination.current_page) {
