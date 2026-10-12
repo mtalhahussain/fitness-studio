@@ -187,11 +187,7 @@
                             <label class="form-label">Experience (Years)</label>
                             <input type="number" class="form-input" min="0" x-model="modal.form.experience_years">
                         </div>
-                        <div class="form-group" x-show="showHourlyRate()" x-transition>
-                            <label class="form-label">Hourly Rate (PKR) *</label>
-                            <input type="number" step="0.01" min="0.01" class="form-input" x-model="modal.form.hourly_rate"
-                                   :required="showHourlyRate()">
-                        </div>
+                        {{-- Mode stays first so the conditional fields below never shift it. --}}
                         <div class="form-group">
                             <label class="form-label">Compensation Mode *</label>
                             <select class="form-select" x-model="modal.form.compensation_mode" @change="syncCompensationMode()">
@@ -200,6 +196,11 @@
                                 <option value="hourly">Hourly Only</option>
                                 <option value="mixed">Salary + Commission</option>
                             </select>
+                        </div>
+                        <div class="form-group" x-show="showHourlyRate()" x-transition>
+                            <label class="form-label">Hourly Rate (PKR) *</label>
+                            <input type="number" step="0.01" min="0.01" class="form-input" x-model="modal.form.hourly_rate"
+                                   :required="showHourlyRate()">
                         </div>
                         <div class="form-group" x-show="showBaseSalary()" x-transition>
                             <label class="form-label">Base Salary (PKR) *</label>
