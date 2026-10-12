@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Gym;
+use App\Models\User;
 use App\Services\PaymentDueReminderService;
 use Illuminate\Http\Request;
 
@@ -15,17 +16,24 @@ class WhatsAppReminderWebController extends Controller
     {
         $gym = $this->resolveGym();
 
-        $filters = $request->only(['month', 'status', 'search']);
+        $filters = $request->validate([
+            'month'     => ['nullable', 'date_format:Y-m'],
+            'status'    => ['nullable', 'in:all,today,overdue'],
+            'search'    => ['nullable', 'string', 'max:100'],
+            'member_id' => ['nullable', 'integer'],
+        ]);
         $invoices = $this->service->getDueInvoicesForOwner((int) $gym->id, $filters);
         $messageTemplate = $this->service->getMessageTemplate($gym);
 
         return view('whatsapp-reminders.index', [
             'gym' => $gym,
             'invoices' => $invoices,
+            'filterMembers' => User::members()->forGym($gym->id)->orderBy('name')->get(['id', 'name', 'phone']),
             'filters' => [
                 'month' => $filters['month'] ?? now()->format('Y-m'),
                 'status' => $filters['status'] ?? 'all',
                 'search' => $filters['search'] ?? '',
+                'member_id' => (string) ($filters['member_id'] ?? ''),
             ],
             'messageTemplate' => $messageTemplate,
         ]);

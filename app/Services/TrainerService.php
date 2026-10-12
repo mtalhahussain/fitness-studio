@@ -97,6 +97,23 @@ class TrainerService extends BaseService
             );
         }
 
+        if (! empty($filters['trainer_id'])) {
+            $query->where('id', $filters['trainer_id']);
+        }
+
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (! empty($filters['compensation_mode'])) {
+            $mode = $filters['compensation_mode'];
+            // Profiles created before compensation fields existed default to commission.
+            $query->where(fn ($q) => $q
+                ->whereHas('trainerProfile', fn ($p) => $p->where('compensation_mode', $mode))
+                ->when($mode === 'commission', fn ($q) => $q->orWhereDoesntHave('trainerProfile'))
+            );
+        }
+
         return $query->latest()->paginate($filters['per_page'] ?? 15);
     }
 

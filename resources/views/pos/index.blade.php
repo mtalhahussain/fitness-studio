@@ -64,21 +64,59 @@
 
     {{-- ═══ INVOICES TAB ═══ --}}
     <div x-show="tab === 'invoices'">
-        <div class="toolbar">
-            <div class="search-wrap" style="flex:1;max-width:300px">
-                <svg class="search-icon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input class="form-input search-input" placeholder="Search invoice or member..." x-model="search" @input.debounce.400ms="load()">
+        <div class="filter-bar">
+            <div class="form-group">
+                <label class="form-label" for="pos-search">Search</label>
+                <div class="search-wrap">
+                    <svg class="search-icon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input id="pos-search" type="search" class="form-input search-input" placeholder="Invoice # or member..." x-model="filters.search" @input.debounce.400ms="load(1)">
+                </div>
             </div>
-            <select class="form-select" style="width:150px" x-model="statusFilter" @change="load()" x-select2>
-                <option value="">All Statuses</option>
-                <option value="unpaid">Unpaid</option>
-                <option value="partially_paid">Partial</option>
-                <option value="paid">Paid</option>
-                <option value="cancelled">Cancelled</option>
-            </select>
-            <button class="btn btn-outline" @click="load()">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            </button>
+            <div class="form-group">
+                <label class="form-label" for="pos-member">Member</label>
+                <select id="pos-member" class="form-select" x-model="filters.member_id" @change="load(1)" x-select2>
+                    <option value="">All Members</option>
+                    @foreach($filterMembers as $fm)
+                        <option value="{{ $fm->id }}">{{ $fm->name }} ({{ $fm->email }})</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="pos-status">Status</label>
+                <select id="pos-status" class="form-select" x-model="filters.status" @change="load(1)">
+                    <option value="">All Statuses</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="partially_paid">Partial</option>
+                    <option value="paid">Paid</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="pos-type">Type</label>
+                <select id="pos-type" class="form-select" x-model="filters.invoice_type" @change="load(1)">
+                    <option value="">All Types</option>
+                    <option value="membership">Membership</option>
+                    <option value="pos">POS Sale</option>
+                    <option value="mixed">Mixed</option>
+                </select>
+            </div>
+            <div class="form-group filter-wide">
+                <label class="form-label">Invoice Date</label>
+                <div class="filter-dates">
+                    <input type="date" class="form-input" aria-label="From date" x-model="filters.date_from" :max="filters.date_to || null" @change="load(1)">
+                    <input type="date" class="form-input" aria-label="To date" x-model="filters.date_to" :min="filters.date_from || null" @change="load(1)">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="button" class="btn btn-outline" @click="load()" title="Refresh">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                </button>
+                <button type="button" class="btn btn-outline filter-reset" @click="resetFilters()" :disabled="activeFilterCount() === 0" title="Clear all filters">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/></svg>
+                    Reset
+                    <span class="filter-count" x-show="activeFilterCount() > 0" x-text="activeFilterCount()"></span>
+                </button>
+            </div>
         </div>
 
         <div class="card" style="padding:0">
@@ -101,7 +139,7 @@
                             <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)"><span class="spinner"></span></td></tr>
                         </template>
                         <template x-if="!loading && invoices.length === 0">
-                            <tr><td colspan="8"><div class="empty-state"><div class="icon">🧾</div><p>No invoices yet</p></div></td></tr>
+                            <tr><td colspan="8"><div class="empty-state"><div class="icon">🧾</div><p x-text="activeFilterCount() ? 'No invoices match these filters' : 'No invoices yet'"></p></div></td></tr>
                         </template>
                         <template x-for="inv in invoices" :key="inv.id">
                             <tr>
@@ -146,6 +184,13 @@
                         </template>
                     </tbody>
                 </table>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border)" x-show="pagination.last_page > 1">
+                <span style="font-size:12px;color:var(--text-muted)" x-text="`Page ${pagination.current_page} of ${pagination.last_page} · ${pagination.total} invoices`"></span>
+                <div style="display:flex;gap:6px">
+                    <button class="btn btn-outline btn-sm" :disabled="pagination.current_page <= 1" @click="load(pagination.current_page - 1)">← Prev</button>
+                    <button class="btn btn-outline btn-sm" :disabled="pagination.current_page >= pagination.last_page" @click="load(pagination.current_page + 1)">Next →</button>
+                </div>
             </div>
         </div>
     </div>
@@ -550,6 +595,10 @@
 
 @push('scripts')
 <script>
+function posEmptyFilters() {
+    return { search: '', member_id: '', status: '', invoice_type: '', date_from: '', date_to: '' };
+}
+
 function posPage() {
     return {
         tab: 'invoices',
@@ -560,8 +609,8 @@ function posPage() {
         saving: false,
 
         // Filters
-        search: '',
-        statusFilter: '',
+        filters: posEmptyFilters(),
+        pagination: @json($pagination),
         productSearch: '',
 
         // Modals
@@ -591,16 +640,26 @@ function posPage() {
 
         // ── Load ──────────────────────────────────────────────────────────────
 
-        async load() {
+        activeFilterCount() {
+            return Object.values(this.filters).filter(v => v !== '' && v != null).length;
+        },
+
+        resetFilters() {
+            this.filters = posEmptyFilters();
+            this.load(1);
+        },
+
+        // page: 1 on filter change; omitted → refresh the current page.
+        async load(page) {
             this.loading = true;
             try {
-                const p = new URLSearchParams();
-                if (this.search)       p.set('search', this.search);
-                if (this.statusFilter) p.set('status', this.statusFilter);
+                const p = new URLSearchParams({ page: page || this.pagination.current_page || 1 });
+                Object.entries(this.filters).forEach(([k, v]) => { if (v !== '' && v != null) p.set(k, v); });
                 const res = await get(`/pos?${p}`);
-                this.invoices = res.invoices;
-                this.summary  = res.summary;
-            } catch(e) { toast('Refresh failed', 'error'); }
+                this.invoices   = res.invoices;
+                this.summary    = res.summary;
+                this.pagination = res.pagination;
+            } catch(e) { toast(e.message || 'Refresh failed', 'error'); }
             this.loading = false;
         },
 

@@ -33,9 +33,10 @@ class TrainerCommissionWebController extends Controller
         $memberStats = $this->trainingService->getTrainerMemberSummary($trainer, $gymId);
         $currentRate = $this->commissionService->getCommissionRate($gymId, $trainer->id);
         $members     = $this->trainingService->getMembersByTrainer($trainer, $gymId);
+        $rateHistory = $this->commissionService->getConfigHistory($gymId, $trainer->id, true);
 
         return view('trainers.commission', compact(
-            'trainer', 'earnings', 'monthly', 'memberStats', 'currentRate', 'month', 'members', 'canManageCommission'
+            'trainer', 'earnings', 'monthly', 'memberStats', 'currentRate', 'month', 'members', 'canManageCommission', 'rateHistory'
         ));
     }
 
@@ -60,7 +61,7 @@ class TrainerCommissionWebController extends Controller
             'trainer_id'      => ['nullable', 'integer', 'exists:users,id'],
             'commission_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'effective_from'  => ['required', 'date'],
-            'effective_to'    => ['nullable', 'date', 'after:effective_from'],
+            'effective_to'    => ['nullable', 'date', 'after_or_equal:effective_from'],
         ]);
 
         $gymId = auth()->user()->gym_id;

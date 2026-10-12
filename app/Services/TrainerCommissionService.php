@@ -10,6 +10,8 @@ use App\Models\TrainerCommissionConfig;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class TrainerCommissionService extends BaseService
 {
@@ -17,25 +19,24 @@ class TrainerCommissionService extends BaseService
 
     public function getCommissionRate(?int $gymId, int $trainerId, ?string $date = null): float
     {
-        $date = $date ?? now()->toDateString();
+        $config = $this->resolveConfig($gymId, $trainerId, $date ?? now()->toDateString());
 
-        $trainerConfig = TrainerCommissionConfig::where('gym_id', $gymId)
-            ->where('trainer_id', $trainerId)
+        return $config ? (float) $config->commission_rate : self::DEFAULT_COMMISSION_RATE;
+    }
+
+    /**
+     * Config that applies on $date: trainer-specific beats gym default; within a scope a
+     * temporary (date-range) override beats the ongoing base rate, which resumes after it ends.
+     */
+    public function resolveConfig(?int $gymId, ?int $trainerId, string $date): ?TrainerCommissionConfig
+    {
+        $find = fn (?int $tid) => TrainerCommissionConfig::where('gym_id', $gymId)
+            ->where('trainer_id', $tid)
             ->activeOn($date)
-            ->orderBy('effective_from', 'desc')
+            ->byPriority()
             ->first();
 
-        if ($trainerConfig) {
-            return (float) $trainerConfig->commission_rate;
-        }
-
-        $gymDefault = TrainerCommissionConfig::where('gym_id', $gymId)
-            ->whereNull('trainer_id')
-            ->activeOn($date)
-            ->orderBy('effective_from', 'desc')
-            ->first();
-
-        return $gymDefault ? (float) $gymDefault->commission_rate : self::DEFAULT_COMMISSION_RATE;
+        return ($trainerId ? $find($trainerId) : null) ?? $find(null);
     }
 
     public function calculateFromPayment(Payment $payment, Invoice $invoice): ?TrainerCommission
@@ -93,12 +94,18 @@ class TrainerCommissionService extends BaseService
             ->get();
 
         $byMember = $commissions->groupBy('member_id')->map(function ($items) {
+            $total        = (float) $items->sum('total_amount');
+            $trainerShare = (float) $items->sum('trainer_share');
+
             return [
                 'member'        => $items->first()?->member,
-                'total_amount'  => (float) $items->sum('total_amount'),
-                'trainer_share' => (float) $items->sum('trainer_share'),
+                'total_amount'  => $total,
+                'trainer_share' => $trainerShare,
                 'gym_share'     => (float) $items->sum('gym_share'),
                 'count'         => $items->count(),
+                // Rates applied to this member's payments (several if the rate changed mid-period).
+                'rates'         => $items->pluck('commission_rate')->map(fn ($r) => (float) $r)->unique()->sort()->values(),
+                'effective_rate'=> $total > 0 ? round($trainerShare / $total * 100, 2) : 0.0,
             ];
         })->values();
 
@@ -165,43 +172,119 @@ class TrainerCommissionService extends BaseService
 
     public function setCommissionConfig(?int $gymId, array $data): TrainerCommissionConfig
     {
-        $trainerId    = $data['trainer_id'] ?? null;
-        $effectiveFrom = $data['effective_from'];
+        $trainerId     = $data['trainer_id'] ?? null;
+        $effectiveFrom = Carbon::parse($data['effective_from'])->toDateString();
+        $effectiveTo   = ! empty($data['effective_to']) ? Carbon::parse($data['effective_to'])->toDateString() : null;
 
-        TrainerCommissionConfig::where('gym_id', $gymId)
-            ->where('trainer_id', $trainerId)
-            ->whereNull('effective_to')
-            ->where('effective_from', '<', $effectiveFrom)
-            ->update(['effective_to' => Carbon::parse($effectiveFrom)->subDay()->toDateString()]);
+        if ($effectiveTo && $effectiveTo < $effectiveFrom) {
+            throw ValidationException::withMessages(['effective_to' => 'End date must be on or after the start date.']);
+        }
 
-        return TrainerCommissionConfig::create([
-            'gym_id'          => $gymId,
-            'trainer_id'      => $trainerId,
-            'commission_rate' => $data['commission_rate'],
-            'effective_from'  => $effectiveFrom,
-            'effective_to'    => $data['effective_to'] ?? null,
-        ]);
+        $scope = fn () => TrainerCommissionConfig::where('gym_id', $gymId)->where('trainer_id', $trainerId);
+
+        return DB::transaction(function () use ($scope, $gymId, $trainerId, $effectiveFrom, $effectiveTo, $data) {
+            $attrs = [
+                'gym_id'          => $gymId,
+                'trainer_id'      => $trainerId,
+                'commission_rate' => $data['commission_rate'],
+                'effective_from'  => $effectiveFrom,
+                'created_by'      => auth()->id(),
+            ];
+
+            // Date-range override: leaves the ongoing rate untouched so it resumes after the range.
+            if ($effectiveTo) {
+                $overlap = $scope()->where('kind', TrainerCommissionConfig::KIND_TEMPORARY)
+                    ->whereDate('effective_from', '<=', $effectiveTo)
+                    ->whereDate('effective_to', '>=', $effectiveFrom)
+                    ->first();
+
+                if ($overlap) {
+                    throw ValidationException::withMessages(['effective_from' => sprintf(
+                        'Overlaps an existing temporary rate (%s%% from %s to %s).',
+                        $overlap->commission_rate,
+                        $overlap->effective_from->format('d M Y'),
+                        $overlap->effective_to->format('d M Y'),
+                    )]);
+                }
+
+                return TrainerCommissionConfig::create($attrs + [
+                    'kind'         => TrainerCommissionConfig::KIND_TEMPORARY,
+                    'effective_to' => $effectiveTo,
+                ]);
+            }
+
+            $bases = fn () => $scope()->where('kind', TrainerCommissionConfig::KIND_BASE);
+
+            // Same start date → correct that rate instead of stacking a duplicate.
+            if ($same = $bases()->whereDate('effective_from', $effectiveFrom)->first()) {
+                $same->update(['commission_rate' => $data['commission_rate'], 'created_by' => auth()->id()]);
+                return $same->fresh();
+            }
+
+            // Close the ongoing rate running into the new start date (history is kept, not deleted).
+            $bases()->whereDate('effective_from', '<', $effectiveFrom)
+                ->where(fn ($q) => $q->whereNull('effective_to')->orWhereDate('effective_to', '>=', $effectiveFrom))
+                ->update(['effective_to' => Carbon::parse($effectiveFrom)->subDay()->toDateString()]);
+
+            // Backdated: stop just before the next ongoing rate already on file.
+            $next = $bases()->whereDate('effective_from', '>', $effectiveFrom)->orderBy('effective_from')->first();
+
+            return TrainerCommissionConfig::create($attrs + [
+                'kind'         => TrainerCommissionConfig::KIND_BASE,
+                'effective_to' => $next?->effective_from->copy()->subDay()->toDateString(),
+            ]);
+        });
+    }
+
+    /** Full rate history for one trainer (or the gym default when $trainerId is null), newest first. */
+    public function getConfigHistory(?int $gymId, ?int $trainerId, bool $includeGymDefault = false): Collection
+    {
+        $today   = now()->toDateString();
+        $current = $this->resolveConfig($gymId, $trainerId, $today);
+
+        return TrainerCommissionConfig::where('gym_id', $gymId)
+            ->where(function ($q) use ($trainerId, $includeGymDefault) {
+                $q->where('trainer_id', $trainerId);
+                if ($includeGymDefault && $trainerId) {
+                    $q->orWhereNull('trainer_id');
+                }
+            })
+            ->with(['trainer:id,name', 'creator:id,name'])
+            ->orderBy('effective_from', 'desc')
+            ->orderBy('id', 'desc')
+            ->get()
+            ->each(function (TrainerCommissionConfig $c) use ($today, $current) {
+                $c->setAttribute('status', $c->statusOn($today));
+                $c->setAttribute('is_current', $current?->id === $c->id);
+            });
     }
 
     public function getConfigs(?int $gymId): array
     {
-        $gymDefault = TrainerCommissionConfig::forGym($gymId)
-            ->gymDefault()
-            ->orderBy('effective_from', 'desc')
-            ->first();
+        $today      = now()->toDateString();
+        $gymDefault = $this->resolveConfig($gymId, null, $today);
 
         $trainerConfigs = TrainerCommissionConfig::forGym($gymId)
             ->whereNotNull('trainer_id')
+            ->activeOn($today)
+            ->byPriority()
             ->with('trainer:id,name')
-            ->orderBy('effective_from', 'desc')
             ->get()
-            ->groupBy('trainer_id')
-            ->map(fn ($items) => $items->first());
+            ->unique('trainer_id')
+            ->values();
+
+        $history = TrainerCommissionConfig::forGym($gymId)
+            ->with(['trainer:id,name', 'creator:id,name'])
+            ->orderBy('effective_from', 'desc')
+            ->orderBy('id', 'desc')
+            ->get()
+            ->each(fn ($c) => $c->setAttribute('status', $c->statusOn($today)));
 
         return [
-            'gym_default'    => $gymDefault,
-            'default_rate'   => $gymDefault ? (float) $gymDefault->commission_rate : self::DEFAULT_COMMISSION_RATE,
-            'trainer_configs' => $trainerConfigs->values(),
+            'gym_default'     => $gymDefault,
+            'default_rate'    => $gymDefault ? (float) $gymDefault->commission_rate : self::DEFAULT_COMMISSION_RATE,
+            'trainer_configs' => $trainerConfigs,
+            'history'         => $history,
         ];
     }
 }

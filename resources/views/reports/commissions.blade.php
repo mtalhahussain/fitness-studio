@@ -153,22 +153,61 @@
             <div style="font-size:20px;font-weight:700;color:var(--primary)">{{ $configs['default_rate'] }}%</div>
             <div style="font-size:11px;color:var(--text-muted)">trainer share · applies when no trainer-specific rate is set</div>
         </div>
-        <template x-if="{{ count($configs['trainer_configs']) === 0 ? 'true' : 'false' }}">
-            <div style="font-size:13px;color:var(--text-muted)">No trainer-specific overrides configured.</div>
-        </template>
-        @if(count($configs['trainer_configs']) > 0)
-        <div class="table-wrap">
+        @if (count($configs['trainer_configs']) === 0)
+            <div style="font-size:13px;color:var(--text-muted)">No trainer-specific rate active today.</div>
+        @else
+        <div class="table-wrap" style="margin-bottom:20px">
             <table>
                 <thead>
-                    <tr><th>Trainer</th><th>Rate</th><th>From</th><th>To</th></tr>
+                    <tr><th>Trainer</th><th>Rate Today</th><th>Type</th><th>From</th><th>To</th></tr>
                 </thead>
                 <tbody>
-                    @foreach($configs['trainer_configs'] as $cfg)
+                    @foreach ($configs['trainer_configs'] as $cfg)
                     <tr>
                         <td class="cell-main">{{ $cfg->trainer?->name ?? '—' }}</td>
                         <td><span style="color:var(--primary);font-weight:600">{{ $cfg->commission_rate }}%</span></td>
+                        <td>{{ $cfg->kind === 'temporary' ? 'Temporary' : 'Ongoing' }}</td>
                         <td>{{ $cfg->effective_from?->format('d M Y') }}</td>
-                        <td>{{ $cfg->effective_to?->format('d M Y') ?? '—' }}</td>
+                        <td>{{ $cfg->effective_to?->format('d M Y') ?? 'No end' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+    </div>
+
+    {{-- Full rate history --}}
+    <div class="card" style="margin-top:24px">
+        <div class="card-header">
+            <div class="card-title">Commission Rate History</div>
+            <div class="card-subtitle">All rates ever set — old rates are closed, never deleted</div>
+        </div>
+        @if ($configs['history']->isEmpty())
+            <div style="font-size:13px;color:var(--text-muted)">No rates configured yet.</div>
+        @else
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Applies To</th><th>Rate</th><th>Type</th><th>From</th><th>To</th><th>Status</th><th>Set By</th><th>Set On</th></tr>
+                </thead>
+                <tbody>
+                    @foreach ($configs['history'] as $cfg)
+                    <tr>
+                        <td class="cell-main">{{ $cfg->trainer?->name ?? 'Gym default' }}</td>
+                        <td><span style="color:var(--primary);font-weight:600">{{ $cfg->commission_rate }}%</span></td>
+                        <td>
+                            <span class="badge {{ $cfg->kind === 'temporary' ? 'badge-purple' : 'badge-blue' }}">
+                                {{ $cfg->kind === 'temporary' ? 'Temporary' : 'Ongoing' }}
+                            </span>
+                        </td>
+                        <td>{{ $cfg->effective_from?->format('d M Y') }}</td>
+                        <td>{{ $cfg->effective_to?->format('d M Y') ?? 'No end' }}</td>
+                        <td>
+                            <span class="badge {{ ['active' => 'badge-green', 'scheduled' => 'badge-yellow'][$cfg->status] ?? 'badge-gray' }}">{{ ucfirst($cfg->status) }}</span>
+                        </td>
+                        <td style="font-size:12px">{{ $cfg->creator?->name ?? '—' }}</td>
+                        <td style="font-size:12px;color:var(--text-muted)">{{ $cfg->created_at?->format('d M Y') }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -204,16 +243,7 @@
                             Gym: <strong x-text="(100-parseFloat(configModal.form.commission_rate||0)).toFixed(2)+'%'"></strong>
                         </div>
                     </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Effective From *</label>
-                            <input type="date" class="form-input" x-model="configModal.form.effective_from" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Effective To (optional)</label>
-                            <input type="date" class="form-input" x-model="configModal.form.effective_to">
-                        </div>
-                    </div>
+                    @include('trainers._commission-period-fields')
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" @click="configModal.show=false">Cancel</button>
@@ -238,7 +268,7 @@ function commissionReport() {
         selectedMonth: '{{ $month }}',
         configModal: {
             show: false, loading: false,
-            form: { trainer_id: '', commission_rate: '{{ $configs['default_rate'] }}', effective_from: new Date().toISOString().slice(0,10), effective_to: '' }
+            form: { trainer_id: '', commission_rate: '{{ $configs['default_rate'] }}', duration: 'ongoing', effective_from: new Date().toISOString().slice(0,10), effective_to: '' }
         },
 
         init() {},
@@ -264,7 +294,7 @@ function commissionReport() {
                     trainer_id:      this.configModal.form.trainer_id || null,
                     commission_rate: this.configModal.form.commission_rate,
                     effective_from:  this.configModal.form.effective_from,
-                    effective_to:    this.configModal.form.effective_to || null,
+                    effective_to:    this.configModal.form.duration === 'ongoing' ? null : (this.configModal.form.effective_to || null),
                 });
                 toast('Commission rate saved.');
                 this.configModal.show = false;

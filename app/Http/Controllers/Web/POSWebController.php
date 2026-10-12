@@ -16,21 +16,34 @@ class POSWebController extends Controller
     public function index(Request $request)
     {
         $gymId    = auth()->user()->gym_id;
-        $filters  = $request->only(['search', 'status', 'per_page']);
+        $filters  = $request->validate([
+            'search'    => ['nullable', 'string', 'max:100'],
+            'status'    => ['nullable', 'in:unpaid,partially_paid,paid,cancelled'],
+            'member_id' => ['nullable', 'integer'],
+            'invoice_type' => ['nullable', 'in:membership,pos,mixed'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to'   => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+            'per_page'  => ['nullable', 'integer', 'min:1', 'max:100'],
+            'page'      => ['nullable', 'integer', 'min:1'],
+        ]);
 
         $summary  = $this->service->getRevenueSummary($gymId);
         $invoices = $this->service->getInvoices($gymId, $filters);
-        $products = Product::forGym($gymId)->active()->orderBy('name')->get(['id', 'name', 'price']);
-        $members  = User::members()->forGym($gymId)->where('status', 'active')->get(['id', 'name', 'email']);
+        $pagination = ['current_page' => $invoices->currentPage(), 'last_page' => $invoices->lastPage(), 'total' => $invoices->total()];
 
         if ($request->wantsJson()) {
             return response()->json([
-                'invoices' => $invoices->items(),
-                'summary'  => $summary,
+                'invoices'   => $invoices->items(),
+                'summary'    => $summary,
+                'pagination' => $pagination,
             ]);
         }
 
-        return view('pos.index', compact('summary', 'invoices', 'products', 'members'));
+        $products = Product::forGym($gymId)->active()->orderBy('name')->get(['id', 'name', 'price']);
+        $members  = User::members()->forGym($gymId)->where('status', 'active')->get(['id', 'name', 'email']);
+        $filterMembers = User::members()->forGym($gymId)->orderBy('name')->get(['id', 'name', 'email']);
+
+        return view('pos.index', compact('summary', 'invoices', 'products', 'members', 'filterMembers', 'pagination'));
     }
 
     public function createInvoice(Request $request)

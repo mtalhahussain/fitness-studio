@@ -460,6 +460,21 @@
         /* ── Toolbar ─────────────────────────────────────────────── */
         .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
 
+        /* ── Filter bar (shared by list modules; matches Attendance filters) ── */
+        .filter-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; padding: 16px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; }
+        .filter-bar .form-group { min-width: 0; margin: 0; }
+        .filter-bar .form-label { margin-bottom: 0; }
+        .filter-bar .search-wrap { width: 100%; }
+        .filter-bar .form-input, .filter-bar .form-select, .filter-bar .filter-reset { min-height: 40px; }
+        .filter-bar .select2-container { max-width: 100%; }
+        .filter-bar .filter-wide { grid-column: span 2; }
+        .filter-actions { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+        .filter-reset { justify-content: center; white-space: nowrap; }
+        .filter-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--primary); color: #fff; font-size: 10px; font-weight: 700; }
+        .filter-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        @media (max-width: 900px) { .filter-bar .filter-wide { grid-column: span 1; } }
+        @media (max-width: 600px) { .filter-bar { grid-template-columns: minmax(0, 1fr); padding: 12px; } .filter-actions { justify-content: stretch; } .filter-actions .btn { flex: 1; } }
+
         /* ── Responsive ──────────────────────────────────────────── */
         @media (max-width: 768px) {
             .sidebar { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); }

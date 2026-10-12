@@ -23,10 +23,22 @@ class MemberWebController extends Controller
     public function index(Request $request)
     {
         $gymId   = auth()->user()->gym_id;
-        $filters = $request->only(['search', 'status', 'per_page']);
+        $filters = $request->validate([
+            'search'      => ['nullable', 'string', 'max:100'],
+            'member_id'   => ['nullable', 'integer'],
+            'status'      => ['nullable', 'in:active,inactive,suspended'],
+            'membership'  => ['nullable', 'in:active,expiring,expired,none'],
+            'plan_id'     => ['nullable', 'integer'],
+            'payment'     => ['nullable', 'in:due,paid'],
+            'joined_from' => ['nullable', 'date_format:Y-m-d'],
+            'joined_to'   => ['nullable', 'date_format:Y-m-d', 'after_or_equal:joined_from'],
+            'per_page'    => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
 
         $members = $this->service->getMembers($gymId, $filters);
         $plans   = MembershipPlan::forGym($gymId)->active()->get();
+        $filterMembers = User::members()->forGym($gymId)->orderBy('name')->get(['id', 'name', 'email']);
+        $filterPlans   = MembershipPlan::forGym($gymId)->orderBy('name')->get(['id', 'name']);
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -39,7 +51,7 @@ class MemberWebController extends Controller
             ]);
         }
 
-        return view('members.index', compact('members', 'plans'));
+        return view('members.index', compact('members', 'plans', 'filterMembers', 'filterPlans'));
     }
 
     public function store(Request $request)

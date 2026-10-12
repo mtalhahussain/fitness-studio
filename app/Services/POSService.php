@@ -115,6 +115,27 @@ class POSService extends BaseService
             $q->where('status', $filters['status']);
         }
 
+        if (! empty($filters['member_id'])) {
+            $q->where('user_id', $filters['member_id']);
+        }
+
+        // Same buckets as Invoice::invoice_type: membership (plan only), pos (no plan), mixed (both).
+        $plan    = fn ($i) => $i->where('item_type', 'plan');
+        $notPlan = fn ($i) => $i->where('item_type', '!=', 'plan');
+        match ($filters['invoice_type'] ?? null) {
+            'membership' => $q->whereHas('items', $plan)->whereDoesntHave('items', $notPlan),
+            'pos'        => $q->whereDoesntHave('items', $plan),
+            'mixed'      => $q->whereHas('items', $plan)->whereHas('items', $notPlan),
+            default      => null,
+        };
+
+        if (! empty($filters['date_from'])) {
+            $q->whereDate('created_at', '>=', $filters['date_from']);
+        }
+        if (! empty($filters['date_to'])) {
+            $q->whereDate('created_at', '<=', $filters['date_to']);
+        }
+
         return $q->paginate($filters['per_page'] ?? 20);
     }
 

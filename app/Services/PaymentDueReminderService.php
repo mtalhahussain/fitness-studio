@@ -106,6 +106,10 @@ class PaymentDueReminderService
             $query->whereDate('due_date', today());
         }
 
+        if (! empty($filters['member_id'])) {
+            $query->where('user_id', (int) $filters['member_id']);
+        }
+
         if ($search !== '') {
             $query->where(function (Builder $q) use ($search) {
                 $q->where('invoice_number', 'like', "%{$search}%")

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Biometric\DeviceCommandQueue;
 use App\Http\Controllers\Controller;
+use App\Models\TrainerProfile;
 use App\Models\User;
 use App\Services\TrainerService;
 use Illuminate\Http\Request;
@@ -15,16 +16,29 @@ class TrainerWebController extends Controller
     public function index(Request $request)
     {
         $gymId   = auth()->user()->gym_id;
-        $filters = $request->only(['search', 'specialization', 'per_page']);
+        $filters = $request->validate([
+            'search'            => ['nullable', 'string', 'max:100'],
+            'trainer_id'        => ['nullable', 'integer'],
+            'specialization'    => ['nullable', 'string', 'max:255'],
+            'status'            => ['nullable', 'in:active,inactive,suspended'],
+            'compensation_mode' => ['nullable', 'in:commission,salary,hourly,mixed'],
+            'per_page'          => ['nullable', 'integer', 'min:1', 'max:100'],
+            'page'              => ['nullable', 'integer', 'min:1'],
+        ]);
 
-        $trainers = $this->service->getTrainers($gymId, $filters);
-        $members  = User::members()->forGym($gymId)->where('status', 'active')->get(['id', 'name', 'email']);
+        $trainers   = $this->service->getTrainers($gymId, $filters);
+        $pagination = ['current_page' => $trainers->currentPage(), 'last_page' => $trainers->lastPage(), 'total' => $trainers->total()];
 
         if ($request->wantsJson()) {
-            return response()->json(['trainers' => $trainers->items()]);
+            return response()->json(['trainers' => $trainers->items(), 'pagination' => $pagination]);
         }
 
-        return view('trainers.index', compact('trainers', 'members'));
+        $members         = User::members()->forGym($gymId)->where('status', 'active')->get(['id', 'name', 'email']);
+        $filterTrainers  = User::trainers()->forGym($gymId)->orderBy('name')->get(['id', 'name', 'email']);
+        $specializations = TrainerProfile::where('gym_id', $gymId)->whereNotNull('specialization')
+            ->distinct()->orderBy('specialization')->pluck('specialization');
+
+        return view('trainers.index', compact('trainers', 'members', 'filterTrainers', 'specializations', 'pagination'));
     }
 
     public function store(Request $request)
@@ -36,9 +50,9 @@ class TrainerWebController extends Controller
             'password'         => ['required', 'string', 'min:6'],
             'specialization'   => ['required', 'string', 'max:255'],
             'experience_years' => ['nullable', 'integer', 'min:0'],
-            'hourly_rate'      => ['nullable', 'numeric', 'min:0'],
+            'hourly_rate'      => ['nullable', 'required_if:compensation_mode,hourly', 'numeric', 'gt:0'],
             'compensation_mode'=> ['required', 'in:commission,salary,hourly,mixed'],
-            'base_salary'      => ['nullable', 'numeric', 'min:0'],
+            'base_salary'      => ['nullable', 'required_if:compensation_mode,salary,mixed', 'numeric', 'gt:0'],
             'commission_enabled' => ['nullable', 'boolean'],
             'salary_enabled'   => ['nullable', 'boolean'],
         ]);
@@ -56,9 +70,9 @@ class TrainerWebController extends Controller
             'status'           => ['sometimes', 'in:active,inactive,suspended'],
             'specialization'   => ['sometimes', 'string', 'max:255'],
             'experience_years' => ['nullable', 'integer', 'min:0'],
-            'hourly_rate'      => ['nullable', 'numeric', 'min:0'],
+            'hourly_rate'      => ['nullable', 'required_if:compensation_mode,hourly', 'numeric', 'gt:0'],
             'compensation_mode'=> ['sometimes', 'in:commission,salary,hourly,mixed'],
-            'base_salary'      => ['nullable', 'numeric', 'min:0'],
+            'base_salary'      => ['nullable', 'required_if:compensation_mode,salary,mixed', 'numeric', 'gt:0'],
             'commission_enabled' => ['nullable', 'boolean'],
             'salary_enabled'   => ['nullable', 'boolean'],
         ]);

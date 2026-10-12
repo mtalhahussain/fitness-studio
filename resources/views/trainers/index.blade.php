@@ -8,7 +8,7 @@
     <div class="page-header">
         <div>
             <div class="page-title">Trainers</div>
-            <div class="page-sub" x-text="`${totalCount} trainers in your gym`"></div>
+            <div class="page-sub" x-text="activeFilterCount() ? `${totalCount} trainers match filters` : `${totalCount} trainers in your gym`"></div>
         </div>
         <button class="btn btn-primary" @click="openAdd()">
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -16,11 +16,58 @@
         </button>
     </div>
 
-    {{-- Search --}}
-    <div class="toolbar">
-        <div class="search-wrap" style="flex:1;max-width:320px">
-            <svg class="search-icon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="form-input search-input" placeholder="Search trainer or specialization..." x-model="search" @input.debounce.400ms="load()">
+    {{-- Filters --}}
+    <div class="filter-bar">
+        <div class="form-group">
+            <label class="form-label" for="trainers-search">Search</label>
+            <div class="search-wrap">
+                <svg class="search-icon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="trainers-search" type="search" class="form-input search-input" placeholder="Name, email, specialization..." x-model="filters.search" @input.debounce.400ms="load(1)">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="trainers-trainer">Trainer</label>
+            <select id="trainers-trainer" class="form-select" x-model="filters.trainer_id" @change="load(1)" x-select2>
+                <option value="">All Trainers</option>
+                @foreach($filterTrainers as $ft)
+                    <option value="{{ $ft->id }}">{{ $ft->name }} ({{ $ft->email }})</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="trainers-spec">Specialization</label>
+            <select id="trainers-spec" class="form-select" x-model="filters.specialization" @change="load(1)" x-select2>
+                <option value="">All Specializations</option>
+                @foreach($specializations as $spec)
+                    <option value="{{ $spec }}">{{ $spec }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="trainers-mode">Compensation</label>
+            <select id="trainers-mode" class="form-select" x-model="filters.compensation_mode" @change="load(1)">
+                <option value="">All Modes</option>
+                <option value="commission">Commission Only</option>
+                <option value="salary">Salary Only</option>
+                <option value="hourly">Hourly Only</option>
+                <option value="mixed">Salary + Commission</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="trainers-status">Status</label>
+            <select id="trainers-status" class="form-select" x-model="filters.status" @change="load(1)">
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="suspended">Suspended</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="button" class="btn btn-outline filter-reset" @click="resetFilters()" :disabled="activeFilterCount() === 0" title="Clear all filters">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/></svg>
+                Reset
+                <span class="filter-count" x-show="activeFilterCount() > 0" x-text="activeFilterCount()"></span>
+            </button>
         </div>
     </div>
 
@@ -30,7 +77,7 @@
     </template>
 
     <template x-if="!loading && trainers.length === 0">
-        <div class="empty-state" style="padding:80px"><div class="icon">🏋️</div><p>No trainers yet. Add your first trainer!</p></div>
+        <div class="empty-state" style="padding:80px"><div class="icon">🏋️</div><p x-text="activeFilterCount() ? 'No trainers match these filters' : 'No trainers yet. Add your first trainer!'"></p></div>
     </template>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px" x-show="!loading && trainers.length > 0">
@@ -95,6 +142,14 @@
         </template>
     </div>
 
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px" x-show="pagination.last_page > 1">
+        <span style="font-size:12px;color:var(--text-muted)" x-text="`Page ${pagination.current_page} of ${pagination.last_page}`"></span>
+        <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" :disabled="pagination.current_page <= 1" @click="load(pagination.current_page - 1)">← Prev</button>
+            <button class="btn btn-outline btn-sm" :disabled="pagination.current_page >= pagination.last_page" @click="load(pagination.current_page + 1)">Next →</button>
+        </div>
+    </div>
+
     {{-- Add/Edit Trainer Modal --}}
     <div class="modal-overlay" x-show="modal.show" x-transition @click.self="modal.show=false" style="display:none">
         <div class="modal" @click.stop>
@@ -133,8 +188,9 @@
                             <input type="number" class="form-input" min="0" x-model="modal.form.experience_years">
                         </div>
                         <div class="form-group" x-show="showHourlyRate()" x-transition>
-                            <label class="form-label">Hourly Rate (PKR)</label>
-                            <input type="number" step="0.01" class="form-input" x-model="modal.form.hourly_rate">
+                            <label class="form-label">Hourly Rate (PKR)<span x-show="hourlyRateRequired()"> *</span></label>
+                            <input type="number" step="0.01" min="0.01" class="form-input" x-model="modal.form.hourly_rate"
+                                   :required="hourlyRateRequired()">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Compensation Mode *</label>
@@ -146,8 +202,9 @@
                             </select>
                         </div>
                         <div class="form-group" x-show="showBaseSalary()" x-transition>
-                            <label class="form-label">Base Salary (PKR)</label>
-                            <input type="number" step="0.01" class="form-input" x-model="modal.form.base_salary">
+                            <label class="form-label">Base Salary (PKR) *</label>
+                            <input type="number" step="0.01" min="0.01" class="form-input" x-model="modal.form.base_salary"
+                                   :required="showBaseSalary()">
                         </div>
                     </div>
                     <template x-if="modal.editing">
@@ -306,12 +363,17 @@
 @push('scripts')
 @if($biometricOn) @include('biometric._pin-script') @endif
 <script>
+function trainersEmptyFilters() {
+    return { search: '', trainer_id: '', specialization: '', compensation_mode: '', status: '' };
+}
+
 function trainersPage() {
     return {
         trainers: @json($trainers->items()),
         totalCount: {{ $trainers->total() }},
         loading: false,
-        search: '',
+        filters: trainersEmptyFilters(),
+        pagination: @json($pagination),
         modal: { show: false, editing: false, loading: false, trainerId: null, form: { name:'', email:'', phone:'', specialization:'', experience_years:0, hourly_rate:'', compensation_mode:'commission', base_salary:'', commission_enabled:true, salary_enabled:false, status:'active' } },
         assignModal: { show: false, loading: false, trainer: null, memberId: '' },
         scheduleModal: { show: false, loading: false, trainer: null, sessions: [] },
@@ -347,18 +409,44 @@ function trainersPage() {
             return ['hourly', 'mixed'].includes(this.modal.form.compensation_mode);
         },
 
+        // Mixed = salary + commission; hourly rate there is optional extra info.
+        hourlyRateRequired() {
+            return this.modal.form.compensation_mode === 'hourly';
+        },
+
         showBaseSalary() {
             return ['salary', 'mixed'].includes(this.modal.form.compensation_mode);
         },
 
-        async load() {
+        // Hidden fields are cleared so a stale salary/rate from an old mode isn't saved.
+        trainerPayload() {
+            return {
+                ...this.modal.form,
+                hourly_rate: this.showHourlyRate() ? this.modal.form.hourly_rate : null,
+                base_salary: this.showBaseSalary() ? this.modal.form.base_salary : null,
+            };
+        },
+
+        activeFilterCount() {
+            return Object.values(this.filters).filter(v => v !== '' && v != null).length;
+        },
+
+        resetFilters() {
+            this.filters = trainersEmptyFilters();
+            this.load(1);
+        },
+
+        // page: 1 on filter change; omitted → refresh the current page.
+        async load(page) {
             this.loading = true;
             try {
-                const params = new URLSearchParams();
-                if (this.search) params.set('search', this.search);
+                const params = new URLSearchParams({ page: page || this.pagination.current_page || 1 });
+                Object.entries(this.filters).forEach(([k, v]) => { if (v !== '' && v != null) params.set(k, v); });
                 const res = await get(`/trainers?${params}`);
-                this.trainers = res.trainers;
-            } catch(e) { toast('Failed to load', 'error'); }
+                this.trainers   = res.trainers;
+                this.pagination = res.pagination;
+                this.totalCount = res.pagination.total;
+            } catch(e) { toast(e.message || 'Failed to load', 'error'); }
             this.loading = false;
         },
 
@@ -403,10 +491,10 @@ function trainersPage() {
             this.modal.loading = true;
             try {
                 if (this.modal.editing) {
-                    await put(`/trainers/${this.modal.trainerId}`, this.modal.form);
+                    await put(`/trainers/${this.modal.trainerId}`, this.trainerPayload());
                     toast('Trainer updated successfully');
                 } else {
-                    await post('/trainers', this.modal.form);
+                    await post('/trainers', this.trainerPayload());
                     toast('Trainer added successfully');
                 }
                 this.modal.show = false;

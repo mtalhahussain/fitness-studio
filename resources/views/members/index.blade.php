@@ -9,7 +9,7 @@
     <div class="page-header">
         <div>
             <div class="page-title">Members</div>
-            <div class="page-sub" x-text="`${totalCount} members registered`"></div>
+            <div class="page-sub" x-text="activeFilterCount() ? `${totalCount} members match filters` : `${totalCount} members registered`"></div>
         </div>
         <button class="btn btn-primary" @click="openAdd()">
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -18,17 +18,73 @@
     </div>
 
     {{-- Toolbar --}}
-    <div class="toolbar">
-        <div class="search-wrap" style="flex:1;max-width:320px">
-            <svg class="search-icon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="form-input search-input" placeholder="Search name, email, phone..." x-model="search" @input.debounce.400ms="load()">
+    <div class="filter-bar">
+        <div class="form-group">
+            <label class="form-label" for="members-search">Search</label>
+            <div class="search-wrap">
+                <svg class="search-icon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="members-search" type="search" class="form-input search-input" placeholder="Name, email, phone..." x-model="filters.search" @input.debounce.400ms="load(1)">
+            </div>
         </div>
-        <select class="form-select" style="width:140px" x-model="statusFilter" @change="load()" x-select2>
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="suspended">Suspended</option>
-        </select>
+        <div class="form-group">
+            <label class="form-label" for="members-member">Member</label>
+            <select id="members-member" class="form-select" x-model="filters.member_id" @change="load(1)" x-select2>
+                <option value="">All Members</option>
+                @foreach($filterMembers as $fm)
+                    <option value="{{ $fm->id }}">{{ $fm->name }} ({{ $fm->email }})</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="members-status">Account Status</label>
+            <select id="members-status" class="form-select" x-model="filters.status" @change="load(1)">
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="suspended">Suspended</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="members-membership">Membership</label>
+            <select id="members-membership" class="form-select" x-model="filters.membership" @change="load(1)">
+                <option value="">Any Membership</option>
+                <option value="active">Active</option>
+                <option value="expiring">Expiring in 7 days</option>
+                <option value="expired">Expired</option>
+                <option value="none">No Plan Yet</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="members-plan">Plan</label>
+            <select id="members-plan" class="form-select" x-model="filters.plan_id" @change="load(1)" x-select2>
+                <option value="">All Plans</option>
+                @foreach($filterPlans as $fp)
+                    <option value="{{ $fp->id }}">{{ $fp->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="members-payment">Payment</label>
+            <select id="members-payment" class="form-select" x-model="filters.payment" @change="load(1)">
+                <option value="">Any Payment</option>
+                <option value="due">Balance Due</option>
+                <option value="paid">Fully Paid</option>
+            </select>
+        </div>
+        <div class="form-group filter-wide">
+            <label class="form-label">Joined Between</label>
+            <div class="filter-dates">
+                <input type="date" class="form-input" aria-label="Joined from" x-model="filters.joined_from" :max="filters.joined_to || null" @change="load(1)">
+                <input type="date" class="form-input" aria-label="Joined to" x-model="filters.joined_to" :min="filters.joined_from || null" @change="load(1)">
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="button" class="btn btn-outline filter-reset" @click="resetFilters()" :disabled="activeFilterCount() === 0" title="Clear all filters">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/></svg>
+                Reset
+                <span class="filter-count" x-show="activeFilterCount() > 0" x-text="activeFilterCount()"></span>
+            </button>
+        </div>
     </div>
 
     {{-- Table --}}
@@ -394,6 +450,10 @@
 @push('scripts')
 @if($biometricOn) @include('biometric._pin-script') @endif
 <script>
+function membersEmptyFilters() {
+    return { search: '', member_id: '', status: '', membership: '', plan_id: '', payment: '', joined_from: '', joined_to: '' };
+}
+
 function membersPage() {
     return {
         members: @json($members->items()),
@@ -402,8 +462,7 @@ function membersPage() {
         currentPage: {{ $members->currentPage() }},
         lastPage: {{ $members->lastPage() }},
         loading: false,
-        search: '',
-        statusFilter: '',
+        filters: membersEmptyFilters(),
         modal: { show: false, editing: false, loading: false, memberId: null, form: { name:'', email:'', phone:'', password:'', status:'active', plan_id:'', amount_paid:'' } },
         planModal: { show: false, loading: false, member: null, form: { plan_id:'', start_date:'', amount_paid:'' } },
         balanceModal: { show: false, loading: false, member: null, form: { amount:'', method:'cash' } },
@@ -411,12 +470,22 @@ function membersPage() {
 
         init() {},
 
-        async load() {
+        activeFilterCount() {
+            return Object.values(this.filters).filter(v => v !== '' && v != null).length;
+        },
+
+        resetFilters() {
+            this.filters = membersEmptyFilters();
+            this.load(1);
+        },
+
+        // page: pass 1 when a filter changes so results don't open on a stale page.
+        async load(page) {
+            if (page) this.currentPage = page;
             this.loading = true;
             try {
                 const params = new URLSearchParams({ page: this.currentPage });
-                if (this.search)       params.set('search', this.search);
-                if (this.statusFilter) params.set('status', this.statusFilter);
+                Object.entries(this.filters).forEach(([k, v]) => { if (v !== '' && v != null) params.set(k, v); });
                 const res = await get(`/members?${params}`);
                 this.members     = res.members;
                 this.totalCount  = res.meta.total;

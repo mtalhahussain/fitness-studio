@@ -40,24 +40,42 @@
             </div>
         </div>
 
-        <div class="toolbar" style="padding:12px 16px;display:grid;grid-template-columns:160px 140px 1fr auto;gap:10px;align-items:end">
-            <div class="form-group" style="margin:0">
-                <label class="form-label">Month</label>
-                <input type="month" class="form-input" x-model="filters.month">
+        <div class="filter-bar" style="margin:12px 16px">
+            <div class="form-group">
+                <label class="form-label" for="wa-search">Search</label>
+                <div class="search-wrap">
+                    <svg class="search-icon" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input id="wa-search" type="search" class="form-input search-input" placeholder="Name, phone, invoice..." x-model="filters.search" @keydown.enter="applyFilters()">
+                </div>
             </div>
-            <div class="form-group" style="margin:0">
-                <label class="form-label">Due Status</label>
-                <select class="form-select" x-model="filters.status">
+            <div class="form-group">
+                <label class="form-label" for="wa-member">Member</label>
+                <select id="wa-member" class="form-select" x-model="filters.member_id" @change="applyFilters()" x-select2>
+                    <option value="">All Members</option>
+                    @foreach($filterMembers as $fm)
+                        <option value="{{ $fm->id }}">{{ $fm->name }}{{ $fm->phone ? ' (' . $fm->phone . ')' : '' }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="wa-month">Due Month</label>
+                <input id="wa-month" type="month" class="form-input" x-model="filters.month" @change="applyFilters()">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="wa-status">Due Status</label>
+                <select id="wa-status" class="form-select" x-model="filters.status" @change="applyFilters()">
                     <option value="all">All</option>
-                    <option value="today">Today</option>
+                    <option value="today">Due Today</option>
                     <option value="overdue">Overdue</option>
                 </select>
             </div>
-            <div class="form-group" style="margin:0">
-                <label class="form-label">Search</label>
-                <input type="text" class="form-input" placeholder="Member name / phone / invoice" x-model="filters.search">
+            <div class="filter-actions">
+                <button type="button" class="btn btn-outline" @click="applyFilters()">Apply</button>
+                <button type="button" class="btn btn-outline filter-reset" @click="resetFilters()" :disabled="!hasCustomFilters" title="Clear all filters">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/></svg>
+                    Reset
+                </button>
             </div>
-            <button class="btn btn-outline" @click="applyFilters()">Apply</button>
         </div>
 
         <div class="table-wrap" style="padding:0 16px 16px">
@@ -106,6 +124,16 @@ function waReminderPage() {
             month: @json($filters['month']),
             status: @json($filters['status']),
             search: @json($filters['search']),
+            member_id: @json($filters['member_id']),
+        },
+
+        get hasCustomFilters() {
+            return this.filters.status !== 'all' || !!this.filters.search || !!this.filters.member_id
+                || this.filters.month !== @json(now()->format('Y-m'));
+        },
+
+        resetFilters() {
+            window.location.href = `{{ route('whatsapp-reminders.index') }}`;
         },
 
         get allChecked() {
@@ -119,7 +147,7 @@ function waReminderPage() {
         },
 
         applyFilters() {
-            const params = new URLSearchParams(this.filters).toString();
+            const params = new URLSearchParams(Object.entries(this.filters).filter(([, v]) => v !== '' && v != null)).toString();
             window.location.href = `{{ route('whatsapp-reminders.index') }}?${params}`;
         },
 

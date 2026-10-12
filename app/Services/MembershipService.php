@@ -221,8 +221,40 @@ class MembershipService extends BaseService
             );
         }
 
+        if (! empty($filters['member_id'])) {
+            $query->where('id', $filters['member_id']);
+        }
+
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
+        }
+
+        match ($filters['membership'] ?? null) {
+            'active'   => $query->whereHas('memberships', fn ($q) => $q->active()),
+            'expiring' => $query->whereHas('memberships', fn ($q) => $q->active()
+                ->where('memberships.end_date', '<=', now()->addDays(7)->toDateString())),
+            'expired'  => $query->whereHas('memberships')->whereDoesntHave('memberships', fn ($q) => $q->active()),
+            'none'     => $query->whereDoesntHave('memberships'),
+            default    => null,
+        };
+
+        if (! empty($filters['plan_id'])) {
+            $query->whereHas('memberships', fn ($q) => $q->active()->where('memberships.plan_id', $filters['plan_id']));
+        }
+
+        match ($filters['payment'] ?? null) {
+            'due'  => $query->whereHas('memberships', fn ($q) => $q->active()
+                ->whereHas('invoice', fn ($i) => $i->whereIn('status', ['unpaid', 'partially_paid']))),
+            'paid' => $query->whereHas('memberships', fn ($q) => $q->active()
+                ->whereHas('invoice', fn ($i) => $i->where('status', 'paid'))),
+            default => null,
+        };
+
+        if (! empty($filters['joined_from'])) {
+            $query->whereDate('created_at', '>=', $filters['joined_from']);
+        }
+        if (! empty($filters['joined_to'])) {
+            $query->whereDate('created_at', '<=', $filters['joined_to']);
         }
 
         return $query->latest()->paginate($filters['per_page'] ?? 15);

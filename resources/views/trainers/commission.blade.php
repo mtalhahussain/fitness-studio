@@ -136,6 +136,7 @@
                         <th>Member</th>
                         <th>Payments</th>
                         <th>Total Amount</th>
+                        <th>Commission %</th>
                         <th>Trainer Share</th>
                         <th>Gym Share</th>
                     </tr>
@@ -149,6 +150,10 @@
                             </td>
                             <td x-text="row.count"></td>
                             <td x-text="currency(row.total_amount)"></td>
+                            <td>
+                                <span style="color:var(--primary);font-weight:600" x-text="fmtRates(row.rates)"></span>
+                                <div class="cell-sub" x-show="(row.rates || []).length > 1" x-text="`avg ${row.effective_rate}%`"></div>
+                            </td>
                             <td><span style="color:var(--success);font-weight:600" x-text="currency(row.trainer_share)"></span></td>
                             <td><span style="color:var(--info)" x-text="currency(row.gym_share)"></span></td>
                         </tr>
@@ -156,6 +161,56 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    {{-- Commission rate history --}}
+    <div class="card" style="margin-bottom:24px">
+        <div class="card-header">
+            <div class="card-title">Commission Rate History</div>
+            <div class="card-subtitle">Every rate set for this trainer, plus gym default fallback</div>
+        </div>
+        @if ($rateHistory->isEmpty())
+            <div class="empty-state" style="padding:30px"><p>No rate configured yet — system default ({{ \App\Services\TrainerCommissionService::DEFAULT_COMMISSION_RATE }}%) applies.</p></div>
+        @else
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Rate</th><th>Applies To</th><th>Type</th><th>From</th><th>To</th><th>Status</th><th>Set By</th><th>Set On</th></tr>
+                </thead>
+                <tbody>
+                    @foreach ($rateHistory as $cfg)
+                    <tr @if ($cfg->is_current) style="background:var(--primary-dim)" @endif>
+                        <td>
+                            <span style="color:var(--primary);font-weight:600">{{ $cfg->commission_rate }}%</span>
+                            <div class="cell-sub">Gym {{ number_format(100 - $cfg->commission_rate, 2) }}%</div>
+                        </td>
+                        <td>{{ $cfg->trainer_id ? 'This trainer' : 'Gym default' }}</td>
+                        <td>
+                            <span class="badge {{ $cfg->kind === 'temporary' ? 'badge-purple' : 'badge-blue' }}">
+                                {{ $cfg->kind === 'temporary' ? 'Temporary' : 'Ongoing' }}
+                            </span>
+                        </td>
+                        <td>{{ $cfg->effective_from?->format('d M Y') }}</td>
+                        <td>{{ $cfg->effective_to?->format('d M Y') ?? 'No end' }}</td>
+                        <td>
+                            @if ($cfg->is_current)
+                                <span class="badge badge-green">Applied now</span>
+                            @elseif ($cfg->status === 'active')
+                                <span class="badge badge-gray">Active (overridden)</span>
+                            @elseif ($cfg->status === 'scheduled')
+                                <span class="badge badge-yellow">Scheduled</span>
+                            @else
+                                <span class="badge badge-gray">Expired</span>
+                            @endif
+                        </td>
+                        <td style="font-size:12px">{{ $cfg->creator?->name ?? '—' }}</td>
+                        <td style="font-size:12px;color:var(--text-muted)">{{ $cfg->created_at?->format('d M Y') }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
     </div>
 
     {{-- Member training periods --}}
@@ -237,16 +292,7 @@
                             </span>
                         </div>
                     </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Effective From *</label>
-                            <input type="date" class="form-input" x-model="configModal.form.effective_from" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Effective To (optional)</label>
-                            <input type="date" class="form-input" x-model="configModal.form.effective_to">
-                        </div>
-                    </div>
+                    @include('trainers._commission-period-fields')
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" @click="configModal.show=false">Cancel</button>
@@ -279,7 +325,7 @@ function commissionPage() {
         filteredPeriods: allPeriods,
         configModal: {
             show: false, loading: false,
-            form: { scope: 'trainer', commission_rate: '{{ $currentRate }}', effective_from: new Date().toISOString().slice(0,10), effective_to: '' }
+            form: { scope: 'trainer', commission_rate: '{{ $currentRate }}', duration: 'ongoing', effective_from: new Date().toISOString().slice(0,10), effective_to: '' }
         },
 
         get maxTotal() {
@@ -309,7 +355,7 @@ function commissionPage() {
                 const payload = {
                     commission_rate: this.configModal.form.commission_rate,
                     effective_from:  this.configModal.form.effective_from,
-                    effective_to:    this.configModal.form.effective_to || null,
+                    effective_to:    this.configModal.form.duration === 'ongoing' ? null : (this.configModal.form.effective_to || null),
                     trainer_id:      this.configModal.form.scope === 'trainer' ? trainerId : null,
                 };
                 await post('/commission-config', payload);
@@ -318,6 +364,11 @@ function commissionPage() {
                 window.location.reload();
             } catch(e) { toast(e.message, 'error'); }
             this.configModal.loading = false;
+        },
+
+        // "40%" or "40% / 60%" when the rate changed between this member's payments.
+        fmtRates(rates) {
+            return (rates || []).length ? rates.map(r => `${r}%`).join(' / ') : '—';
         },
 
         fmtMonth(d) {
