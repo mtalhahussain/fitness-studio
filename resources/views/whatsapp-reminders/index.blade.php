@@ -10,23 +10,6 @@
         </div>
     </div>
 
-    <div class="card" style="margin-bottom:20px">
-        <div class="card-header">
-            <div>
-                <div class="card-title">Reminder Message Format</div>
-                <div class="card-subtitle">This same format is used for scheduled job and manual send.</div>
-            </div>
-            <button class="btn btn-primary" @click="saveTemplate()" :disabled="savingTemplate">
-                <span x-show="savingTemplate" class="spinner"></span>
-                Save Format
-            </button>
-        </div>
-        <div style="padding:16px">
-            <label class="form-label">Template Text</label>
-            <textarea class="form-input" rows="4" x-model="templateText"></textarea>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:8px">Allowed placeholders: {name}, {invoice_number}, {amount_due}, {due_date}</div>
-        </div>
-    </div>
 
     <div class="card">
         <div class="card-header">
@@ -118,8 +101,6 @@ function waReminderPage() {
     return {
         selectedIds: [],
         sending: false,
-        savingTemplate: false,
-        templateText: @json($messageTemplate),
         filters: {
             month: @json($filters['month']),
             status: @json($filters['status']),
@@ -161,17 +142,6 @@ function waReminderPage() {
                 toast(e.message || 'Failed to queue reminders.', 'error');
             }
             this.sending = false;
-        },
-
-        async saveTemplate() {
-            this.savingTemplate = true;
-            try {
-                await post('{{ route('whatsapp-reminders.template') }}', { whatsapp_message_template: this.templateText });
-                toast('Template updated successfully.', 'success');
-            } catch (e) {
-                toast(e.message || 'Failed to update template.', 'error');
-            }
-            this.savingTemplate = false;
         },
     }
 }

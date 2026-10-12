@@ -23,7 +23,6 @@ class WhatsAppReminderWebController extends Controller
             'member_id' => ['nullable', 'integer'],
         ]);
         $invoices = $this->service->getDueInvoicesForOwner((int) $gym->id, $filters);
-        $messageTemplate = $this->service->getMessageTemplate($gym);
 
         return view('whatsapp-reminders.index', [
             'gym' => $gym,
@@ -35,7 +34,6 @@ class WhatsAppReminderWebController extends Controller
                 'search' => $filters['search'] ?? '',
                 'member_id' => (string) ($filters['member_id'] ?? ''),
             ],
-            'messageTemplate' => $messageTemplate,
         ]);
     }
 
@@ -53,24 +51,6 @@ class WhatsAppReminderWebController extends Controller
         return response()->json([
             'message' => 'WhatsApp reminders queued successfully.',
             'result' => $result,
-        ]);
-    }
-
-    public function updateTemplate(Request $request)
-    {
-        $gym = $this->resolveGym();
-
-        $data = $request->validate([
-            'whatsapp_message_template' => ['required', 'string', 'max:2000'],
-        ]);
-
-        $gym->update([
-            'whatsapp_message_template' => $data['whatsapp_message_template'],
-        ]);
-
-        return response()->json([
-            'message' => 'Reminder message template updated.',
-            'template' => $gym->fresh()->whatsapp_message_template,
         ]);
     }
 

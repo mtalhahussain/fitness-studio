@@ -92,7 +92,6 @@ Route::middleware(['auth', 'gym.tenant'])->group(function () {
             Route::middleware('module:whatsapp')->group(function () {
                 Route::get('/whatsapp-reminders',               [WhatsAppReminderWebController::class, 'index'])->name('whatsapp-reminders.index');
                 Route::post('/whatsapp-reminders/send',         [WhatsAppReminderWebController::class, 'send'])->name('whatsapp-reminders.send');
-                Route::post('/whatsapp-reminders/template',     [WhatsAppReminderWebController::class, 'updateTemplate'])->name('whatsapp-reminders.template');
             });
 
             // Biometric Devices

@@ -87,6 +87,15 @@
                     </select>
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">Reminder Message Format</label>
+                    <textarea class="form-input" rows="4" maxlength="2000" x-model="form.whatsapp_message_template"
+                              placeholder="{{ \App\Services\PaymentDueReminderService::DEFAULT_MESSAGE_TEMPLATE }}"></textarea>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
+                        Used by the scheduled job and manual sends for this gym. Placeholders: {name}, {invoice_number}, {amount_due}, {due_date}. Leave blank for the default shown.
+                    </div>
+                </div>
+
                 <div x-data="{ open: false }" style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
                     <button type="button" @click="open = !open" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg-secondary);border:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--text)">
                         <span>How to create &amp; get your template approved on Meta</span>
@@ -127,6 +136,7 @@ function whatsAppSettings() {
             whatsapp_business_account_id: @json($gym->whatsapp_business_account_id ?? ''),
             whatsapp_template_name: @json($gym->whatsapp_template_name ?? ''),
             whatsapp_template_language: @json($gym->whatsapp_template_language ?? 'en_US'),
+            whatsapp_message_template: @json($gym->whatsapp_message_template ?? ''),
         },
         saving: false,
 
@@ -145,6 +155,7 @@ function whatsAppSettings() {
                 }
                 payload.whatsapp_template_name = this.form.whatsapp_template_name;
                 payload.whatsapp_template_language = this.form.whatsapp_template_language;
+                payload.whatsapp_message_template = this.form.whatsapp_message_template || null;
                 await post(`/gyms/{{ $gym->id }}/whatsapp`, payload);
                 toast('WhatsApp configuration saved successfully.');
                 window.location.reload();
