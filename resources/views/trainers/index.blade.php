@@ -197,12 +197,12 @@
                                 <option value="mixed">Salary + Commission</option>
                             </select>
                         </div>
-                        <div class="form-group" x-show="showHourlyRate()" x-transition>
+                        <div class="form-group" x-show="showHourlyRate()" x-transition :style="pairFieldStyle()">
                             <label class="form-label">Hourly Rate (PKR) *</label>
                             <input type="number" step="0.01" min="0.01" class="form-input" x-model="modal.form.hourly_rate"
                                    :required="showHourlyRate()">
                         </div>
-                        <div class="form-group" x-show="showBaseSalary()" x-transition>
+                        <div class="form-group" x-show="showBaseSalary()" x-transition :style="pairFieldStyle()">
                             <label class="form-label">Base Salary (PKR) *</label>
                             <input type="number" step="0.01" min="0.01" class="form-input" x-model="modal.form.base_salary"
                                    :required="showBaseSalary()">
@@ -404,6 +404,12 @@ function trainersPage() {
                 this.modal.form.salary_enabled = true;
                 this.modal.form.commission_enabled = true;
             }
+        },
+
+        // Edit form has no Password field, so Compensation Mode closes its row and the
+        // salary/hourly field sits alone → span full width. In Add it pairs with Mode.
+        pairFieldStyle() {
+            return this.modal.editing ? 'grid-column:1 / -1' : '';
         },
 
         // Mixed = salary + commission, so hourly rate belongs to Hourly mode only.
