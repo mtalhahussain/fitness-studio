@@ -188,9 +188,9 @@
                             <input type="number" class="form-input" min="0" x-model="modal.form.experience_years">
                         </div>
                         <div class="form-group" x-show="showHourlyRate()" x-transition>
-                            <label class="form-label">Hourly Rate (PKR)<span x-show="hourlyRateRequired()"> *</span></label>
+                            <label class="form-label">Hourly Rate (PKR) *</label>
                             <input type="number" step="0.01" min="0.01" class="form-input" x-model="modal.form.hourly_rate"
-                                   :required="hourlyRateRequired()">
+                                   :required="showHourlyRate()">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Compensation Mode *</label>
@@ -405,12 +405,8 @@ function trainersPage() {
             }
         },
 
+        // Mixed = salary + commission, so hourly rate belongs to Hourly mode only.
         showHourlyRate() {
-            return ['hourly', 'mixed'].includes(this.modal.form.compensation_mode);
-        },
-
-        // Mixed = salary + commission; hourly rate there is optional extra info.
-        hourlyRateRequired() {
             return this.modal.form.compensation_mode === 'hourly';
         },
 
@@ -544,7 +540,7 @@ function trainersPage() {
 
             if (mode === 'salary') return `Salary${salary ? ' · ' + salary : ''}`;
             if (mode === 'hourly') return `Hourly${hourly ? ' · ' + hourly : ''}`;
-            if (mode === 'mixed') return `Mixed${salary ? ' · ' + salary : ''}${hourly ? ' · ' + hourly : ''}`;
+            if (mode === 'mixed') return `Salary + Commission${salary ? ' · ' + salary : ''}`;
 
             return `Commission${profile.commission_enabled === false ? ' (off)' : ''}`;
         },
