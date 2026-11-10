@@ -290,9 +290,20 @@ function attendancePage() {
         checkInModal: false,
         selectedMemberId: '',
         ciLoading: false,
+        refreshTimer: null,
+        refreshing: false,
 
         init() {
-            setInterval(() => this.load(), 30000);
+            this.refreshTimer = setInterval(() => {
+                if (!document.hidden && !this.loading && !this.refreshing) {
+                    this.load(this.pagination.current_page, true);
+                }
+            }, 5000);
+        },
+
+        destroy() {
+            clearInterval(this.refreshTimer);
+            this.requestNumber++;
         },
 
         rangeLabel(start, end) {
@@ -374,13 +385,14 @@ function attendancePage() {
             this.load(1);
         },
 
-        async load(page = this.pagination.current_page) {
+        async load(page = this.pagination.current_page, background = false) {
             if (!!this.startDate !== !!this.endDate || (this.startDate && this.endDate < this.startDate)) {
                 toast('Choose a valid start and end date', 'error');
                 return;
             }
             const requestNumber = ++this.requestNumber;
-            this.loading = true;
+            if (background) this.refreshing = true;
+            else this.loading = true;
             try {
                 const params = new URLSearchParams();
                 if (this.search)       params.set('search', this.search);
@@ -397,16 +409,33 @@ function attendancePage() {
                 }
                 params.set('view', this.viewMode);
                 params.set('page', page);
-                const res = await get(`/attendance?${params}`);
+                const response = await fetch(`/attendance?${params}`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    cache: 'no-store',
+                });
+                if (!response.ok) throw new Error('Attendance refresh failed');
+                const res = await response.json();
+                if (!Array.isArray(res.records) || !Array.isArray(res.monthly) || !Array.isArray(res.dates) || !res.summary || !res.pagination) {
+                    throw new Error('Invalid attendance response');
+                }
                 if (requestNumber !== this.requestNumber) return;
+                if (res.pagination.current_page > res.pagination.last_page) {
+                    return this.load(res.pagination.last_page, background);
+                }
                 this.records = res.records;
                 this.summary = res.summary;
                 this.monthly = res.monthly;
                 this.dates = res.dates;
                 this.pagination = res.pagination;
                 history.replaceState(null, '', `/attendance?${params}`);
-            } catch(e) { if (requestNumber === this.requestNumber) toast(e.message || 'Refresh failed', 'error'); }
-            if (requestNumber === this.requestNumber) this.loading = false;
+            } catch(e) {
+                if (requestNumber === this.requestNumber && !background) toast(e.message || 'Refresh failed', 'error');
+            } finally {
+                if (requestNumber === this.requestNumber) {
+                    this.loading = false;
+                    this.refreshing = false;
+                }
+            }
         },
 
         async doCheckIn() {
@@ -417,7 +446,7 @@ function attendancePage() {
                 toast(res.message, 'success');
                 this.checkInModal = false;
                 this.selectedMemberId = '';
-                await this.load();
+                await this.load(1);
             } catch(e) { toast(e.message, 'error'); }
             this.ciLoading = false;
         },
