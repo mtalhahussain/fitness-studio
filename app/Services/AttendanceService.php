@@ -49,7 +49,7 @@ class AttendanceService extends BaseService
 
         if ($open) {
             throw new \RuntimeException(
-                "Already checked in at {$open->check_in_time->format('H:i')}. Please check out first.",
+                "Already checked in at {$open->check_in_time->format('h:i A')}. Please check out first.",
                 409
             );
         }

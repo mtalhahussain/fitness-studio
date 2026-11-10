@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class MembershipService extends BaseService
 {
@@ -55,6 +56,14 @@ class MembershipService extends BaseService
         $amountPaid = (float) ($data['amount_paid'] ?? $plan->price);
 
         return DB::transaction(function () use ($member, $plan, $gymId, $startDate, $endDate, $amountPaid, $data) {
+            User::whereKey($member->id)->lockForUpdate()->firstOrFail();
+            if ($startDate->isAfter(today()) && $member->memberships()
+                ->where('status', 'active')->whereDate('start_date', '<=', $endDate->toDateString())
+                ->where('end_date', '>=', $startDate->toDateString())->exists()) {
+                throw ValidationException::withMessages([
+                    'start_date' => 'This date overlaps an existing membership. Choose a date after its end date.',
+                ]);
+            }
             $invoice = $this->createMembershipInvoice($member->id, $plan, $gymId, $startDate, $endDate, $amountPaid);
 
             return Membership::create([
@@ -208,6 +217,7 @@ class MembershipService extends BaseService
             ->forGym($gymId)
             ->with([
                 'activeMembership.plan',
+                'upcomingMemberships.plan',
                 'activeMembership.invoice' => fn ($q) => $q->withSum('payments', 'amount'),
             ])
             ->withCount('memberships');

@@ -137,6 +137,7 @@ class MemberWebController extends Controller
 
     public function assignMembership(Request $request, User $member)
     {
+        abort_if($member->gym_id !== auth()->user()->gym_id || ! $member->isMember(), 403);
         $data = $request->validate([
             'plan_id'     => ['required', 'integer', 'exists:membership_plans,id'],
             'start_date'  => ['nullable', 'date'],
@@ -145,7 +146,8 @@ class MemberWebController extends Controller
 
         $membership = $this->service->assignMembership($member, $data['plan_id'], auth()->user()->gym_id, $data);
 
-        return response()->json(['message' => 'Membership assigned successfully.', 'membership' => $membership->load('plan')]);
+        return response()->json(['message' => $membership->start_date->isAfter(today())
+            ? 'Membership scheduled successfully.' : 'Membership assigned successfully.', 'membership' => $membership->load('plan')]);
     }
 
     // ── Training Period Management ────────────────────────────────────────────

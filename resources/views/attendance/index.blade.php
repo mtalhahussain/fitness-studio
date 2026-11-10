@@ -147,8 +147,8 @@
                                 </div>
                             </td>
                             <td x-text="r.check_in_time ? new Date(r.check_in_time).toLocaleDateString('en-GB', {timeZone: @js(config('app.timezone'))}) : '—'"></td>
-                            <td x-text="r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',timeZone: @js(config('app.timezone'))}) : '—'"></td>
-                            <td x-text="r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',timeZone: @js(config('app.timezone'))}) : '—'"></td>
+                            <td x-text="r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',hour12:true,timeZone: @js(config('app.timezone'))}) : '—'"></td>
+                            <td x-text="r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',hour12:true,timeZone: @js(config('app.timezone'))}) : '—'"></td>
                             <td x-text="r.duration_mins ? r.duration_mins + ' min' : '—'"></td>
                             <td>
                                 <span class="badge" :class="r.source==='biometric'?'badge-purple':'badge-gray'" x-text="r.source"></span>

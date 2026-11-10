@@ -226,7 +226,7 @@ class TrainerService extends BaseService
 
         if ($conflict) {
             throw new \RuntimeException(
-                "Trainer has a conflicting session at {$conflict->scheduled_at->format('H:i')} on {$conflict->scheduled_at->toDateString()}.",
+                "Trainer has a conflicting session at {$conflict->scheduled_at->format('h:i A')} on {$conflict->scheduled_at->toDateString()}.",
                 409
             );
         }

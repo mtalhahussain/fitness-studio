@@ -66,7 +66,7 @@
                         <span class="badge {{ $connClass }}" style="font-size:10px;white-space:nowrap">{{ $connLabel }}</span>
                         <div class="cell-sub" style="margin-top:3px">
                             @if($device->last_seen_at)
-                                <span title="{{ $device->last_seen_at->format('d-M-Y H:i:s') }}">{{ $device->last_seen_at->diffForHumans() }}</span>
+                                <span title="{{ $device->last_seen_at->format('d-M-Y h:i:s A') }}">{{ $device->last_seen_at->diffForHumans() }}</span>
                             @else
                                 Waiting for first contact
                             @endif

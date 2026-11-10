@@ -69,6 +69,12 @@ class User extends Authenticatable
         return $this->hasOne(Membership::class)->active()->latest('start_date');
     }
 
+    public function upcomingMemberships()
+    {
+        return $this->hasMany(Membership::class)->where('status', 'active')
+            ->whereDate('start_date', '>', now()->toDateString())->orderBy('start_date');
+    }
+
     // ── Trainer relations ─────────────────────────────────────────────────────
 
     public function trainerProfile()

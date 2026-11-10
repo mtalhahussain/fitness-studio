@@ -187,7 +187,7 @@
                             <label class="form-label">Experience (Years)</label>
                             <input type="number" class="form-input" min="0" x-model="modal.form.experience_years">
                         </div>
-                        {{-- Mode stays first so the conditional fields below never shift it. --}}
+                        <div class="form-grid" style="grid-column:1 / -1">
                         <div class="form-group">
                             <label class="form-label">Compensation Mode *</label>
                             <select class="form-select" x-model="modal.form.compensation_mode" @change="syncCompensationMode()">
@@ -197,15 +197,20 @@
                                 <option value="mixed">Salary + Commission</option>
                             </select>
                         </div>
-                        <div class="form-group" x-show="showHourlyRate()" x-transition :style="pairFieldStyle()">
+                        <template x-if="showHourlyRate()">
+                        <div class="form-group">
                             <label class="form-label">Hourly Rate (PKR) *</label>
                             <input type="number" step="0.01" min="0.01" class="form-input" x-model="modal.form.hourly_rate"
                                    :required="showHourlyRate()">
                         </div>
-                        <div class="form-group" x-show="showBaseSalary()" x-transition :style="pairFieldStyle()">
+                        </template>
+                        <template x-if="showBaseSalary()">
+                        <div class="form-group">
                             <label class="form-label">Base Salary (PKR) *</label>
                             <input type="number" step="0.01" min="0.01" class="form-input" x-model="modal.form.base_salary"
                                    :required="showBaseSalary()">
+                        </div>
+                        </template>
                         </div>
                     </div>
                     <template x-if="modal.editing">
@@ -288,7 +293,7 @@
                         <div style="flex:1;min-width:0">
                             <div style="font-weight:600;color:var(--text)" x-text="s.title"></div>
                             <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
-                                <span x-text="new Date(s.scheduled_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})"></span>
+                                <span x-text="new Date(s.scheduled_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true})"></span>
                                 · <span x-text="s.duration_mins + ' min'"></span>
                                 <template x-if="s.member"><span> · <span x-text="s.member.name"></span></span></template>
                             </div>
@@ -319,7 +324,7 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label class="form-label">Date & Time *</label>
-                            <input type="datetime-local" class="form-input" x-model="sessionModal.form.scheduled_at" required>
+                            <x-date-time-input x-model="sessionModal.form.scheduled_at" />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Duration (mins)</label>
@@ -404,12 +409,6 @@ function trainersPage() {
                 this.modal.form.salary_enabled = true;
                 this.modal.form.commission_enabled = true;
             }
-        },
-
-        // Edit form has no Password field, so Compensation Mode closes its row and the
-        // salary/hourly field sits alone → span full width. In Add it pairs with Mode.
-        pairFieldStyle() {
-            return this.modal.editing ? 'grid-column:1 / -1' : '';
         },
 
         // Mixed = salary + commission, so hourly rate belongs to Hourly mode only.

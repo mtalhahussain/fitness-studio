@@ -15,6 +15,51 @@ class MemberFiltersTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_future_plan_keeps_current_plan_until_its_start_date(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-10 12:00:00'));
+        $member = $this->makeUser('Scheduled Member', 'member');
+        $this->giveMembership($member, $this->monthly, '2026-11-30');
+
+        $this->actingAs($this->owner)->postJson('/members/'.$member->id.'/membership', [
+            'plan_id' => $this->yearly->id, 'start_date' => '2026-12-01', 'amount_paid' => 0,
+        ])->assertOk()->assertJsonPath('message', 'Membership scheduled successfully.');
+
+        $this->assertSame($this->monthly->id, $member->activeMembership()->first()->plan_id);
+        $this->getJson('/members?member_id='.$member->id)->assertOk()
+            ->assertJsonPath('members.0.active_membership.plan_id', $this->monthly->id)
+            ->assertJsonPath('members.0.upcoming_memberships.0.plan_id', $this->yearly->id);
+
+        $this->travelTo(\Carbon\Carbon::parse('2026-12-01 00:00:00'));
+        $this->assertSame($this->yearly->id, $member->activeMembership()->first()->plan_id);
+        $this->assertCount(0, $member->upcomingMemberships()->get());
+    }
+
+    public function test_overlapping_future_plan_is_rejected_without_creating_an_invoice(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-10 12:00:00'));
+        $member = $this->makeUser('Overlap Member', 'member');
+        $this->giveMembership($member, $this->monthly, '2026-12-05');
+        $invoices = Invoice::count();
+        $this->actingAs($this->owner)->postJson('/members/'.$member->id.'/membership', [
+            'plan_id' => $this->yearly->id, 'start_date' => '2026-12-01', 'amount_paid' => 0,
+        ])->assertUnprocessable()->assertJsonValidationErrors('start_date');
+        $this->assertSame($invoices, Invoice::count());
+        $this->assertSame(1, $member->memberships()->count());
+    }
+
+    public function test_future_only_membership_is_not_active_early(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-10 12:00:00'));
+        $member = $this->makeUser('Future Member', 'member');
+        $this->actingAs($this->owner)->postJson('/members/'.$member->id.'/membership', [
+            'plan_id' => $this->monthly->id, 'start_date' => '2026-12-01', 'amount_paid' => 0,
+        ])->assertOk();
+        $this->assertNull($member->activeMembership()->first());
+        $this->getJson('/members?member_id='.$member->id.'&membership=active')
+            ->assertOk()->assertJsonCount(0, 'members');
+    }
+
     private Gym $gym;
     private User $owner;
     private MembershipPlan $monthly;

@@ -128,7 +128,7 @@ class BiometricDeviceWebController extends Controller
                 $preview['count']   = count($logs);
                 $preview['punches'] = array_map(fn ($l) => [
                     'employee_id' => $l->employeeId,
-                    'time'        => $l->time->format('Y-m-d H:i:s'),
+                    'time'        => $l->time->format('Y-m-d h:i:s A'),
                     'type'        => $l->type,
                 ], array_slice($logs, 0, 10));
             } catch (\Throwable $e) {

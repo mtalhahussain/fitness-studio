@@ -74,7 +74,7 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Date &amp; time *</label>
-                        <input type="datetime-local" name="scheduled_at" class="form-input" value="{{ old('scheduled_at', $defaultWhen) }}" required>
+                        <x-date-time-input name="scheduled_at" :value="old('scheduled_at', $defaultWhen)" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">Duration</label>

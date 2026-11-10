@@ -66,7 +66,9 @@ class Membership extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('memberships.status', 'active')->where('memberships.end_date', '>=', now()->toDateString());
+        return $query->where('memberships.status', 'active')
+            ->whereDate('memberships.start_date', '<=', now()->toDateString())
+            ->where('memberships.end_date', '>=', now()->toDateString());
     }
 
     public function scopeExpired($query)

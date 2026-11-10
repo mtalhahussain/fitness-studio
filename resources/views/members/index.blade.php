@@ -149,11 +149,15 @@
                                 <template x-if="!m.active_membership">
                                     <button class="btn btn-outline btn-sm" @click="openPlan(m)">Assign Plan</button>
                                 </template>
+                                <template x-for="upcoming in (m.upcoming_memberships || [])" :key="upcoming.id">
+                                    <div class="cell-sub" style="margin-top:6px" x-text="'Scheduled: ' + upcoming.plan?.name + ' · ' + fmtDate(upcoming.start_date)"></div>
+                                </template>
                             </td>
                             <td x-text="fmtDate(m.created_at)"></td>
                             <td>
                                 <div style="display:flex;gap:6px;justify-content:flex-end">
                                     <button class="btn btn-outline btn-sm" @click="openTraining(m)" title="Training">🏋️</button>
+                                    <button class="btn btn-outline btn-sm" @click="openPlan(m)">Change / Renew Plan</button>
                                     <button class="btn btn-outline btn-sm" @click="openEdit(m)">Edit</button>
                                     <button class="btn btn-danger btn-sm" @click="deleteMember(m)">Delete</button>
                                 </div>
@@ -406,13 +410,24 @@
         <div class="modal" @click.stop>
             <div class="modal-header">
                 <div>
-                    <div class="modal-title">Assign Membership Plan</div>
+                    <div class="modal-title">Assign / Schedule Membership Plan</div>
                     <div style="font-size:12px;color:var(--text-muted);margin-top:4px" x-text="'For: ' + (planModal.member?.name || '')"></div>
                 </div>
                 <button class="modal-close" @click="planModal.show=false">×</button>
             </div>
             <form @submit.prevent="savePlan()">
                 <div style="display:flex;flex-direction:column;gap:14px">
+                    <p class="cell-sub" x-show="planModal.member?.active_membership" x-text="'Current plan: ' + (planModal.member?.active_membership?.plan?.name || '') + ' · Ends: ' + fmtDate(planModal.member?.active_membership?.end_date)"></p>
+                    <div class="form-group">
+                        <label class="form-label">Start Plan</label>
+                        <select class="form-select" x-model="planModal.timing" @change="setPlanStartDate()">
+                            <option value="after_current">After current / scheduled plan ends</option>
+                            <option value="next_month">From next month</option>
+                            <option value="today">From today</option>
+                            <option value="custom">Choose a date</option>
+                        </select>
+                        <div class="cell-sub">A future plan starts automatically on its start date. Payment entered here is recorded now.</div>
+                    </div>
                     <div class="form-group">
                         <label class="form-label">Select Plan *</label>
                         <select class="form-select" x-model="planModal.form.plan_id" required x-select2>
@@ -425,7 +440,7 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label class="form-label">Start Date</label>
-                            <input type="date" class="form-input" x-model="planModal.form.start_date">
+                            <input type="date" class="form-input" x-model="planModal.form.start_date" @change="planModal.timing = 'custom'" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Amount Paid (PKR)</label>
@@ -542,7 +557,26 @@ function membersPage() {
         },
 
         openPlan(m) {
-            this.planModal = { show: true, loading: false, member: m, form: { plan_id:'', start_date:'', amount_paid:'' } };
+            this.planModal = { show: true, loading: false, member: m, timing: 'after_current', form: { plan_id:'', start_date:'', amount_paid:0 } };
+            this.setPlanStartDate();
+        },
+
+        setPlanStartDate() {
+            const today = @js(now()->toDateString());
+            if (this.planModal.timing === 'custom') return;
+            let date = today;
+            if (this.planModal.timing === 'next_month') date = @js(now()->startOfMonth()->addMonth()->toDateString());
+            if (this.planModal.timing === 'after_current') {
+                const member = this.planModal.member;
+                const ends = [member.active_membership, ...(member.upcoming_memberships || [])]
+                    .filter(Boolean).map(plan => plan.end_date.slice(0, 10)).sort();
+                if (ends.length && ends[ends.length - 1] >= today) {
+                    const next = new Date(ends[ends.length - 1] + 'T12:00:00Z');
+                    next.setUTCDate(next.getUTCDate() + 1);
+                    date = next.toISOString().slice(0, 10);
+                }
+            }
+            this.planModal.form.start_date = date;
         },
 
         async saveMember() {
@@ -564,8 +598,8 @@ function membersPage() {
         async savePlan() {
             this.planModal.loading = true;
             try {
-                await post(`/members/${this.planModal.member.id}/membership`, this.planModal.form);
-                toast('Membership plan assigned');
+                const res = await post(`/members/${this.planModal.member.id}/membership`, this.planModal.form);
+                toast(res.message);
                 this.planModal.show = false;
                 this.load();
             } catch(e) { toast(e.message, 'error'); }
