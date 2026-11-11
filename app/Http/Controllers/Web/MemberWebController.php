@@ -135,6 +135,25 @@ class MemberWebController extends Controller
         ]);
     }
 
+    /**
+     * Outstanding balance on an active membership (invoice-based, falling back to
+     * plan price − amount_paid). Mirrors the front-end memberBalance() helper.
+     */
+    private function activeMembershipBalance(Membership $membership): float
+    {
+        $invoice = $membership->invoice;
+        if ($invoice) {
+            $total = (float) $invoice->total_amount;
+            $paid  = (float) ($invoice->payments_sum_amount ?? 0);
+
+            return max(0, round($total - $paid));
+        }
+
+        $price = (float) ($membership->plan?->price ?? 0);
+
+        return max(0, round($price - (float) $membership->amount_paid));
+    }
+
     public function assignMembership(Request $request, User $member)
     {
         abort_if($member->gym_id !== auth()->user()->gym_id || ! $member->isMember(), 403);
@@ -143,6 +162,16 @@ class MemberWebController extends Controller
             'start_date'  => ['nullable', 'date'],
             'amount_paid' => ['nullable', 'numeric', 'min:0'],
         ]);
+
+        // Hard block: the active membership's pending dues must be cleared before a plan change.
+        $active = $member->activeMembership()
+            ->with(['plan', 'invoice' => fn ($q) => $q->withSum('payments', 'amount')])
+            ->first();
+        if ($active && ($balance = $this->activeMembershipBalance($active)) > 0) {
+            return response()->json([
+                'message' => 'Clear pending dues of PKR ' . number_format($balance) . ' before changing the plan.',
+            ], 422);
+        }
 
         $membership = $this->service->assignMembership($member, $data['plan_id'], auth()->user()->gym_id, $data);
 

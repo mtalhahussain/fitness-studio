@@ -418,6 +418,40 @@
             <form @submit.prevent="savePlan()">
                 <div style="display:flex;flex-direction:column;gap:14px">
                     <p class="cell-sub" x-show="planModal.member?.active_membership" x-text="'Current plan: ' + (planModal.member?.active_membership?.plan?.name || '') + ' · Ends: ' + fmtDate(planModal.member?.active_membership?.end_date)"></p>
+
+                    {{-- Pending dues must be cleared before the plan can be changed --}}
+                    <template x-if="planModal.due > 0">
+                        <div style="border:1px solid var(--danger);background:color-mix(in srgb, var(--danger) 10%, transparent);border-radius:8px;padding:12px">
+                            <div style="font-size:13px;font-weight:600;color:var(--danger)">
+                                ⚠ Pending dues: PKR <span x-text="planModal.due.toLocaleString()"></span>
+                            </div>
+                            <div class="cell-sub" style="margin-bottom:10px">Clear the dues before changing the plan.</div>
+                            <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+                                <div class="form-group" style="margin:0">
+                                    <label class="form-label">Method</label>
+                                    <select class="form-select" x-model="planModal.payForm.method">
+                                        <option value="cash">Cash</option>
+                                        <option value="card">Card</option>
+                                        <option value="bank_transfer">Bank Transfer</option>
+                                        <option value="wallet">Wallet</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin:0">
+                                    <label class="form-label">Amount</label>
+                                    <input type="number" step="0.01" min="0.01" class="form-input" x-model="planModal.payForm.amount" style="width:140px">
+                                </div>
+                                <button type="button" class="btn btn-success" :disabled="planModal.paying" @click="payPlanDues()">
+                                    <span x-show="planModal.paying" class="spinner"></span>
+                                    Pay &amp; Clear Dues
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="planModal.justCleared && planModal.due === 0">
+                        <div class="cell-sub" style="color:var(--success);font-weight:600">✓ Dues cleared</div>
+                    </template>
+
                     <div class="form-group">
                         <label class="form-label">Start Plan</label>
                         <select class="form-select" x-model="planModal.timing" @change="setPlanStartDate()">
@@ -430,7 +464,7 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Select Plan *</label>
-                        <select class="form-select" x-model="planModal.form.plan_id" required x-select2>
+                        <select id="plan-select" class="form-select" x-model="planModal.form.plan_id" required x-select2>
                             <option value="">Choose a plan</option>
                             @foreach($plans as $plan)
                             <option value="{{ $plan->id }}">{{ $plan->name }} — {{ ucfirst($plan->type) }} — PKR {{ $plan->price }}</option>
@@ -450,7 +484,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" @click="planModal.show=false">Cancel</button>
-                    <button type="submit" class="btn btn-success" :disabled="planModal.loading">
+                    <button type="submit" class="btn btn-success" :disabled="planModal.loading || planModal.due > 0"
+                            :title="planModal.due > 0 ? 'Clear pending dues first' : ''">
                         <span x-show="planModal.loading" class="spinner"></span>
                         Assign Plan
                     </button>
@@ -557,8 +592,46 @@ function membersPage() {
         },
 
         openPlan(m) {
-            this.planModal = { show: true, loading: false, member: m, timing: 'after_current', form: { plan_id:'', start_date:'', amount_paid:0 } };
+            const due = this.memberBalance(m);
+            this.planModal = { show: true, loading: false, member: m, timing: 'after_current',
+                due, paying: false, justCleared: false, payForm: { amount: due, method: 'cash' },
+                form: { plan_id:'', start_date:'', amount_paid:0 } };
             this.setPlanStartDate();
+            this.filterPlanOptions(m);
+        },
+
+        // Clear the active membership's dues in-place, then unlock the plan change.
+        async payPlanDues() {
+            if (this.planModal.due <= 0) return;
+            this.planModal.paying = true;
+            try {
+                const res = await post(`/members/${this.planModal.member.id}/pay-balance`, this.planModal.payForm);
+                const remaining = (res && res.amount_due != null) ? Math.max(0, Math.round(res.amount_due)) : 0;
+                this.planModal.due = remaining;
+                this.planModal.payForm.amount = remaining;
+                this.planModal.justCleared = remaining === 0;
+                toast(remaining === 0 ? 'Dues cleared' : 'Payment recorded · PKR ' + remaining.toLocaleString() + ' still due', remaining === 0 ? 'success' : 'info');
+            } catch(e) { toast(e.message, 'error'); }
+            this.planModal.paying = false;
+        },
+
+        // Hide the member's current active plan from the Select Plan dropdown.
+        // Select2 ignores [hidden], so the option is removed and the full list
+        // restored from a cached copy each time the modal opens.
+        filterPlanOptions(m) {
+            this.$nextTick(() => {
+                const sel = document.getElementById('plan-select');
+                if (!sel) return;
+                if (this._planOptionsHTML == null) this._planOptionsHTML = sel.innerHTML;
+                sel.innerHTML = this._planOptionsHTML;
+                const activeId = m?.active_membership?.plan?.id;
+                if (activeId) {
+                    const opt = sel.querySelector(`option[value="${activeId}"]`);
+                    if (opt) opt.remove();
+                }
+                // Reset selection and let Select2 rebuild from the new option set.
+                $(sel).val('').trigger('change.select2');
+            });
         },
 
         setPlanStartDate() {

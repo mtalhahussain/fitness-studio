@@ -1,0 +1,56 @@
+<h2>Trainers list — how should it look?</h2>
+<p class="subtitle">Right now it's cards only. You asked for Cards / Table. Pick the direction.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Toggle: Cards + Table (recommended)</h3>
+      <p>Keep the cards you have, add a Table view, and a small switch at the top to flip between them. Choice saved so it stays next visit.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-body" style="font-size:12px">
+          <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:8px">
+            <span class="mock-button" style="padding:3px 10px">▦ Cards</span>
+            <span class="mock-button" style="padding:3px 10px;opacity:.5">☰ Table</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div class="placeholder" style="flex:1;height:70px">card</div>
+            <div class="placeholder" style="flex:1;height:70px">card</div>
+            <div class="placeholder" style="flex:1;height:70px">card</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Table only</h3>
+      <p>Replace cards with a dense table — one row per trainer. Good for many trainers, scan fast, but less visual.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-body" style="font-size:11px">
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:6px;color:#888;border-bottom:1px solid #4443;padding-bottom:4px;margin-bottom:6px">
+            <span>Trainer</span><span>Spec</span><span>Members</span><span>Pay</span><span>Status</span>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:6px;padding:4px 0">
+            <span>● Jane Smith</span><span>Yoga</span><span>12</span><span>Salary</span><span>Active</span>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:6px;padding:4px 0">
+            <span>● Ali Raza</span><span>Boxing</span><span>8</span><span>Comm.</span><span>Active</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Keep Cards only, just polish</h3>
+      <p>No table. Clean up the current cards (spacing, make the whole card clickable to open the view page). Simplest change.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px">Click one, and tell me in the terminal. Me lean toward <b>A</b> — you asked for both, toggle gives both without clutter.</p>

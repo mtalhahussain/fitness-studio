@@ -82,9 +82,13 @@
                         @endif
                     </td>
                     <td style="text-align:center">
-                        <span id="status-{{ $device->id }}" class="badge {{ $device->is_active ? 'badge-green' : 'badge-red' }}">
+                        <button type="button" id="status-{{ $device->id }}"
+                                class="badge {{ $device->is_active ? 'badge-green' : 'badge-red' }}"
+                                style="cursor:pointer;border:none;font:inherit"
+                                title="Click to activate / deactivate"
+                                onclick="toggleDevice({{ $device->id }})">
                             {{ $device->is_active ? 'Active' : 'Inactive' }}
-                        </span>
+                        </button>
                     </td>
                     <td style="text-align:right">
                         <button class="btn btn-primary btn-sm" onclick="openSetup({{ $device->id }})">Setup / Test</button>
@@ -92,7 +96,6 @@
                         <button class="btn btn-outline btn-sm" title="Send all members and trainers to this machine" onclick="pushUsers({{ $device->id }})">Sync users</button>
                         @endif
                         <button class="btn btn-outline btn-sm" onclick="openEdit({{ \Illuminate\Support\Js::from($device->only(['id', 'name', 'model', 'location', 'brand', 'settings'])) }})">Edit</button>
-                        <button class="btn btn-outline btn-sm" onclick="toggleDevice({{ $device->id }})">Toggle</button>
                         <button class="btn btn-outline btn-sm" style="color:var(--danger)" onclick="deleteDevice({{ $device->id }})">Delete</button>
                     </td>
                 </tr>

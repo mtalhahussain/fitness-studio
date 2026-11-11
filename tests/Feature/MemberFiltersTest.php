@@ -48,6 +48,29 @@ class MemberFiltersTest extends TestCase
         $this->assertSame(1, $member->memberships()->count());
     }
 
+    public function test_plan_change_is_blocked_until_active_dues_are_cleared(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-10 12:00:00'));
+        $member = $this->makeUser('Due Member', 'member');
+        $this->giveMembership($member, $this->monthly, '2026-12-05', null, 0); // PKR 3,000 outstanding
+
+        // Blocked while the active membership has dues.
+        $this->actingAs($this->owner)->postJson('/members/'.$member->id.'/membership', [
+            'plan_id' => $this->yearly->id, 'start_date' => '2026-12-06', 'amount_paid' => 0,
+        ])->assertStatus(422)->assertJsonPath('message', 'Clear pending dues of PKR 3,000 before changing the plan.');
+        $this->assertSame(1, $member->memberships()->count());
+
+        // Clear the dues, then the plan change goes through.
+        $this->actingAs($this->owner)->postJson('/members/'.$member->id.'/pay-balance', [
+            'amount' => 3000, 'method' => 'cash',
+        ])->assertOk();
+
+        $this->actingAs($this->owner)->postJson('/members/'.$member->id.'/membership', [
+            'plan_id' => $this->yearly->id, 'start_date' => '2026-12-06', 'amount_paid' => 0,
+        ])->assertOk();
+        $this->assertSame(2, $member->memberships()->count());
+    }
+
     public function test_future_only_membership_is_not_active_early(): void
     {
         $this->travelTo(\Carbon\Carbon::parse('2026-11-10 12:00:00'));
@@ -90,7 +113,9 @@ class MemberFiltersTest extends TestCase
         return $user;
     }
 
-    private function giveMembership(User $member, MembershipPlan $plan, string $endDate, ?string $invoiceStatus = null): void
+    // amountPaid defaults to the full price (settled) so tests that aren't about
+    // dues don't trip the "clear pending dues first" block. Pass 0 for a due membership.
+    private function giveMembership(User $member, MembershipPlan $plan, string $endDate, ?string $invoiceStatus = null, ?float $amountPaid = null): void
     {
         static $n = 0;
         $invoice = $invoiceStatus ? Invoice::create([
@@ -102,7 +127,7 @@ class MemberFiltersTest extends TestCase
         Membership::create([
             'gym_id' => $this->gym->id, 'user_id' => $member->id, 'plan_id' => $plan->id,
             'start_date' => now()->subMonth()->toDateString(), 'end_date' => $endDate,
-            'status' => 'active', 'amount_paid' => 0, 'invoice_id' => $invoice?->id,
+            'status' => 'active', 'amount_paid' => $amountPaid ?? $plan->price, 'invoice_id' => $invoice?->id,
         ]);
     }
 
